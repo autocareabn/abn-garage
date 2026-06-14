@@ -5,6 +5,21 @@ th:{grp_work:"การจัดการงาน",nav_today:"📅 วันน
 let LANG="he";
 function applyLang(){const d=I18N[LANG]||I18N.he;document.querySelectorAll("[data-i18n]").forEach(function(el){var k=el.getAttribute("data-i18n");if(d[k]!==undefined){if(el.id==="viewTitle")return;el.textContent=d[k];}});document.querySelectorAll("[data-i18n-ph]").forEach(function(el){var k=el.getAttribute("data-i18n-ph");if(d[k]!==undefined)el.setAttribute("placeholder",d[k]);});var sub=document.getElementById("viewSub");if(sub)sub.textContent=d.sub;}
 function setLang(l){LANG=l;document.documentElement.lang=(l==="he"?"he":l);document.documentElement.dir=(l==="he"?"rtl":"ltr");document.querySelectorAll(".langbar button").forEach(function(b){b.classList.toggle("active",b.dataset.lang===l);});applyLang();}
+
+try{window.COLS=COLS;}catch(e){}
+try{window.LINKS=LINKS;}catch(e){}
+try{window.recCache=recCache;}catch(e){}
+try{window.selColor=selColor;}catch(e){}
+try{window.txt=txt;}catch(e){}
+try{window.dstr=dstr;}catch(e){}
+try{window.curRows=curRows;}catch(e){}
+try{window.I18N=I18N;}catch(e){}
+try{window.renderList=renderList;}catch(e){}
+try{window.enrichVisible=enrichVisible;}catch(e){}
+try{window.openRec=openRec;}catch(e){}
+try{window.setLang=setLang;}catch(e){}
+try{window.api=api;}catch(e){}
+try{window.applyLang=applyLang;}catch(e){}
 </script>
 <script>
 (function(){
