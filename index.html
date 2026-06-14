@@ -80,7 +80,7 @@ try{window.applyLang=applyLang;}catch(e){}
       document.getElementById("thead").innerHTML="<tr>"+COLS.map(function(c){var h=(c[2]&&d[c[2]]!==undefined)?d[c[2]]:c[0];return "<th>"+h+"</th>";}).join("")+"</tr>";
       var tb=document.getElementById("tbody"); tb.innerHTML="";
       rows.forEach(function(r){
-        var tr=document.createElement("tr"); tr.className="row"; tr.onclick=function(){openRec(r);};
+        var tr=document.createElement("tr"); tr.className="row"; tr.onclick=function(){openRec(r.id);};
         COLS.forEach(function(c){
           var td=document.createElement("td");
           if(c[1]===null){
