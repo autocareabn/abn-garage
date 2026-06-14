@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABN - מערכת ניהול מוסך</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;padding:18px}
+.wrap{max-width:1100px;margin:0 auto;background:#fff;border:1px solid #e3e6ea;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid #eee}
+.title{font-size:22px;font-weight:700}
+.langbox{display:flex;align-items:center;gap:6px;font-size:13px;color:#666}
+.langbtn{border:1px solid #d0d4da;background:#fff;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px}
+.langbtn.active{background:#e11d2a;color:#fff;border-color:#e11d2a}
+.closex{border:1px solid #d0d4da;background:#fff;border-radius:6px;padding:5px 9px;cursor:pointer;margin-inline-start:8px}
+.tabs{display:flex;gap:26px;padding:0 22px;border-bottom:1px solid #eee;justify-content:flex-end}
+.tab{padding:14px 2px;cursor:pointer;color:#555;font-size:15px;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab.active{color:#e11d2a;border-bottom-color:#e11d2a;font-weight:600}
+.pane{display:none;padding:24px 22px}
+.pane.active{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld.full{grid-column:1/3}
+label{font-size:13px;color:#666}
+input,select,textarea{border:1px solid #d0d4da;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;width:100%;background:#fff}
+input[readonly],.ro{background:#eceef0;color:#333}
+textarea{min-height:90px;resize:vertical}
+.foot{display:flex;justify-content:flex-start;gap:12px;padding:18px 22px;border-top:1px solid #eee}
+.btn{border:none;border-radius:8px;padding:12px 22px;font-size:15px;cursor:pointer;font-weight:600}
+.btn-fin{background:#e11d2a;color:#fff}
+.btn-print{background:#fff;color:#333;border:1px solid #d0d4da}
+.banner{display:none;padding:10px 22px;font-size:13px}
+.banner.err{display:block;background:#fde8e8;color:#9b1c1c;border-bottom:1px solid #f5c2c2}
+.banner.warn{display:block;background:#fff7e6;color:#8a6d00;border-bottom:1px solid #ffe1a8}
+.picker{position:relative}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{background:#eef1fb;border:1px solid #c9d2f0;border-radius:14px;padding:3px 10px;font-size:13px;display:flex;align-items:center;gap:6px}
+.chip b{cursor:pointer;color:#7a86c2}
+.opts{position:absolute;z-index:20;top:100%;inset-inline:0;background:#fff;border:1px solid #d0d4da;border-radius:8px;margin-top:3px;max-height:200px;overflow:auto;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.opts.show{display:block}
+.opt{padding:9px 12px;cursor:pointer;font-size:14px}
+.opt:hover{background:#f0f2f5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="banner" class="banner"></div>
+  <div class="topbar">
+    <div class="langbox">
+      <span data-i18n="lang">שפה:</span>
+      <button class="langbtn active" data-lang="he">עברית</button>
+      <button class="langbtn" data-lang="en">English</button>
+      <button class="langbtn" data-lang="th">ไทย</button>
+      <button class="closex" onclick="window.close()">✕</button>
+    </div>
+    <div class="title"><span data-i18n="card">כרטיס עבודה</span> <span id="jobNo">#—</span></div>
+  </div>
+  <div class="tabs">
+    <div class="tab" data-pane="checks" data-i18n="t_checks">בדיקות</div>
+    <div class="tab" data-pane="treat" data-i18n="t_treat">תהליך הטיפול</div>
+    <div class="tab active" data-pane="intake" data-i18n="t_intake">פרטי קליטה</div>
+  </div>
+  <div id="intake" class="pane active">
+    <div class="grid">
+      <div class="fld"><label data-i18n="f_cust">שם לקוח</label><div class="picker" id="pk_cust"></div></div>
+      <div class="fld"><label data-i18n="f_jobno">מספר כרטיס עבודה</label><input id="i_jobno" class="ro" readonly></div>
+      <div class="fld"><label data-i18n="f_veh">מספר רכב</label><div class="picker" id="pk_veh"></div></div>
+      <div class="fld"><label data-i18n="f_phone">מספר טלפון</label><input id="i_phone" class="ro" readonly></div>
+      <div class="fld"><label data-i18n="f_status">סטטוס</label><input id="i_status" class="ro" readonly></div>
+      <div class="fld"><label data-i18n="f_svc">סוג טיפול</label><select id="i_svc"></select></div>
+      <div class="fld"><label data-i18n="f_locbefore">מיקום לפני טיפול</label><select id="i_locb"></select></div>
+      <div class="fld"><label data-i18n="f_locafter">מיקום בסוף הטיפול</label><select id="i_loca"></select></div>
+      <div class="fld full"><label data-i18n="f_reason">סיבת הגעה</label><textarea id="i_reason"></textarea></div>
+    </div>
+  </div>
+  <div id="treat" class="pane">
+    <div class="grid">
+      <div class="fld"><label data-i18n="f_parts">חלפים</label><div class="picker" id="pk_part"></div></div>
+      <div class="fld"><label data-i18n="f_extra">שירותים נוספים</label><div class="picker" id="pk_svc2"></div></div>
+      <div class="fld full"><label data-i18n="f_mech">מכונאי אחראי</label><div class="picker" id="pk_mech"></div></div>
+      <div class="fld full"><label data-i18n="f_mnotes">הערות מכונאי</label><textarea id="i_mnotes"></textarea></div>
+      <div class="fld full"><label data-i18n="f_done">בעיית הלקוח טופלה</label><input type="checkbox" id="i_done" style="width:auto"></div>
+    </div>
+  </div>
+  <div id="checks" class="pane">
+    <div class="grid"><div class="fld full"><label data-i18n="f_checks">בדיקות</label><textarea id="i_checks"></textarea></div></div>
+  </div>
+  <div class="foot">
+    <button class="btn btn-fin" id="b_fin" data-i18n="b_fin">סיימתי את העבודה</button>
+    <button class="btn btn-print" onclick="window.print()" data-i18n="b_print">🖨 הדפסת כרטיס עבודה</button>
+  </div>
+</div>
+<script>
+const CFG = {
+  token: "patzTcvw86aySgYQW.e588ae99f3c6f0cf294b117531d9336236a2421c11c69a89da68fefdd4262d7c",
+  base: "appX4z91yKZGwz6ap",
+  main: "tbl5X1tEJVAAUk4uE",
+  link: {
+    cust:{tbl:"tblnCFvGEpL75AVRl",prim:"שם לקוח",mode:"search"},
+    veh:{tbl:"tbl9CnyPSqTookRT5",prim:"מספר רכב",mode:"search"},
+    part:{tbl:"tblPjXb3FN1bA7Ir6",prim:"פריט",mode:"search"},
+    mech:{tbl:"tblzY5fT9cpNSTIZY",prim:"שם מלא",mode:"preload"},
+    loc:{tbl:"tbl5Jm2ssq6kVSZFT",prim:"שם מיקום",mode:"preload"}
+  }
+};
+let REC=null;
+function api(p){return "https://api.airtable.com/v0/"+CFG.base+"/"+p;}
+function H(){return {Authorization:"Bearer "+CFG.token,"Content-Type":"application/json"};}
+function showBanner(m,t){var b=document.getElementById('banner');if(!b)return;b.className='banner '+(t||'err');b.textContent=m;}
+function clearBanner(){var b=document.getElementById('banner');if(b)b.className='banner';}
+function withTimeout(p,ms){return Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);}
+if(location.protocol==='file:'){showBanner('שים לב: הקובץ נפתח מקובץ מקומי (file://) ולכן הנתונים לא ייטענו. יש לפתוח אותו דרך כתובת https.','warn');}
+</script>
+<script>
+const I18N = {
+  he:{lang:"שפה:",card:"כרטיס עבודה",t_intake:"פרטי קליטה",t_treat:"תהליך הטיפול",t_checks:"בדיקות",f_cust:"שם לקוח",f_jobno:"מספר כרטיס עבודה",f_veh:"מספר רכב",f_phone:"מספר טלפון",f_status:"סטטוס",f_svc:"סוג טיפול",f_locbefore:"מיקום לפני טיפול",f_locafter:"מיקום בסוף הטיפול",f_reason:"סיבת הגעה",f_parts:"חלפים",f_extra:"שירותים נוספים",f_mech:"מכונאי אחראי",f_mnotes:"הערות מכונאי",f_done:"בעיית הלקוח טופלה",f_checks:"בדיקות",b_fin:"סיימתי את העבודה",b_print:"🖨 הדפסת כרטיס עבודה"},
+  en:{lang:"Language:",card:"Work Card",t_intake:"Intake",t_treat:"Treatment",t_checks:"Inspections",f_cust:"Customer name",f_jobno:"Work card number",f_veh:"Vehicle number",f_phone:"Phone number",f_status:"Status",f_svc:"Service type",f_locbefore:"Location before",f_locafter:"Location after",f_reason:"Reason for arrival",f_parts:"Parts",f_extra:"Additional services",f_mech:"Responsible mechanic",f_mnotes:"Mechanic notes",f_done:"Customer issue resolved",f_checks:"Inspections",b_fin:"I finished the work",b_print:"🖨 Print work card"},
+  th:{lang:"ภาษา:",card:"ใบงาน",t_intake:"รับรถ",t_treat:"การซ่อม",t_checks:"การตรวจสอบ",f_cust:"ชื่อลูกค้า",f_jobno:"หมายเลขใบงาน",f_veh:"ทะเบียนรถ",f_phone:"เบอร์โทร",f_status:"สถานะ",f_svc:"ประเภทบริการ",f_locbefore:"ตำแหน่งก่อน",f_locafter:"ตำแหน่งหลัง",f_reason:"เหตุผลที่มา",f_parts:"อะไหล่",f_extra:"บริการเพิ่มเติม",f_mech:"ช่างผู้รับผิดชอบ",f_mnotes:"บันทึกช่าง",f_done:"แก้ปัญหาลูกค้าแล้ว",f_checks:"การตรวจสอบ",b_fin:"ฉันทำงานเสร็จแล้ว",b_print:"🖨 พิมพ์ใบงาน"}
+};
+function setLang(l){
+  document.documentElement.lang=(l==="he"?"he":l);
+  document.documentElement.dir=(l==="he"?"rtl":"ltr");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){var k=el.getAttribute("data-i18n"); if(I18N[l][k]!==undefined) el.textContent=I18N[l][k];});
+  document.querySelectorAll(".langbtn").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-lang")===l);});
+}
+</script>
+<script>
+function makePicker(elId, linkKey, fieldName, single){
+  var host=document.getElementById(elId); if(!host)return null;
+  var L=CFG.link[linkKey];
+  host.innerHTML='<div class="chips"></div><input placeholder="חיפוש..."><div class="opts"></div>';
+  var chips=host.querySelector(".chips"), input=host.querySelector("input"), opts=host.querySelector(".opts");
+  var state={selected:[],cache:[]};
+  function render(){
+    chips.innerHTML="";
+    state.selected.forEach(function(s){
+      var c=document.createElement("span"); c.className="chip"; c.innerHTML='<b>×</b> '+(s.name||"");
+      c.querySelector("b").onclick=function(){ state.selected=state.selected.filter(function(x){return x.id!==s.id;}); render(); save(); };
+      chips.appendChild(c);
+    });
+  }
+  function showOpts(list){
+    opts.innerHTML="";
+    list.slice(0,30).forEach(function(o){
+      var d=document.createElement("div"); d.className="opt"; d.textContent=o.name;
+      d.onclick=function(){ if(single) state.selected=[o]; else if(!state.selected.find(function(x){return x.id===o.id;})) state.selected.push(o); input.value=""; opts.classList.remove("show"); render(); save(); };
+      opts.appendChild(d);
+    });
+    opts.classList.toggle("show",list.length>0);
+  }
+  async function search(q){
+    try{
+      var ff=q?("&filterByFormula="+encodeURIComponent("SEARCH('"+q.replace(/'/g,"")+"',{"+L.prim+"})")):"";
+      var r=await fetch(api(L.tbl+"?maxRecords=30"+ff),{headers:H()}); var j=await r.json();
+      return (j.records||[]).map(function(rec){return {id:rec.id,name:rec.fields[L.prim]||rec.id};});
+    }catch(e){return [];}
+  }
+  input.addEventListener("input",async function(){
+    var q=input.value.trim();
+    if(L.mode==="preload"){ showOpts(state.cache.filter(function(o){return (o.name||"").indexOf(q)>=0;})); }
+    else { if(q.length<1){opts.classList.remove("show");return;} showOpts(await search(q)); }
+  });
+  input.addEventListener("focus",async function(){ if(L.mode==="preload"){ if(!state.cache.length) state.cache=await search(""); showOpts(state.cache); } });
+  document.addEventListener("click",function(e){ if(!host.contains(e.target)) opts.classList.remove("show"); });
+  function save(){ if(REC) patchField(fieldName, state.selected.map(function(s){return s.id;})); }
+  host._setSelected=function(arr){ state.selected=arr||[]; render(); };
+  return host;
+}
+</script>
+<script>
+async function patchField(fieldName, value){
+  if(!REC) return;
+  try{
+    var body={fields:{}}; body.fields[fieldName]=value;
+    var r=await fetch(api(CFG.main+"/"+REC.id),{method:"PATCH",headers:H(),body:JSON.stringify(body)});
+    if(!r.ok){ showBanner("שמירה נכשלה ("+r.status+")","err"); } else { clearBanner(); }
+  }catch(e){ showBanner("שגיאת רשת בשמירה","err"); }
+}
+function txt(id,v){var e=document.getElementById(id); if(e) e.value=(v==null?"":v);}
+async function resolveLinks(ids, L){
+  if(!ids||!ids.length) return [];
+  var out=[];
+  for(var i=0;i<ids.length;i++){
+    try{ var r=await fetch(api(L.tbl+"/"+ids[i]),{headers:H()}); var j=await r.json(); out.push({id:ids[i],name:j.fields?(j.fields[L.prim]||ids[i]):ids[i]}); }
+    catch(e){ out.push({id:ids[i],name:ids[i]}); }
+  }
+  return out;
+}
+async function loadRecord(){
+  try{
+    var url=api(CFG.main+"?maxRecords=1&filterByFormula="+encodeURIComponent("{מספר כרטיס עבודה}!=''")+"&sort%5B0%5D%5Bfield%5D="+encodeURIComponent("מספר כרטיס עבודה")+"&sort%5B0%5D%5Bdirection%5D=desc");
+    var r=await withTimeout(fetch(url,{headers:H()}),12000); var j=await r.json();
+    if(!j.records||!j.records.length){ showBanner("לא נמצאו רשומות","err"); return; }
+    REC=j.records[0]; clearBanner(); populate();
+  }catch(e){ showBanner("טעינת הנתונים נכשלה: "+e.message,"err"); }
+}
+</script>
+<script>
+var PK={};
+function fillSelect(id, options, current){
+  var s=document.getElementById(id); if(!s)return;
+  s.innerHTML='<option value="">—</option>';
+  options.forEach(function(o){ var op=document.createElement("option"); op.value=o; op.textContent=o; if(o===current) op.selected=true; s.appendChild(op); });
+}
+async function populate(){
+  var fF=REC.fields;
+  document.getElementById("jobNo").textContent="#"+(fF["מספר כרטיס עבודה"]||"—");
+  txt("i_jobno",fF["מספר כרטיס עבודה"]); txt("i_phone",fF["מספר טלפון"]); txt("i_status",fF["סטטוס"]); txt("i_reason",fF["סיבת הגעה"]);
+  var mn=fF["הערות מכונאי"]; txt("i_mnotes",typeof mn==="object"?(mn&&mn.text||""):(mn||""));
+  var ck=document.getElementById("i_done"); if(ck) ck.checked=!!fF["בעיית הלקוח טופלה"];
+  fillSelect("i_svc",["טיפול תקופתי","הכנה לטסט + טסט","הכנה לטסט","תקלות ברכב","טיפול תקופתי + הכנה לטסט","נכשלת בטסט?","טיפול תקופתי + טסט","רכב נגרר"],fF["סוג טיפול"]);
+  try{
+    var lr=await fetch(api(CFG.link.loc.tbl+"?maxRecords=50"),{headers:H()}); var lj=await lr.json();
+    var locs=(lj.records||[]).map(function(r){return {id:r.id,name:r.fields[CFG.link.loc.prim]||r.id};});
+    [["i_locb","מיקום לפני טיפול"],["i_loca","מיקום בסוף הטיפול"]].forEach(function(pair){
+      var s=document.getElementById(pair[0]); if(!s)return; s.innerHTML='<option value="">בחר מיקום...</option>';
+      var curIds=fF[pair[1]]||[];
+      locs.forEach(function(l){ var o=document.createElement("option"); o.value=l.id; o.textContent=l.name; if(curIds.indexOf(l.id)>=0)o.selected=true; s.appendChild(o); });
+      s.onchange=function(){ patchField(pair[1], s.value?[s.value]:[]); };
+    });
+  }catch(e){}
+  PK.cust=makePicker("pk_cust","cust","שם לקוח",true);
+  PK.veh=makePicker("pk_veh","veh","מספר רכב",true);
+  PK.part=makePicker("pk_part","part","חלפים",false);
+  PK.mech=makePicker("pk_mech","mech","מכונאי אחראי",true);
+  PK.svc2=makePicker("pk_svc2","part","חלפים",false);
+  if(PK.cust) PK.cust._setSelected(await resolveLinks(fF["שם לקוח"],CFG.link.cust));
+  if(PK.veh) PK.veh._setSelected(await resolveLinks(fF["מספר רכב"],CFG.link.veh));
+  if(PK.part) PK.part._setSelected(await resolveLinks(fF["חלפים"],CFG.link.part));
+  if(PK.mech) PK.mech._setSelected(await resolveLinks(fF["מכונאי אחראי"],CFG.link.mech));
+  var rs=document.getElementById("i_reason"); if(rs) rs.onblur=function(){patchField("סיבת הגעה",rs.value);};
+  var ms=document.getElementById("i_mnotes"); if(ms) ms.onblur=function(){patchField("הערות מכונאי",ms.value);};
+  var sv=document.getElementById("i_svc"); if(sv) sv.onchange=function(){patchField("סוג טיפול",sv.value);};
+}
+</script>
+<script>
+async function finishWork(){
+  if(!REC){ showBanner("אין רשומה טעונה","err"); return; }
+  var ck=document.getElementById("i_done"); if(ck) ck.checked=true;
+  await patchField("בעיית הלקוח טופלה", true);
+  showBanner("העבודה סומנה כהושלמה (הסטטוס יתעדכן אוטומטית).","warn");
+}
+function initUI(){
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.onclick=function(){
+      document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active");});
+      document.querySelectorAll(".pane").forEach(function(x){x.classList.remove("active");});
+      t.classList.add("active"); var p=document.getElementById(t.getAttribute("data-pane")); if(p)p.classList.add("active");
+    };
+  });
+  document.querySelectorAll(".langbtn").forEach(function(b){ b.onclick=function(){ setLang(b.getAttribute("data-lang")); }; });
+  var ck=document.getElementById("i_done"); if(ck) ck.onchange=function(){ patchField("בעיית הלקוח טופלה", ck.checked); };
+  var fb=document.getElementById("b_fin"); if(fb) fb.onclick=finishWork;
+  setLang("he");
+  if(location.protocol!=="file:") loadRecord();
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",initUI); else initUI();
+</script>
+</body>
+</html>
