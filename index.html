@@ -5,4 +5,167 @@ th:{grp_work:"การจัดการงาน",nav_today:"📅 วันน
 let LANG="he";
 function applyLang(){const d=I18N[LANG]||I18N.he;document.querySelectorAll("[data-i18n]").forEach(function(el){var k=el.getAttribute("data-i18n");if(d[k]!==undefined){if(el.id==="viewTitle")return;el.textContent=d[k];}});document.querySelectorAll("[data-i18n-ph]").forEach(function(el){var k=el.getAttribute("data-i18n-ph");if(d[k]!==undefined)el.setAttribute("placeholder",d[k]);});var sub=document.getElementById("viewSub");if(sub)sub.textContent=d.sub;}
 function setLang(l){LANG=l;document.documentElement.lang=(l==="he"?"he":l);document.documentElement.dir=(l==="he"?"rtl":"ltr");document.querySelectorAll(".langbar button").forEach(function(b){b.classList.toggle("active",b.dataset.lang===l);});applyLang();}
+</script>
+<script>
+(function(){
+  function ready(fn){ if(window.COLS&&window.LINKS&&window.recCache&&typeof renderList==='function'){fn();} else {setTimeout(function(){ready(fn);},120);} }
+  ready(function(){
+    LINKS.man={tbl:"tblR9SLO2OPQWcbDO",prim:"יצרן",mode:"live"};
+    if(!recCache.man)recCache.man={};
+    async function resolveMan(ids){
+      var todo=ids.filter(function(id){return id && !(id in recCache.man);});
+      if(!todo.length)return;
+      for(var i=0;i<todo.length;i+=40){
+        var chunk=todo.slice(i,i+40);
+        var f="OR("+chunk.map(function(id){return "RECORD_ID()='"+id+"'";}).join(",")+")";
+        try{
+          var data=await api("tblR9SLO2OPQWcbDO?filterByFormula="+encodeURIComponent(f),{});
+          (data.records||[]).forEach(function(rec){ recCache.man[rec.id]=rec.fields["יצרן"]||""; });
+        }catch(e){}
+      }
+    }
+    var _origEnrich=window.enrichVisible;
+    window.enrichVisible=async function(){
+      await _origEnrich.apply(this,arguments);
+      var rows=curRows();
+      var ids=new Set();
+      rows.forEach(function(r){ (r.fields["יצרן רכב"]||[]).forEach(function(id){ids.add(id);}); });
+      await resolveMan([].concat([...ids]));
+      rows.forEach(function(r){
+        r.fields["יצרן_disp"]=(r.fields["יצרן רכב"]||[]).map(function(id){return recCache.man[id]||"";}).filter(Boolean).join(", ");
+      });
+      renderList();
+    };
+
+    function dtFull(v){ if(!v)return ""; var dt=new Date(v); if(isNaN(dt))return ""; var p=function(n){return String(n).padStart(2,"0");}; return p(dt.getHours())+":"+p(dt.getMinutes())+" "+dt.getDate()+"/"+(dt.getMonth()+1)+"/"+dt.getFullYear(); }
+    function ttBadge(r){ var v=(r.fields["\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc"]||""); if(!v)return document.createTextNode(""); var disp=trVal(v); var sp=document.createElement("span"); sp.className="tt"; sp.style.background=selColor("\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc",v); sp.style.color="#222"; sp.textContent=disp; return sp; }
+    COLS.length=0;
+    COLS.push(["\u05ea\u05d0\u05e8\u05d9\u05da",function(r){return dstr(r);},"col_date"]);
+    COLS.push(["\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1",function(r){return r.fields["\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1_disp"]||"";},"col_plate"]);
+    COLS.push(["\u05e7\u05d5\u05d3 \u05e8\u05db\u05d1",function(r){return txt(r.fields["\u05e7\u05d5\u05d3 \u05e8\u05db\u05d1"]);},"col_vcode"]);
+    COLS.push(["\u05e9\u05dd \u05dc\u05e7\u05d5\u05d7",function(r){return r.fields["\u05e9\u05dd \u05dc\u05e7\u05d5\u05d7_disp"]||"";},"col_customer"]);
+    COLS.push(["\u05d9\u05e6\u05e8\u05df",function(r){return r.fields["\u05d9\u05e6\u05e8\u05df_disp"]||txt(r.fields["\u05d9\u05e6\u05e8\u05df \u05e8\u05db\u05d1"]);},"col_maker"]);
+    COLS.push(["\u05d3\u05d2\u05dd",function(r){return txt(r.fields["\u05d3\u05d2\u05dd"]);},"col_model"]);
+    COLS.push(["\u05e1\u05d8\u05d8\u05d5\u05e1",null,"col_status"]);
+    COLS.push(["\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc",ttBadge,"col_ttype"]);
+    COLS.push(["\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05ea\u05d9\u05d7\u05d4",function(r){return dtFull(r.fields["\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05ea\u05d9\u05d7\u05d4"]);},"col_open"]);
+    COLS.push(["\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4",function(r){return dtFull(r.fields["\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4"]);},"col_close"]);
+    var _curRows=window.curRows;
+    window.curRows=function(){
+      var rows=_curRows.apply(this,arguments);
+      if(CURVIEW==="today"){ rows=rows.filter(function(r){return (r.fields["\u05e1\u05d8\u05d8\u05d5\u05e1"]||"")!=="\u05e9\u05d5\u05dc\u05dd";}); }
+      return rows;
+    };
+
+    window.renderList=function(){
+      var q=(document.getElementById("search").value||"").trim();
+      var rows=curRows();
+      if(q)rows=rows.filter(function(r){return JSON.stringify(r.fields).indexOf(q)>=0;});
+      var d=I18N[LANG]||I18N.he;
+      document.getElementById("thead").innerHTML="<tr>"+COLS.map(function(c){var h=(c[2]&&d[c[2]]!==undefined)?d[c[2]]:c[0];return "<th>"+h+"</th>";}).join("")+"</tr>";
+      var tb=document.getElementById("tbody"); tb.innerHTML="";
+      rows.forEach(function(r){
+        var tr=document.createElement("tr"); tr.className="row"; tr.onclick=function(){openRec(r);};
+        COLS.forEach(function(c){
+          var td=document.createElement("td");
+          if(c[1]===null){
+            var v=r.fields["\u05e1\u05d8\u05d8\u05d5\u05e1"]||"";
+            if(v){var sp=document.createElement("span");sp.className="pill";sp.style.background=selColor("\u05e1\u05d8\u05d8\u05d5\u05e1",v);sp.textContent=trVal(v);td.appendChild(sp);}
+          } else {
+            var out=c[1](r);
+            if(out&&out.nodeType){ td.appendChild(out); }
+            else { td.textContent=(out==null?"":out); }
+          }
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+      if(!rows.length){tb.innerHTML='<tr><td colspan="'+COLS.length+'" class="empty">'+((I18N[LANG]||I18N.he).empty||"\u05d0\u05d9\u05df \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4")+'</td></tr>';}
+    };
+
+    var DICT={
+      "\u05d7\u05d3\u05e9":{en:"New",th:"\u0e43\u0e2b\u0e21\u0e48"},
+      "\u05de\u05d7\u05db\u05d4 \u05dc\u05d8\u05d9\u05e4\u05d5\u05dc":{en:"Waiting",th:"\u0e23\u0e2d\u0e0b\u0e48\u0e2d\u0e21"},
+      "\u05d1\u05d8\u05d9\u05e4\u05d5\u05dc":{en:"In service",th:"\u0e01\u0e33\u0e25\u0e31\u0e07\u0e0b\u0e48\u0e2d\u0e21"},
+      "\u05de\u05d5\u05db\u05df \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":{en:"Ready to pay",th:"\u0e23\u0e2d\u0e0a\u0e33\u0e23\u0e30"},
+      "\u05e9\u05d5\u05dc\u05dd":{en:"Paid",th:"\u0e0a\u0e33\u0e23\u0e30\u0e41\u0e25\u0e49\u0e27"},
+      "\u05d1\u05d5\u05d8\u05dc":{en:"Cancelled",th:"\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01"},
+      "\u05de\u05d0\u05d5\u05e9\u05e8":{en:"Approved",th:"\u0e2d\u0e19\u0e38\u0e21\u0e31\u0e15\u0e34"},
+      "\u05d8\u05d9\u05e4\u05d5\u05dc \u05ea\u05e7\u05d5\u05e4\u05ea\u05d9":{en:"Periodic service",th:"\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23\u0e15\u0e32\u0e21\u0e23\u0e30\u0e22\u0e30"},
+      "\u05d4\u05db\u05e0\u05d4 \u05dc\u05d8\u05e1\u05d8 + \u05d8\u05e1\u05d8":{en:"Test prep + Test",th:"\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21+\u0e15\u0e23\u0e27\u0e08"},
+      "\u05d4\u05db\u05e0\u05d4 \u05dc\u05d8\u05e1\u05d8":{en:"Test prep",th:"\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21\u0e2a\u0e2d\u0e1a"},
+      "\u05ea\u05e7\u05dc\u05d5\u05ea \u05d1\u05e8\u05db\u05d1":{en:"Vehicle faults",th:"\u0e23\u0e16\u0e02\u0e31\u0e14\u0e02\u0e49\u0e2d\u0e07"},
+      "\u05d8\u05d9\u05e4\u05d5\u05dc \u05ea\u05e7\u05d5\u05e4\u05ea\u05d9 + \u05d4\u05db\u05e0\u05d4 \u05dc\u05d8\u05e1\u05d8":{en:"Periodic + Test prep",th:"\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23+\u0e40\u0e15\u0e23\u0e35\u0e22\u0e21"},
+      "\u05e0\u05db\u05e9\u05dc\u05ea \u05d1\u05d8\u05e1\u05d8?":{en:"Failed test?",th:"\u0e2a\u0e2d\u0e1a\u0e44\u0e21\u0e48\u0e1c\u0e48\u0e32\u0e19?"},
+      "\u05d8\u05d9\u05e4\u05d5\u05dc \u05ea\u05e7\u05d5\u05e4\u05ea\u05d9 + \u05d8\u05e1\u05d8":{en:"Periodic + Test",th:"\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23+\u0e15\u0e23\u0e27\u0e08"},
+      "\u05e8\u05db\u05d1 \u05e0\u05d2\u05e8\u05e8":{en:"Towed vehicle",th:"\u0e23\u0e16\u0e25\u0e32\u0e01\u0e08\u0e39\u0e07"},
+      "\u05ea\u05d0\u05e8\u05d9\u05da":{en:"Date",th:"\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48"},
+      "\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1":{en:"Plate no.",th:"\u0e17\u0e30\u0e40\u0e1a\u0e35\u0e22\u0e19"},
+      "\u05e7\u05d5\u05d3 \u05e8\u05db\u05d1":{en:"Vehicle code",th:"\u0e23\u0e2b\u0e31\u0e2a\u0e23\u0e16"},
+      "\u05e9\u05dd \u05dc\u05e7\u05d5\u05d7":{en:"Customer",th:"\u0e25\u0e39\u0e01\u0e04\u0e49\u0e32"},
+      "\u05d9\u05e6\u05e8\u05df":{en:"Make",th:"\u0e22\u0e35\u0e48\u0e2b\u0e49\u0e2d"},
+      "\u05d9\u05e6\u05e8\u05df \u05e8\u05db\u05d1":{en:"Make",th:"\u0e22\u0e35\u0e48\u0e2b\u0e49\u0e2d"},
+      "\u05d3\u05d2\u05dd":{en:"Model",th:"\u0e23\u0e38\u0e48\u0e19"},
+      "\u05e1\u05d8\u05d8\u05d5\u05e1":{en:"Status",th:"\u0e2a\u0e16\u0e32\u0e19\u0e30"},
+      "\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc":{en:"Service type",th:"\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23"},
+      "\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05ea\u05d9\u05d7\u05d4":{en:"Open date",th:"\u0e27\u0e31\u0e19\u0e40\u0e1b\u0e34\u0e14"},
+      "\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4":{en:"Close date",th:"\u0e27\u0e31\u0e19\u0e1b\u0e34\u0e14"},
+      "\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4":{en:"Work card no.",th:"\u0e40\u0e25\u0e02\u0e17\u0e35\u0e48\u0e43\u0e1a\u0e07\u0e32\u0e19"},
+      "\u05de\u05e1\u05e4\u05e8 \u05d8\u05dc\u05e4\u05d5\u05df":{en:"Phone",th:"\u0e42\u0e17\u0e23\u0e28\u0e31\u0e1e\u0e17\u0e4c"},
+      "\u05de\u05d9\u05e7\u05d5\u05dd \u05dc\u05e4\u05e0\u05d9 \u05d8\u05d9\u05e4\u05d5\u05dc":{en:"Location before",th:"\u0e15\u0e33\u0e41\u0e2b\u0e19\u0e48\u0e07\u0e01\u0e48\u0e2d\u0e19"},
+      "\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc":{en:"Location after",th:"\u0e15\u0e33\u0e41\u0e2b\u0e19\u0e48\u0e07\u0e2b\u0e25\u0e31\u0e07"},
+      "\u05e1\u05d9\u05d1\u05ea \u05d4\u05d2\u05e2\u05d4":{en:"Reason for arrival",th:"\u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25"},
+      "\u05e6\u05d9\u05dc\u05d5\u05dd \u05d4\u05d1\u05e2\u05d9\u05d4":{en:"Problem photo",th:"\u0e20\u0e32\u0e1e\u0e1b\u0e31\u0e0d\u0e2b\u0e32"},
+      "\u05d7\u05dc\u05e4\u05d9\u05dd":{en:"Parts",th:"\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48"},
+      "\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd":{en:"Extra services",th:"\u0e1a\u0e23\u0e34\u0e01\u0e32\u0e23\u0e40\u0e1e\u0e34\u0e48\u0e21"},
+      "\u05de\u05db\u05d5\u05e0\u05d0\u05d9 \u05d0\u05d7\u05e8\u05d0\u05d9":{en:"Responsible mechanic",th:"\u0e0a\u0e48\u0e32\u0e07\u0e1c\u0e39\u0e49\u0e23\u0e31\u0e1a\u0e1c\u0e34\u0e14\u0e0a\u0e2d\u0e1a"},
+      "\u05d4\u05e2\u05e8\u05d5\u05ea \u05de\u05db\u05d5\u05e0\u05d0\u05d9":{en:"Mechanic notes",th:"\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e0a\u0e48\u0e32\u0e07"},
+      "\u05d1\u05e2\u05d9\u05d9\u05ea \u05d4\u05dc\u05e7\u05d5\u05d7 \u05d8\u05d5\u05e4\u05dc\u05d4":{en:"Customer issue resolved",th:"\u0e41\u0e01\u0e49\u0e1b\u0e31\u0e0d\u0e2b\u0e32\u0e41\u0e25\u0e49\u0e27"},
+      "\u05d7\u05d9\u05e4\u05d5\u05e9...":{en:"Search...",th:"\u0e04\u0e49\u0e19\u0e2b\u0e32..."},
+      "\u05d7\u05d9\u05e4\u05d5\u05e9 \u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1...":{en:"Search plate...",th:"\u0e04\u0e49\u0e19\u0e2b\u0e32\u0e17\u0e30\u0e40\u0e1a\u0e35\u0e22\u0e19..."},
+      "\u05d1\u05d7\u05e8 \u05de\u05d9\u05e7\u05d5\u05dd...":{en:"Choose location...",th:"\u0e40\u0e25\u0e37\u0e2d\u0e01..."},
+      "\u05d0\u05d9\u05df \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4":{en:"No cards to display",th:"\u0e44\u0e21\u0e48\u0e21\u0e35\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23"},
+      "\u05e9\u05e4\u05d4:":{en:"Language:",th:"\u0e20\u0e32\u0e29\u0e32:"},
+      "\u05e2\u05d1\u05e8\u05d9\u05ea":{en:"Hebrew",th:"\u0e2e\u0e35\u0e1a\u0e23\u0e39"},
+      "\u05e1\u05d2\u05d5\u05e8":{en:"Close",th:"\u0e1b\u0e34\u0e14"}
+    };
+    window.trVal=function(v){ if(LANG==="he"||!v)return v; var e=DICT[v]; return e?(e[LANG]||v):v; };
+
+    function ext(lang,obj){ I18N[lang]=I18N[lang]||{}; for(var k in obj)I18N[lang][k]=obj[k]; }
+    ext("he",{col_date:"\u05ea\u05d0\u05e8\u05d9\u05da",col_plate:"\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1",col_vcode:"\u05e7\u05d5\u05d3 \u05e8\u05db\u05d1",col_customer:"\u05e9\u05dd \u05dc\u05e7\u05d5\u05d7",col_maker:"\u05d9\u05e6\u05e8\u05df",col_model:"\u05d3\u05d2\u05dd",col_status:"\u05e1\u05d8\u05d8\u05d5\u05e1",col_ttype:"\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc",col_open:"\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05ea\u05d9\u05d7\u05d4",col_close:"\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4",empty:"\u05d0\u05d9\u05df \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"});
+    ext("en",{col_date:"Date",col_plate:"Plate no.",col_vcode:"Vehicle code",col_customer:"Customer",col_maker:"Make",col_model:"Model",col_status:"Status",col_ttype:"Service type",col_open:"Open date",col_close:"Close date",empty:"No cards to display"});
+    ext("th",{col_date:"\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48",col_plate:"\u0e17\u0e30\u0e40\u0e1a\u0e35\u0e22\u0e19",col_vcode:"\u0e23\u0e2b\u0e31\u0e2a\u0e23\u0e16",col_customer:"\u0e25\u0e39\u0e01\u0e04\u0e49\u0e32",col_maker:"\u0e22\u0e35\u0e48\u0e2b\u0e49\u0e2d",col_model:"\u0e23\u0e38\u0e48\u0e19",col_status:"\u0e2a\u0e16\u0e32\u0e19\u0e30",col_ttype:"\u0e1b\u0e23\u0e30\u0e40\u0e20\u0e17",col_open:"\u0e27\u0e31\u0e19\u0e40\u0e1b\u0e34\u0e14",col_close:"\u0e27\u0e31\u0e19\u0e1b\u0e34\u0e14",empty:"\u0e44\u0e21\u0e48\u0e21\u0e35\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23"});
+    var ORIG=new WeakMap();
+    function walkTranslate(root){
+      root=root||document.body;
+      var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);
+      var n,nodes=[]; while(n=w.nextNode())nodes.push(n);
+      nodes.forEach(function(t){
+        var he=ORIG.get(t); if(he===undefined){he=t.nodeValue; if(/[\u0590-\u05FF]/.test(he))ORIG.set(t,he); else return;}
+        var key=he.trim(); if(!key)return;
+        if(LANG==="he"){ t.nodeValue=he; return; }
+        var d=DICT[key]; if(d&&d[LANG]) t.nodeValue=he.replace(key,d[LANG]);
+      });
+      root.querySelectorAll("input[placeholder],textarea[placeholder]").forEach(function(el){
+        var he=el.getAttribute("data-ph-he"); if(he===null||he===undefined){he=el.getAttribute("placeholder")||""; if(/[\u0590-\u05FF]/.test(he))el.setAttribute("data-ph-he",he); else return;}
+        var key=he.trim();
+        if(LANG==="he"){el.setAttribute("placeholder",he);return;}
+        var d=DICT[key]; if(d&&d[LANG])el.setAttribute("placeholder",d[LANG]);
+      });
+      root.querySelectorAll("option").forEach(function(op){
+        var he=op.getAttribute("data-he"); if(he===null||he===undefined){he=op.textContent||""; if(/[\u0590-\u05FF]/.test(he))op.setAttribute("data-he",he); else return;}
+        var key=he.trim();
+        if(LANG==="he"){op.textContent=he;return;}
+        var d=DICT[key]; if(d&&d[LANG])op.textContent=d[LANG];
+      });
+    }
+    window.walkTranslate=walkTranslate;
+    var _setLang=window.setLang;
+    window.setLang=function(l){ _setLang.call(this,l); try{renderList();}catch(e){} try{walkTranslate(document.body);}catch(e){} };
+    var _openRec=window.openRec;
+    window.openRec=function(){ var r=_openRec.apply(this,arguments); try{ if(LANG!=="he")setTimeout(function(){walkTranslate(document.querySelector(".modal")||document.body);},30); }catch(e){} return r; };
+    try{renderList();}catch(e){}
+    try{enrichVisible();}catch(e){}
+  });
+})();
 </script></body></html>
