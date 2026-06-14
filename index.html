@@ -34,7 +34,7 @@ try{window.applyLang=applyLang;}catch(e){}
         var chunk=todo.slice(i,i+40);
         var f="OR("+chunk.map(function(id){return "RECORD_ID()='"+id+"'";}).join(",")+")";
         try{
-          var data=await api("tblR9SLO2OPQWcbDO?filterByFormula="+encodeURIComponent(f),{});
+          var data=await api("appX4z91yKZGwz6ap/tblR9SLO2OPQWcbDO?filterByFormula="+encodeURIComponent(f));
           (data.records||[]).forEach(function(rec){ recCache.man[rec.id]=rec.fields["יצרן"]||""; });
         }catch(e){}
       }
