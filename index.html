@@ -200,7 +200,8 @@ window.openRec = function(id){
 };
 
 function fixManInModal(){
-  var f = window.CURRENT && window.CURRENT.fields;
+  var cur = (typeof CURRENT !== 'undefined') ? CURRENT : null;
+  var f = (cur || window.CURRENT) && (cur || window.CURRENT).fields;
   if(!f) return;
   var ids = f['יצרן רכב'] || [];
   if(!ids.length) return;
