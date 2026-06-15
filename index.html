@@ -225,7 +225,7 @@ window.openRec = function(id){
         if(!lang||lang==='he')return;
         muts.forEach(function(mut){
           mut.addedNodes.forEach(function(node){
-            if(node.nodeType===1){try{walkTranslate(node);}catch(e){}}
+            if(node.nodeType===1){try{window.walkTranslate(node);}catch(e){}}
           });
         });
       });
@@ -565,6 +565,31 @@ document.addEventListener('focusin', function(e){
     else inp.placeholder = 'חיפוש...';
   }
 });
+
+// ===== 7. MECHANIC → STATUS AUTO-UPDATE =====
+var _prevAddLink = window.addLink;
+window.addLink = async function(optEl){
+  var box = optEl && optEl.closest ? optEl.closest('.linkbox') : null;
+  var field = box ? box.dataset.field : '';
+  await _prevAddLink.apply(this, arguments);
+  if(field === 'מכונאי אחראי'){
+    var cur = (typeof CURRENT !== 'undefined') ? CURRENT : null;
+    if(cur && cur.fields && cur.fields['סטטוס'] !== 'בטיפול'){
+      var ok = await patchField('סטטוס', 'בטיפול');
+      if(ok){
+        var pill = document.querySelector('.modal .statuspill');
+        if(pill){
+          pill.dataset.heOrig = 'בטיפול';
+          pill.textContent = 'בטיפול';
+          pill.style.background = (typeof selColor === 'function') ? selColor('סטטוס','בטיפול') : '#d1f7c4';
+          var lang = window.LANG || (typeof LANG !== 'undefined' ? LANG : 'he');
+          if(lang && lang !== 'he') applyModalTrans(lang);
+        }
+        if(typeof renderList === 'function') renderList();
+      }
+    }
+  }
+};
 
 })(); /* end v16 addon */
 
