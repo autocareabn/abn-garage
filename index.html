@@ -176,7 +176,7 @@ try{window.applyLang=applyLang;}catch(e){}
     }
     window.walkTranslate=walkTranslate;
     var _setLang=window.setLang;
-    window.setLang=function(l){ _setLang.call(this,l); try{renderList();}catch(e){} try{walkTranslate(document.body);}catch(e){} };
+    window.setLang=function(l){ window.LANG=l; _setLang.call(this,l); try{renderList();}catch(e){} try{walkTranslate(document.body);}catch(e){} };
     var _openRec=window.openRec;
     window.openRec=function(){ var r=_openRec.apply(this,arguments); try{ if(LANG!=="he")setTimeout(function(){walkTranslate(document.querySelector(".modal")||document.body);},30); }catch(e){} return r; };
     try{renderList();}catch(e){}
@@ -271,6 +271,10 @@ var HE2EN = {
   // inspection select values
   'תקין':'OK','לא תקין':'Not OK','תחליף':'Replace',
   'לא בדקתי':'Not checked','לא עדכנתי':'Not updated','עדכנתי':'Updated',
+  'מצב תקין':'Normal','הוספה':'Top up','החלפה':'Replace',
+  // km update select values
+  'שיגרתי':'Routine','לפי ק"מ':'By km',
+  'ידני':'Manual','צילום דרך הטלפון':'Via phone photo',
   // modal title prefix / tab labels
   'כרטיס עבודה':'Work Card',
   // save messages
@@ -328,7 +332,11 @@ var HE2TH = {
   'פחחות וצבע':'ตัวถัง & สี','עבודת מסגרייה':'งานโครง','גמר טסט':'ผ่านตรวจ',
   // inspection select values
   'תקין':'ปกติ','לא תקין':'ผิดปกติ','תחליף':'เปลี่ยน',
-  'לא בדקתי':'ไม่ได้ตรวจ','לא עדכנתי':'ไม่ได้อัพเดท','עדכנתי':'อัพเดทแล้ว',
+  'לא בדקתי':'ไม่ได้ตรวจ','לא עดכנתי':'ไม่ได้อัพเดท','עדכנתי':'อัพเดทแล้ว',
+  'מצב תקין':'ของเหลวปกติ','הוספה':'เติม','החלפה':'เปลี่ยน',
+  // km update select values
+  'שיגרתי':'ตามระยะ','לפי ק"מ':'ตามกิโลเมตร',
+  'ידני':'ด้วยตนเอง','צילום דרך הטלפון':'ถ่ายรูปผ่านมือถือ',
   // modal title prefix
   'כרטיס עבודה':'ใบงาน',
   // save messages
@@ -434,8 +442,9 @@ function applyModalTrans(lang){
 
   // --- 3h. Modal title prefix ---
   var titleEl = document.getElementById('recTitle');
-  if(titleEl && window.CURRENT){
-    var f = window.CURRENT.fields;
+  var _curRec = (typeof CURRENT !== 'undefined') ? CURRENT : (window.CURRENT || null);
+  if(titleEl && _curRec){
+    var f = _curRec.fields;
     var num = f['מספר כרטיס עבודה'] || '';
     var custId = (f['שם לקוח']||[])[0];
     var custName = (window.recCache && window.recCache.cust && custId && window.recCache.cust[custId]) || '';
