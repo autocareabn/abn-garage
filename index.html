@@ -100,6 +100,14 @@ try{window.applyLang=applyLang;}catch(e){}
     };
 
     var DICT={
+"\u1f527 ABN \u05de\u05d5\u05e1\u05da":{en:"🔧 ABN Garage",th:"\u1f527 ABN \u0e2d\u0e39\u0e48"},
+"\u05de\u05e2\u05e8\u05db\u05ea \u05e0\u05d9\u05d4\u05d5\u05dc \u05de\u05d5\u05e1\u05da":{en:"Garage Management System",th:"\u0e23\u0e30\u0e1a\u0e1a\u0e08\u0e31\u0e14\u0e01\u0e32\u0e23\u0e2d\u0e39\u0e48"},
+"\u05d4\u05d9\u05d5\u05dd \u05d1\u05de\u05d5\u05e1\u05da":{en:"In the garage today",th:"\u0e27\u0e31\u0e19\u0e19\u0e35\u0e49\u0e17\u0e35\u0e48\u0e2d\u0e39\u0e48"},
+"\u05de\u05d7\u05e8 \u05d1\u05de\u05d5\u05e1\u05da":{en:"In the garage tomorrow",th:"\u0e1e\u0e23\u0e38\u0e48\u0e07\u0e19\u0e35\u0e49\u0e17\u0e35\u0e48\u0e2d\u0e39\u0e48"},
+"\u05d8\u05d9\u05e4\u05d5\u05dc\u05d9\u05dd \u05e2\u05ea\u05d9\u05d3\u05d9\u05d9\u05dd":{en:"Future jobs",th:"\u0e07\u0e32\u0e19\u0e43\u0e19\u0e2d\u0e19\u0e32\u0e04\u0e15"},
+"\u05e1\u05d4"\u05db \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd":{en:"Total work orders",th:"\u0e43\u0e1a\u0e07\u0e32\u0e19\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14"},
+"\u05d4\u05d9\u05d5\u05dd":{en:"Today",th:"\u0e27\u0e31\u0e19\u0e19\u0e35\u0e49"},
+"\u05de\u05d7\u05e8":{en:"Tomorrow",th:"\u0e1e\u0e23\u0e38\u0e48\u0e07\u0e19\u0e35\u0e49"},
 "\u05d8\u05d5\u05d9\u05d5\u05d8\u05d4":{en:"Toyota",th:"\u0e42\u0e15\u0e42\u0e22\u0e15\u0e49\u0e32"},
 "\u05e7\u05d9\u05d4":{en:"Kia",th:"\u0e40\u0e01\u0e35\u0e22"},
 "\u05de\u05d9\u05e6\u05d5\u05d1\u05d9\u05e9\u05d9":{en:"Mitsubishi",th:"\u0e21\u0e34\u0e15\u0e0b\u0e39\u0e1a\u0e34\u0e0a\u0e34"},
@@ -782,7 +790,7 @@ var _prevRS = window.renderStats;
 if(typeof _prevRS === 'function'){
   window.renderStats = function(){
     _prevRS.apply(this, arguments);
-    var d = getDictForLang(window.LANG);
+    var __L=window.LANG; var d=(__L==="he")?null:new Proxy({},{get:function(o,k){var e=DICT[k];return e&&e[__L];}});
     if(!d) return;
     document.querySelectorAll('#statRow .l').forEach(function(el){
       if(!el.dataset.heOrig) el.dataset.heOrig = el.textContent.trim();
