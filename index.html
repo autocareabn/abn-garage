@@ -459,6 +459,9 @@ function setManRoval(name){
 
 // ===== 2. TRANSLATION DICTIONARIES =====
 var HE2EN = {
+  'סה"כ כרטיסים':'Total work orders',
+  'היום':'Today',
+  'מחר':'Tomorrow',
   // field labels
   'מספר כרטיס עבודה':'Work card no.',
   'שם לקוח':'Customer name','מספר רכב':'Plate number',
@@ -562,6 +565,9 @@ var HE2EN = {
 };
 
 var HE2TH = {
+  'סה"כ כרטיסים':'ใบงานทั้งหมด',
+  'היום':'วันนี้',
+  'מחר':'พรุ่งนี้',
   // field labels
   'מספר כרטיס עבודה':'เลขที่ใบงาน',
   'שם לקוח':'ชื่อลูกค้า','מספר רכב':'ทะเบียนรถ',
@@ -790,7 +796,7 @@ var _prevRS = window.renderStats;
 if(typeof _prevRS === 'function'){
   window.renderStats = function(){
     _prevRS.apply(this, arguments);
-    var __L=window.LANG; var d=(__L==="he")?null:new Proxy({},{get:function(o,k){var e=DICT[k];return e&&e[__L];}});
+    var d = getDictForLang(window.LANG);
     if(!d) return;
     document.querySelectorAll('#statRow .l').forEach(function(el){
       if(!el.dataset.heOrig) el.dataset.heOrig = el.textContent.trim();
