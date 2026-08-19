@@ -20,10 +20,7 @@ return [
 ['סטטוס',T(f['סטטוס'])],
 ['סוג טיפול',T(f['סוג טיפול'])],
 ['מכונאי אחראי',link(f['מכונאי אחראי'],recCache.emp)],
-['חלפים',first(f['🔧 חלפים שהותקנו (תצוגה)'],f['🔧 חלקים שזוהו אוטומטית'])],
-['שירותים נוספים',link(f['שירותים נוספים:'],recCache.svc)],
 ['סיבת הגעה',T(f['סיבת הגעה'])],
-['הערות מכונאי',T(f['הערות מכונאי'])],
 ['מיקום לפני טיפול',link(f['מיקום לפני טיפול'],recCache.loc)],
 ['מיקום בסוף הטיפול',link(f['מיקום בסוף הטיפול'],recCache.loc)]
 ];}
@@ -135,10 +132,10 @@ try{window.applyLang=applyLang;}catch(e){}
       var rows=curRows();
       if(q)rows=rows.filter(function(r){return JSON.stringify(r.fields).indexOf(q)>=0;});
       var d=I18N[LANG]||I18N.he;
-      document.getElementById("thead").innerHTML="<tr>"+COLS.map(function(c){var h=(c[2]&&d[c[2]]!==undefined)?d[c[2]]:c[0];return "<th>"+h+"</th>";}).join("")+"</tr>";
+      document.getElementById("thead").innerHTML='<tr><th style="width:34px"><input type="checkbox" id="selAll" onclick="selAllToggle(this.checked)"></th>'+COLS.map(function(c){var h=(c[2]&&d[c[2]]!==undefined)?d[c[2]]:c[0];return "<th>"+h+"</th>";}).join("")+"</tr>";
       var tb=document.getElementById("tbody"); tb.innerHTML="";
       rows.forEach(function(r){
-        var tr=document.createElement("tr"); tr.className="row"; tr.onclick=function(){openRec(r.id);};
+        var tr=document.createElement("tr"); tr.className="row"; tr.onclick=function(){openRec(r.id);};var ck=document.createElement("td"); ck.style.textAlign="center";var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=SEL.has(r.id);cb.onclick=function(ev){ev.stopPropagation();toggleSel(r.id,cb.checked);};ck.onclick=function(ev){ev.stopPropagation();}; ck.appendChild(cb); tr.appendChild(ck);
         COLS.forEach(function(c){
           var td=document.createElement("td");
           if(c[1]===null){
@@ -153,7 +150,7 @@ try{window.applyLang=applyLang;}catch(e){}
         });
         tb.appendChild(tr);
       });
-      if(!rows.length){tb.innerHTML='<tr><td colspan="'+COLS.length+'" class="empty">'+((I18N[LANG]||I18N.he).empty||"\u05d0\u05d9\u05df \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4")+'</td></tr>';}
+      updateSelBar(); if(!rows.length){tb.innerHTML='<tr><td colspan="'+(COLS.length+1)+'" class="empty">'+((I18N[LANG]||I18N.he).empty||"\u05d0\u05d9\u05df \u05db\u05e8\u05d8\u05d9\u05e1\u05d9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4")+'</td></tr>';}
     };
 
     var DICT={
