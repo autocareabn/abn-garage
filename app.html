@@ -112,7 +112,7 @@ function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 
 async function api(path,opt){var r=await fetch(PX+B+path,opt||{});if(!r.ok)throw new Error((await r.text()).slice(0,140));return r.json();}
-async function all(tbl,extra){var out=[],off=null,n=0;do{var u="/"+tbl+"?pageSize=100"+(extra||"")+(off?"&offset="+encodeURIComponent(off):"");var d=await api(u);out=out.concat(d.records||[]);off=d.offset;n++;}while(off&&n<60);return out;}
+async function all(tbl,extra){var out=[],off=null,n=0;do{var u="/"+tbl+"?pageSize=100"+(extra||"")+(off?"&offset="+encodeURIComponent(off):"");var d=await api(u);out=out.concat(d.records||[]);off=d.offset;n++;}while(off&&n<200);return out;}
 
 /* ---------- list ---------- */
 var TABS=[["today","היום"],["tomorrow","מחר"],["open","בטיפול"],["pay","מוכן לתשלום"],["all","הכל"]];
@@ -241,6 +241,7 @@ function rmLine(id){
 }
 function sq(){
   var q=(document.getElementById("pq").value||"").trim().toLowerCase(),dd=document.getElementById("pdd");
+  if(!CATALOG.length){dd.innerHTML='<div class="muted">קטלוג החלפים עדיין נטען…</div>';dd.classList.add("on");return;}
   if(q.length<2){dd.classList.remove("on");return;}
   var toks=q.split(/\s+/).filter(Boolean);
   var hits=CATALOG.filter(function(o){var h=(o.name+" "+o.sku).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0;});}).slice(0,20);
@@ -267,8 +268,9 @@ async function boot(){
   }catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
   try{ LINES=await all(T.ln); if(CUR)paneParts(); }catch(e){}
   try{
-    var c=await all(T.cat);
+    var c=await all(T.cat,"&fields%5B%5D=%D7%A4%D7%A8%D7%99%D7%98&fields%5B%5D=%D7%9E%D7%A7%22%D7%98");
     CATALOG=c.map(function(r){var f=r.fields||{};return {id:r.id,name:(f["פריט"]||"").trim(),sku:(f['מק"ט']||"").trim()};}).filter(function(x){return x.name;});
+    document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+CATALOG.length+" חלפים";
   }catch(e){}
 }
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
