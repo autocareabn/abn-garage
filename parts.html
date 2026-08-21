@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>חלפים — מוסך ABN</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#1d2130;direction:rtl}
+.wrap{max-width:760px;margin:0 auto;padding:0 12px 40px}
+.top{background:#c8102e;color:#fff;padding:16px 18px;border-radius:0 0 16px 16px}
+.top h1{font-size:19px;font-weight:bold}
+.top .sub{font-size:13.5px;opacity:.93;margin-top:5px;line-height:1.6}
+.card{background:#fff;border:1px solid #e2e6ee;border-radius:14px;margin-top:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,25,45,.05)}
+.card h2{font-size:16px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:9px;padding:11px 0;border-bottom:1px solid #eef0f5}
+.row:last-child{border-bottom:0}
+.nm{flex:1;font-size:14.5px;line-height:1.45}
+.nm small{display:block;color:#8a90a0;font-size:12px;margin-top:2px}
+input[type=number]{width:66px;padding:8px;text-align:center;font-size:15px;border:1px solid #cfd5e0;border-radius:8px}
+input.price{width:88px}
+.x{background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:8px;padding:7px 11px;font-size:15px;cursor:pointer}
+.x:hover{background:#fdecef}
+.srch{position:relative;margin-top:12px}
+.srch input{width:100%;padding:12px;font-size:15px;border:1.5px solid #c8102e;border-radius:10px}
+.dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:10px;max-height:270px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.12)}
+.dd.on{display:block}
+.dd div{padding:11px 13px;cursor:pointer;font-size:14.5px;border-bottom:1px solid #f2f4f8}
+.dd div:hover{background:#fdecef}
+.tot{display:flex;justify-content:space-between;font-size:15px;font-weight:bold;padding-top:12px;margin-top:6px;border-top:1.5px solid #1d2130}
+.msg{padding:10px 13px;border-radius:9px;font-size:14px;margin-top:12px;display:none}
+.ok{background:#e8f6ea;color:#245c2a;border:1px solid #bfe3c6}
+.err{background:#fdecec;color:#8a1220;border:1px solid #f0c2c2}
+.empty{color:#8a90a0;padding:14px 0;font-size:14.5px}
+.load{text-align:center;padding:36px;color:#8a90a0}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap" style="padding:0">
+    <h1>🔧 חלפים שהותקנו</h1>
+    <div class="sub" id="hdr">טוען…</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>רשימת החלפים</h2>
+    <div id="lines"><div class="load">⏳ טוען…</div></div>
+    <div class="srch">
+      <input id="q" placeholder="🔍 חפש חלף להוספה…" autocomplete="off">
+      <div class="dd" id="dd"></div>
+    </div>
+    <div class="tot"><span>סה"כ חלפים</span><span id="sum">₪0.00</span></div>
+    <div class="msg ok" id="ok">✓ נשמר</div>
+    <div class="msg err" id="err"></div>
+  </div>
+</div>
+
+<script>
+var P="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/";
+var BASE="appX4z91yKZGwz6ap", WO="tbl5X1tEJVAAUk4uE", LN="tblT2TK3L3dpHEZji", CAT="tblPjXb3FN1bA7Ir6";
+var REC=(location.search.match(/rec=(rec[A-Za-z0-9]{14})/)||[])[1];
+var CARD=null, ROWS=[], CATALOG=[];
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function flash(id,t){var e=document.getElementById(id);if(t)e.textContent=t;e.style.display="block";setTimeout(function(){e.style.display="none";},2600);}
+function fail(t){flash("err","⚠️ "+t);}
+
+async function get(u){var r=await fetch(u);if(!r.ok)throw new Error(await r.text());return r.json();}
+
+async function loadCard(){
+  var d=await get(P+BASE+"/"+WO+"/"+REC);
+  CARD=d;var f=d.fields||{};
+  var veh=(f["מספר רכב_disp"]||(f["מספר רכב"]&&f["מספר רכב"][0]&&f["מספר רכב"][0].name)||"");
+  document.getElementById("hdr").innerHTML=
+    "כרטיס עבודה <b>"+esc(f["מספר כרטיס עבודה"]||"")+"</b> · "+esc(f["שם להצגה"]||f["שם לקוח (טקסט)"]||"")+
+    "<br>רכב "+esc(veh)+" · "+esc(f["סוג טיפול"]||"");
+  return f;
+}
+
+async function loadLines(){
+  var f=(CARD&&CARD.fields)||{};
+  var ids=(f["➕ חלפים שהותקנו (עם כמות)"]||f["שורות חלקים בכרטיס עבודה"]||[]).map(function(x){return (x&&x.id)||x;});
+  ROWS=[];
+  for(var i=0;i<ids.length;i++){
+    try{ROWS.push(await get(P+BASE+"/"+LN+"/"+ids[i]));}catch(e){}
+  }
+  render();
+}
+
+function render(){
+  var el=document.getElementById("lines"),sum=0;
+  if(!ROWS.length){el.innerHTML='<div class="empty">אין חלפים בכרטיס. חפש חלף למטה כדי להוסיף.</div>';document.getElementById("sum").textContent="₪0.00";return;}
+  el.innerHTML=ROWS.map(function(r){
+    var f=r.fields||{};
+    var nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
+    var q=f["כמות"]==null?1:f["כמות"], pr=f["מחיר ליחידה (בזמן השימוש)"]||0;
+    sum+=q*pr;
+    return '<div class="row">'
+      +'<div class="nm">'+esc(nm)+(pr?'':'<small>⚠️ אין מחיר</small>')+'</div>'
+      +'<input type="number" min="1" step="1" value="'+q+'" title="כמות" onchange="setQty(\''+r.id+'\',this.value)">'
+      +'<input type="number" min="0" step="0.01" class="price" value="'+pr+'" title="מחיר ליחידה" onchange="setPrice(\''+r.id+'\',this.value)">'
+      +'<button class="x" title="הסר" onclick="del(\''+r.id+'\')">✕</button>'
+      +'</div>';
+  }).join("");
+  document.getElementById("sum").textContent="₪"+sum.toFixed(2);
+}
+
+async function patch(id,fields){
+  var r=await fetch(P+BASE+"/"+LN+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:fields,typecast:true})});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+
+async function setQty(id,v){
+  var q=parseInt(v,10);if(!q||q<1)q=1;
+  try{var d=await patch(id,{"כמות":q});
+    ROWS=ROWS.map(function(r){return r.id===id?d:r;});render();flash("ok");
+  }catch(e){fail("לא נשמר: "+String(e.message).slice(0,90));}
+}
+async function setPrice(id,v){
+  var p=parseFloat(v);if(isNaN(p)||p<0)p=0;
+  try{var d=await patch(id,{"מחיר ליחידה (בזמן השימוש)":p});
+    ROWS=ROWS.map(function(r){return r.id===id?d:r;});render();flash("ok");
+  }catch(e){fail("לא נשמר: "+String(e.message).slice(0,90));}
+}
+async function del(id){
+  try{var r=await fetch(P+BASE+"/"+LN+"/"+id,{method:"DELETE",headers:{"Content-Type":"application/json"}});
+    if(!r.ok)throw new Error(await r.text());
+    ROWS=ROWS.filter(function(x){return x.id!==id;});render();flash("ok","✓ הוסר");
+  }catch(e){fail("ההסרה נכשלה: "+String(e.message).slice(0,90));}
+}
+async function add(partId){
+  try{
+    var body={fields:{},typecast:true};
+    body.fields["כרטיס עבודה"]=[REC];
+    body.fields["חלף"]=[partId];
+    body.fields["כמות"]=1;
+    var r=await fetch(P+BASE+"/"+LN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error(await r.text());
+    var d=await r.json();
+    ROWS.push(d);render();flash("ok","✓ נוסף");
+  }catch(e){fail("ההוספה נכשלה: "+String(e.message).slice(0,90));}
+}
+
+async function loadCatalog(){
+  var out=[],off=null;
+  do{
+    var u=P+BASE+"/"+CAT+"?pageSize=100"+(off?"&offset="+off:"");
+    var d=await get(u);
+    out=out.concat((d.records||[]).map(function(r){
+      var f=r.fields||{};
+      return {id:r.id,name:(f["פריט"]||"").trim(),sku:(f["מק\"ט"]||"").trim()};
+    }).filter(function(x){return x.name;}));
+    off=d.offset;
+  }while(off&&out.length<3000);
+  CATALOG=out;
+}
+
+document.getElementById("q").addEventListener("input",function(){
+  var q=this.value.trim().toLowerCase(),dd=document.getElementById("dd");
+  if(q.length<2){dd.classList.remove("on");return;}
+  var toks=q.split(/\s+/).filter(Boolean);
+  var hits=CATALOG.filter(function(o){
+    var hay=(o.name+" "+o.sku).toLowerCase();
+    return toks.every(function(t){return hay.indexOf(t)>=0;});
+  }).slice(0,25);
+  if(!hits.length){dd.innerHTML='<div style="color:#8a90a0">לא נמצא חלף</div>';dd.classList.add("on");return;}
+  dd.innerHTML=hits.map(function(o){
+    return '<div onclick="pick(\''+o.id+'\')">'+esc(o.name)+(o.sku?' <small style="color:#8a90a0">· '+esc(o.sku)+'</small>':'')+'</div>';
+  }).join("");
+  dd.classList.add("on");
+});
+function pick(id){document.getElementById("dd").classList.remove("on");document.getElementById("q").value="";add(id);}
+document.addEventListener("click",function(e){if(!e.target.closest(".srch"))document.getElementById("dd").classList.remove("on");});
+
+(async function(){
+  if(!REC){document.getElementById("hdr").textContent="חסר מזהה כרטיס בקישור";
+    document.getElementById("lines").innerHTML='<div class="empty">פתח מסך זה מתוך כרטיס העבודה ב-Airtable.</div>';return;}
+  try{await loadCard();await loadLines();}catch(e){fail("טעינה נכשלה: "+String(e.message).slice(0,100));
+    document.getElementById("lines").innerHTML='<div class="empty">לא ניתן לטעון את הכרטיס.</div>';}
+  try{await loadCatalog();}catch(e){fail("קטלוג החלפים לא נטען — חיפוש לא יעבוד");}
+})();
+</script>
+</body>
+</html>
