@@ -7,241 +7,263 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#1d2130;direction:rtl;font-size:14px}
-.bar{background:#c8102e;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
+.bar{background:#c8102e;color:#fff;padding:9px 15px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
 .bar h1{font-size:17px;font-weight:bold;white-space:nowrap}
-.bar input{flex:1;min-width:170px;padding:8px 11px;border:0;border-radius:8px;font-size:14px}
+.bar input{flex:1;min-width:160px;padding:8px 11px;border:0;border-radius:8px;font-size:14px}
 .bar button{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13.5px}
-.bar button:hover{background:rgba(255,255,255,.28)}
-.tabs{display:flex;gap:7px;padding:11px 16px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e2e6ee;position:sticky;top:47px;z-index:35}
-.tabs button{background:#f2f4f9;border:1px solid #e2e6ee;border-radius:20px;padding:7px 15px;cursor:pointer;font-size:13.5px;color:#3a4152}
+.bar button:hover{background:rgba(255,255,255,.3)}
+.bar .st{font-size:12px;opacity:.85;white-space:nowrap}
+.tabs{display:flex;gap:6px;padding:10px 15px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e2e6ee;position:sticky;top:46px;z-index:35}
+.tabs button{background:#f2f4f9;border:1px solid #e2e6ee;border-radius:18px;padding:6px 13px;cursor:pointer;font-size:13px;color:#3a4152;white-space:nowrap}
 .tabs button.on{background:#c8102e;color:#fff;border-color:#c8102e;font-weight:bold}
-.tabs .cnt{opacity:.72;font-size:12px;margin-inline-start:4px}
-.wrap{padding:12px 16px 40px}
+.tabs .c{opacity:.72;font-size:11.5px;margin-inline-start:4px}
+.wrap{padding:12px 15px 40px}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:11px;overflow:hidden;box-shadow:0 1px 4px rgba(20,25,45,.07)}
-th{background:#f7f9fc;padding:9px 10px;text-align:right;font-size:12.5px;color:#5b6172;border-bottom:2px solid #e2e6ee;white-space:nowrap}
-td{padding:9px 10px;border-bottom:1px solid #f0f2f7;font-size:13.5px}
+th{background:#f7f9fc;padding:9px;text-align:right;font-size:12.5px;color:#5b6172;border-bottom:2px solid #e2e6ee;white-space:nowrap}
+td{padding:9px;border-bottom:1px solid #f0f2f7;font-size:13.5px}
 tr.r{cursor:pointer}
 tr.r:hover td{background:#fdf4f5}
 .pill{display:inline-block;padding:3px 9px;border-radius:11px;font-size:12px;font-weight:bold;white-space:nowrap}
 .muted{color:#8a90a0}
 .empty{text-align:center;padding:40px;color:#8a90a0}
-/* modal */
-.ov{position:fixed;inset:0;background:rgba(15,19,32,.5);display:none;z-index:60;overflow:auto;padding:18px}
+.ov{position:fixed;inset:0;background:rgba(15,19,32,.5);display:none;z-index:60;overflow:auto;padding:16px}
 .ov.on{display:block}
-.md{max-width:840px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)}
-.mh{background:#1f2a44;color:#fff;padding:13px 17px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
-.mh .t{flex:1}
-.mh .t b{font-size:16px}
-.mh .t span{display:block;font-size:12.5px;opacity:.85;margin-top:2px}
-.mh button{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13px}
-.mt{display:flex;gap:5px;padding:9px 14px 0;background:#f7f9fc;border-bottom:1px solid #e2e6ee;flex-wrap:wrap;position:sticky;top:52px;z-index:4}
-.mt button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 13px;cursor:pointer;font-size:14px;color:#5b6172}
+.md{max-width:860px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.mh{background:#1f2a44;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:6}
+.mh .t{flex:1}.mh .t b{font-size:16px}.mh .t span{display:block;font-size:12.5px;opacity:.85;margin-top:2px}
+.mh button{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer}
+.mt{display:flex;gap:4px;padding:8px 12px 0;background:#f7f9fc;border-bottom:1px solid #e2e6ee;flex-wrap:wrap;position:sticky;top:50px;z-index:5}
+.mt button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;cursor:pointer;font-size:14px;color:#5b6172}
 .mt button.on{color:#c8102e;border-bottom-color:#c8102e;font-weight:bold}
-.pane{display:none;padding:15px 17px}
+.pane{display:none;padding:14px 16px}
 .pane.on{display:block}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px 18px}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.md{max-width:100%}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 14px}
+@media(max-width:720px){.grid,.g3{grid-template-columns:1fr}.md{max-width:100%}}
 .f label{display:block;font-size:12px;color:#5b6172;margin-bottom:3px}
-.f .v{font-size:14px;padding:6px 0;min-height:29px}
-.f input,.f select,.f textarea{width:100%;padding:7px 9px;border:1px solid #cfd5e0;border-radius:7px;font-size:14px;font-family:inherit}
+.f .v{font-size:14px;padding:6px 0;min-height:28px}
+.f select,.f input,.f textarea{width:100%;padding:7px 9px;border:1px solid #cfd5e0;border-radius:7px;font-size:14px;font-family:inherit;background:#fff}
+.sec{font-size:14px;font-weight:bold;margin:16px 0 8px;padding-bottom:5px;border-bottom:2px solid #e2e6ee;color:#1f2a44}
+.chk{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1px solid #e2e6ee;border-radius:8px;cursor:pointer;font-size:13.5px;background:#fff}
+.chk:hover{background:#f7f9fc}
+.chk.on{background:#e8f6ea;border-color:#a8ddb4}
+.chk input{width:17px;height:17px;cursor:pointer;flex:0 0 auto}
 .hd{display:flex;gap:6px;padding:0 0 6px;border-bottom:2px solid #1d2130;font-size:12px;font-weight:bold;color:#5b6172}
-.hd .nm{flex:1}.hd .c1{width:62px;text-align:center}.hd .c2{width:84px;text-align:center}.hd .c3{width:72px;text-align:center}.hd .c4{width:34px}
+.hd .nm{flex:1}.hd .c1{width:60px;text-align:center}.hd .c2{width:82px;text-align:center}.hd .c3{width:70px;text-align:center}.hd .c4{width:32px}
 .ln{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #eef0f5}
 .ln .nm{flex:1;font-size:13.5px;line-height:1.35}
 .ln .nm small{display:block;color:#c8102e;font-size:11.5px}
-.ln input{width:62px;padding:6px;text-align:center;border:1px solid #cfd5e0;border-radius:7px;font-size:14px}
-.ln input.pr{width:84px}
-.ln .lt{width:72px;text-align:center;font-size:13px;font-weight:bold}
-.ln .x{width:34px;background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:7px;padding:5px 0;cursor:pointer}
-.srch{position:relative;margin-top:11px}
+.ln input{width:60px;padding:6px;text-align:center;border:1px solid #cfd5e0;border-radius:7px;font-size:14px}
+.ln input.pr{width:82px}
+.ln .lt{width:70px;text-align:center;font-size:13px;font-weight:bold}
+.ln .x{width:32px;background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:7px;padding:5px 0;cursor:pointer}
+.srch{position:relative;margin-top:10px}
 .srch input{width:100%;padding:11px;border:1.5px solid #c8102e;border-radius:9px;font-size:14.5px}
-.dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:250px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
+.dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:240px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
 .dd.on{display:block}
 .dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8}
 .dd div:hover{background:#fdecef}
-.tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:11px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d7a33;color:#fff;padding:10px 18px;border-radius:9px;z-index:99;display:none;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
-.toast.err{background:#c8102e}
-.toast.on{display:block}
-.boot{text-align:center;padding:70px 20px;color:#5b6172}
-.boot .sp{font-size:34px}
+.tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d7a33;color:#fff;padding:10px 18px;border-radius:9px;z-index:99;display:none;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.toast.err{background:#c8102e}.toast.on{display:block}
+.boot{text-align:center;padding:60px 20px;color:#5b6172}.boot .sp{font-size:32px}
 </style>
 </head>
 <body>
 
 <div class="bar">
   <h1>🔧 ABN</h1>
-  <input id="q" placeholder="חיפוש: לקוח, רכב, מספר כרטיס…" oninput="draw()">
+  <input id="q" placeholder="חיפוש: לקוח, רכב, כרטיס, טלפון…" oninput="draw()">
   <button onclick="reload()">↻ רענן</button>
-  <span id="stamp" style="font-size:12px;opacity:.8"></span>
+  <span class="st" id="stamp"></span>
 </div>
-
 <div class="tabs" id="tabs"></div>
-
-<div class="wrap">
-  <div id="list"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען כרטיסי עבודה…</div></div></div>
-</div>
+<div class="wrap"><div id="list"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען…</div></div></div></div>
 
 <div class="ov" id="ov" onclick="if(event.target.id==='ov')closeCard()">
   <div class="md">
-    <div class="mh">
-      <div class="t"><b id="mTitle">—</b><span id="mSub"></span></div>
-      <button onclick="closeCard()">✕ סגור</button>
-    </div>
+    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button onclick="closeCard()">✕ סגור</button></div>
     <div class="mt" id="mTabs"></div>
-    <div class="pane on" id="p0"></div>
-    <div class="pane" id="p1"></div>
-    <div class="pane" id="p2"></div>
+    <div class="pane on" id="p0"></div><div class="pane" id="p1"></div>
+    <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-var PX="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/";
-var B="appX4z91yKZGwz6ap";
-var T={wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",veh:"tbl9CnyPSqTookRT5",cus:"tblnCFvGEpL75AVRl",svc:"tblKlDFqJ1lRHV4gI"};
-var WOS=[], LINES=[], CATALOG=[], CUR=null, FILTER="today", CACHE={};
+var PX="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/", B="appX4z91yKZGwz6ap";
+var T={wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY"};
+var WOS=[],LINES=[],CATALOG=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today";
+
+var STATUS=["חדש","מחכה לטיפול","בטיפול","מוכן לתשלום","שולם","בוטל","ממתין לאישור אמיר"];
+var TREAT=["טיפול תקופתי","הכנה לטסט + טסט","הכנה לטסט","תקלות ברכב","טיפול תקופתי + הכנה לטסט","נכשלת בטסט?","טיפול תקופתי + טסט","רכב נגרר"];
+var PAY=["מזומן","כרטיס אשראי","העברה בנקאית","צ'ק"];
+var BRAKE=["תקין","25%","50%","לא תקין"];
+var FLUID=["תקין","הוספה","החלפה"];
+var COOL=["מצב תקין","הוספה","החלפה"];
+var CHECKS=["בדיקת לחץ אויר","בדיקת שמשות","בדיקת גומיות ריקות","בדיקת חופשים","בדיקת צמיגים","בדיקת אורות","בדיקת מיסבים (סיבוב גלגלים)","איפוס טיפול","סימון בורג אגן שמן","בעיית הלקוח טופלה"];
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
-function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2400);}
+function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2300);}
 function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
-function dt(v){var s=txt(v);var m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
-function dkey(v){var s=txt(v);var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:"";}
-function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function dt(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
+function dk(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:"";}
+function ds(o){var d=new Date();d.setDate(d.getDate()+(o||0));return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+async function api(p,o){var r=await fetch(PX+B+p,o||{});if(!r.ok)throw new Error((await r.text()).slice(0,140));return r.json();}
+async function all(t,x){var out=[],off=null,n=0;do{var d=await api("/"+t+"?pageSize=100"+(x||"")+(off?"&offset="+encodeURIComponent(off):""));out=out.concat(d.records||[]);off=d.offset;n++;}while(off&&n<200);return out;}
 
-async function api(path,opt){var r=await fetch(PX+B+path,opt||{});if(!r.ok)throw new Error((await r.text()).slice(0,140));return r.json();}
-async function all(tbl,extra){var out=[],off=null,n=0;do{var u="/"+tbl+"?pageSize=100"+(extra||"")+(off?"&offset="+encodeURIComponent(off):"");var d=await api(u);out=out.concat(d.records||[]);off=d.offset;n++;}while(off&&n<200);return out;}
-
-/* ---------- list ---------- */
-var TABS=[["today","היום"],["tomorrow","מחר"],["open","בטיפול"],["pay","מוכן לתשלום"],["all","הכל"]];
+var TABS=[["today","היום"],["tomorrow","מחר"],["test","טסטים מחר"],["future","עתידיים"],["work","בטיפול"],["pay","מוכן לתשלום"],["openc","לא נסגרו"],["closed","נסגרו היום"],["newc","לקוחות לאישור"],["all","הכל"]];
 function match(r,k){
-  var f=r.fields||{}, d=dkey(f["תאריך ושעה"]), st=txt(f["סטטוס"]);
-  if(k==="today")return d===today();
-  if(k==="tomorrow")return d===tomorrow();
-  if(k==="open")return st.indexOf("בטיפול")>=0||st.indexOf("מחכה")>=0;
-  if(k==="pay")return st.indexOf("מוכן")>=0||txt(f["סטטוס חשבון"]).indexOf("מאושר")>=0;
+  var f=r.fields||{},d=dk(f["תאריך ושעה"]),st=txt(f["סטטוס"]),tp=txt(f["סוג טיפול"]);
+  if(k==="today")return d===ds(0);
+  if(k==="tomorrow")return d===ds(1);
+  if(k==="test")return d===ds(1)&&tp.indexOf("טסט")>=0;
+  if(k==="future")return d>ds(0);
+  if(k==="work")return st==="בטיפול"||st==="מחכה לטיפול";
+  if(k==="pay")return st==="מוכן לתשלום";
+  if(k==="openc")return st!=="שולם"&&st!=="בוטל";
+  if(k==="closed")return dk(f["תאריך סגירה"])===ds(0);
+  if(k==="newc")return !!(f["לקוח חדש - טעון אישור"]);
   return true;
 }
-function drawTabs(){
-  document.getElementById("tabs").innerHTML=TABS.map(function(t){
-    var n=WOS.filter(function(r){return match(r,t[0]);}).length;
-    return '<button class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="cnt">'+n+'</span></button>';
-  }).join("");
-}
+function drawTabs(){document.getElementById("tabs").innerHTML=TABS.map(function(t){
+  var n=WOS.filter(function(r){return match(r,t[0]);}).length;
+  return '<button class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c">'+n+'</span></button>';}).join("");}
 function setF(k){FILTER=k;drawTabs();draw();}
 function rows(){
-  var q=(document.getElementById("q").value||"").trim().toLowerCase();
-  var toks=q.split(/\s+/).filter(Boolean);
+  var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
   return WOS.filter(function(r){
     if(!match(r,FILTER))return false;
     if(!toks.length)return true;
     var f=r.fields||{};
-    var hay=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
-    return toks.every(function(t){return hay.indexOf(t)>=0;});
-  }).sort(function(a,b){return String(dkey(b.fields["תאריך ושעה"])).localeCompare(String(dkey(a.fields["תאריך ושעה"])));});
+    var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
+    return toks.every(function(t){return h.indexOf(t)>=0;});
+  }).sort(function(a,b){return String(dk(b.fields["תאריך ושעה"])).localeCompare(String(dk(a.fields["תאריך ושעה"])));});
 }
-function stColor(s){
-  if(s.indexOf("שולם")>=0)return"background:#e8f6ea;color:#1d7a33";
-  if(s.indexOf("בוטל")>=0)return"background:#fdecec;color:#c8102e";
-  if(s.indexOf("בטיפול")>=0)return"background:#fff4e0;color:#8a5b00";
-  return"background:#eef1f5;color:#5b6172";
-}
+function sc(s){if(s==="שולם")return"background:#e8f6ea;color:#1d7a33";if(s==="בוטל")return"background:#fdecec;color:#c8102e";
+ if(s==="בטיפול")return"background:#fff4e0;color:#8a5b00";if(s==="מוכן לתשלום")return"background:#e6f0fd;color:#1246a0";return"background:#eef1f5;color:#5b6172";}
 function draw(){
-  var rs=rows(), el=document.getElementById("list");
+  var rs=rows(),el=document.getElementById("list");
   if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
-  el.innerHTML='<table><tr><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>סטטוס</th><th>סה"כ</th></tr>'
+  el.innerHTML='<table><tr><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th></tr>'
    +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
-     return '<tr class="r" onclick="openCard(\''+r.id+'\')">'
-      +'<td class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
-      +'<td><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td>'
-      +'<td>'+esc(f["שם להצגה"]||"")+'</td>'
-      +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td>'
-      +'<td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
-      +'<td>'+esc(txt(f["סוג טיפול"]))+'</td>'
-      +'<td><span class="pill" style="'+stColor(st)+'">'+esc(st)+'</span></td>'
-      +'<td>'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td>'
-      +'</tr>';}).join("")+'</table>';
+    return '<tr class="r" onclick="openCard(\''+r.id+'\')"><td class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
+     +'<td><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td>'+esc(f["שם להצגה"]||"")+'</td>'
+     +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td><td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
+     +'<td>'+esc(txt(f["סוג טיפול"]))+'</td><td class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
+     +'<td><span class="pill" style="'+sc(st)+'">'+esc(st)+'</span></td>'
+     +'<td>'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td></tr>';}).join("")+'</table>';
 }
 
-/* ---------- card ---------- */
-var MTABS=[["פרטים",0],["חלפים",1],["תשלום",2]];
+var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
-  CUR=WOS.filter(function(r){return r.id===id;})[0]; if(!CUR)return;
+  CUR=WOS.filter(function(r){return r.id===id;})[0];if(!CUR)return;
   var f=CUR.fields||{};
-  document.getElementById("mTitle").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
-  document.getElementById("mSub").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["סוג טיפול"])].filter(Boolean).join(" · ");
-  document.getElementById("mTabs").innerHTML=MTABS.map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mtab('+i+')">'+t[0]+'</button>';}).join("");
-  mtab(0); paneDetails(); paneParts(); panePay();
+  document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
+  document.getElementById("mS").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
+  document.getElementById("mTabs").innerHTML=MT.map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
+  mt(0);pDet();pParts();pSvc();pChecks();pPay();
   document.getElementById("ov").classList.add("on");
 }
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
-function mtab(i){
-  [].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
-  [0,1,2].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});
+function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
+ [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
+function ro(l,v){return '<div class="f"><label>'+esc(l)+'</label><div class="v">'+esc(v||"—")+'</div></div>';}
+function sel(l,fld,opts,cur){
+  return '<div class="f"><label>'+esc(l)+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
+   +'<option value=""></option>'+opts.map(function(o){return '<option'+(o===cur?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
 }
-function fld(lab,val){return '<div class="f"><label>'+esc(lab)+'</label><div class="v">'+esc(val||"—")+'</div></div>';}
-function paneDetails(){
+function pDet(){
   var f=CUR.fields||{};
   document.getElementById("p0").innerHTML='<div class="grid">'
-   +fld("לקוח",f["שם להצגה"])+fld("טלפון",txt(f["מספר טלפון"]))
-   +fld("מספר רכב",f["מספר רכב_disp"])+fld("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
-   +fld("שנת ייצור",txt(f["שנת ייצור"]))+fld("קילומטראז'",f["עדכון קילומטרז' ידני"]?Number(f["עדכון קילומטרז' ידני"]).toLocaleString("en-US"):"")
-   +fld("תאריך התור",dt(f["תאריך ושעה"]))+fld("סטטוס",txt(f["סטטוס"]))
-   +fld("סוג טיפול",txt(f["סוג טיפול"]))+fld("מכונאי אחראי",txt(f["מכונאי אחראי"]))
-   +'</div><div class="f" style="margin-top:12px"><label>סיבת הגעה</label><div class="v">'+esc(f["סיבת הגעה"]||"—")+'</div></div>'
-   +'<div class="f"><label>הערות מכונאי</label><div class="v">'+esc(f["הערות מכונאי"]||"—")+'</div></div>';
+   +ro("לקוח",f["שם להצגה"])+ro("טלפון",txt(f["מספר טלפון"]))
+   +ro("מספר רכב",f["מספר רכב_disp"])+ro("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
+   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
+   +ro("קילומטראז'",f["עדכון קילומטרז' ידני"]?Number(f["עדכון קילומטרז' ידני"]).toLocaleString("en-US"):"")
+   +ro("תאריך התור",dt(f["תאריך ושעה"]))
+   +sel("סטטוס","סטטוס",STATUS,txt(f["סטטוס"]))
+   +sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
+   +ro("מכונאי אחראי",txt(f["מכונאי אחראי"]))
+   +ro("מיקום לפני טיפול",txt(f["מיקום לפני טיפול"]))
+   +ro("מיקום בסוף הטיפול",txt(f["מיקום בסוף הטיפול"]))
+   +ro("תאריך פתיחה",dt(f["תאריך פתיחה"]))+ro("תאריך סגירה",dt(f["תאריך סגירה"]))
+   +'</div><div class="sec">תיאור</div>'
+   +'<div class="f"><label>סיבת הגעה</label><div class="v">'+esc(f["סיבת הגעה"]||"—")+'</div></div>'
+   +'<div class="f"><label>הערות מכונאי</label><div class="v">'+esc(String(f["הערות מכונאי"]||"—").replace(/<[^>]+>/g,""))+'</div></div>'
+   +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:#c8102e">'+esc(f["⚠️ התראה"])+'</div></div>':'');
 }
 function myLines(){return LINES.filter(function(x){var w=(x.fields||{})["כרטיס עבודה"]||[];return w.some&&w.some(function(y){return ((y&&y.id)||y)===CUR.id;});});}
-function paneParts(){
-  var ls=myLines(), sum=0;
+function pParts(){
+  var ls=myLines(),sum=0;
   var head='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span><span class="c2">מחיר ליח\'</span><span class="c3">סה"כ</span><span class="c4"></span></div>';
-  var body=ls.map(function(r){
-    var f=r.fields||{}, nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
-    var q=f["כמות"]==null?1:f["כמות"], pr=f["מחיר ליחידה (בזמן השימוש)"]||0, lt=q*pr; sum+=lt;
-    return '<div class="ln"><div class="nm">'+esc(nm)+(pr?"":"<small>אין מחיר</small>")+'</div>'
-      +'<input type="number" min="1" step="1" value="'+q+'" onchange="setQ(\''+r.id+'\',this.value)">'
-      +'<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
-      +'<div class="lt">'+lt.toFixed(2)+'</div>'
-      +'<button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';
-  }).join("")||'<div class="empty" style="padding:18px">אין חלפים. חפש חלף להוספה.</div>';
+  var body=ls.map(function(r){var f=r.fields||{},nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
+   var q=f["כמות"]==null?1:f["כמות"],pr=f["מחיר ליחידה (בזמן השימוש)"]||0,lt=q*pr;sum+=lt;
+   return '<div class="ln"><div class="nm">'+esc(nm)+(pr?"":"<small>אין מחיר</small>")+'</div>'
+    +'<input type="number" min="1" value="'+q+'" onchange="setQ(\''+r.id+'\',this.value)">'
+    +'<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
+    +'<div class="lt">'+lt.toFixed(2)+'</div><button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("")
+   ||'<div class="empty" style="padding:16px">אין חלפים. חפש חלף להוספה.</div>';
   document.getElementById("p1").innerHTML=head+body
    +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף להוספה…" autocomplete="off" oninput="sq()"><div class="dd" id="pdd"></div></div>'
    +'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>';
 }
-function panePay(){
+function pSvc(){
+  var f=CUR.fields||{},cur=(f["שירותים נוספים:"]||[]);
+  var names=cur.map(function(x){return (x&&x.name)||"";}).filter(Boolean);
+  document.getElementById("p2").innerHTML='<div class="sec">שירותים נוספים בכרטיס</div>'
+   +(names.length?names.map(function(n){return '<div class="ln"><div class="nm">'+esc(n)+'</div></div>';}).join(""):'<div class="empty" style="padding:16px">לא נבחרו שירותים</div>')
+   +'<div class="f" style="margin-top:12px"><label>סך עלות שירותים</label><div class="v">'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</div></div>'
+   +'<div class="muted" style="margin-top:10px;font-size:13px">קטלוג: '+SVC.length+' שירותים · הוספה תתאפשר בשלב הבא</div>';
+}
+function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(name)+'</span></label>';}
+function pChecks(){
   var f=CUR.fields||{};
-  document.getElementById("p2").innerHTML='<div class="grid">'
-   +fld("סך חלקי חילוף",f["סך עלות חלקי חילוף"]!=null?"₪"+Number(f["סך עלות חלקי חילוף"]).toFixed(2):"")
-   +fld("סך שירותים",f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"")
-   +fld("עלות עבודה",f["עלות עבודה"]!=null?"₪"+Number(f["עלות עבודה"]).toFixed(2):"")
-   +fld('סה"כ לפני מע"מ',f['סה"כ לפני מע"מ']!=null?"₪"+Number(f['סה"כ לפני מע"מ']).toFixed(2):"")
-   +fld('מע"מ',f['סכום מע"מ']!=null?"₪"+Number(f['סכום מע"מ']).toFixed(2):"")
-   +fld('סה"כ לתשלום',f['סה"כ לתשלום']!=null?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"")
-   +fld("אמצעי תשלום",txt(f["אמצעי תשלום"]))
-   +fld("מוכנות לחשבונית",txt(f["מוכנות לחשבונית"]))
+  document.getElementById("p3").innerHTML='<div class="sec">מערכות</div><div class="grid">'
+   +sel("מערכת בלמים קידמית","מערכת בלמים קידמית",BRAKE,txt(f["מערכת בלמים קידמית"]))
+   +sel("מערכת בלמים אחורית","מערכת בלמים אחורית",BRAKE,txt(f["מערכת בלמים אחורית"]))
+   +sel("נוזל בלמים","נוזל בלמים",FLUID,txt(f["נוזל בלמים"]))
+   +sel("נוזל קירור","נוזל קירור",COOL,txt(f["נוזל קירור"]))
+   +'</div><div class="sec">בדיקות</div><div class="g3">'
+   +CHECKS.map(function(c){return chk(c,!!f[c]);}).join("")+'</div>';
+}
+function pPay(){
+  var f=CUR.fields||{};
+  document.getElementById("p4").innerHTML='<div class="grid">'
+   +ro("סך חלקי חילוף",f["סך עלות חלקי חילוף"]!=null?"₪"+Number(f["סך עלות חלקי חילוף"]).toFixed(2):"")
+   +ro("סך שירותים",f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"")
+   +ro("עלות עבודה",f["עלות עבודה"]!=null?"₪"+Number(f["עלות עבודה"]).toFixed(2):"")
+   +ro('סה"כ לפני מע"מ',f['סה"כ לפני מע"מ']!=null?"₪"+Number(f['סה"כ לפני מע"מ']).toFixed(2):"")
+   +ro('מע"מ',f['סכום מע"מ']!=null?"₪"+Number(f['סכום מע"מ']).toFixed(2):"")
+   +ro('סה"כ לתשלום',f['סה"כ לתשלום']!=null?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"")
+   +sel("אמצעי תשלום","אמצעי תשלום",PAY,txt(f["אמצעי תשלום"]))
+   +ro("מוכנות לחשבונית",txt(f["מוכנות לחשבונית"]))
+   +ro('סה"כ כמות חלפים',txt(f['סה"כ כמות חלפים']))
    +'</div>';
 }
 
-/* ---------- edits (optimistic) ---------- */
+function patchWO(fields,redraw){
+  Object.keys(fields).forEach(function(k){CUR.fields[k]=fields[k];});
+  if(redraw)redraw();
+  draw();drawTabs();
+  fetch(PX+B+"/"+T.wo+"/"+CUR.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
+   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה — רענן",1);});
+}
+function setF2(fld,v){var o={};o[fld]=v||null;patchWO(o,fld.indexOf("בלמים")>=0||fld.indexOf("נוזל")>=0?pChecks:(fld==="אמצעי תשלום"?pPay:pDet));}
+function setChk(name,on){var o={};o[name]=!!on;patchWO(o,pChecks);}
 function patchLine(id,fields){
-  var i=-1; LINES.forEach(function(r,n){if(r.id===id)i=n;});
-  if(i>=0){Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});}
-  paneParts();
+  var i=-1;LINES.forEach(function(r,n){if(r.id===id)i=n;});
+  if(i>=0)Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});
+  pParts();
   fetch(PX+B+"/"+T.ln+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
-    .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");})
-    .catch(function(){toast("השמירה נכשלה — רענן",1);});
+   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה — רענן",1);});
 }
 function setQ(id,v){var q=parseInt(v,10);if(!q||q<1)q=1;patchLine(id,{"כמות":q});}
 function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
-function rmLine(id){
-  LINES=LINES.filter(function(r){return r.id!==id;}); paneParts();
-  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה — רענן",1);});
-}
+function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});pParts();
+ fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה",1);});}
 function sq(){
   var q=(document.getElementById("pq").value||"").trim().toLowerCase(),dd=document.getElementById("pdd");
-  if(!CATALOG.length){dd.innerHTML='<div class="muted">קטלוג החלפים עדיין נטען…</div>';dd.classList.add("on");return;}
+  if(!CATALOG.length){dd.innerHTML='<div class="muted">קטלוג נטען…</div>';dd.classList.add("on");return;}
   if(q.length<2){dd.classList.remove("on");return;}
   var toks=q.split(/\s+/).filter(Boolean);
   var hits=CATALOG.filter(function(o){var h=(o.name+" "+o.sku).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0;});}).slice(0,20);
@@ -250,23 +272,20 @@ function sq(){
 }
 function addPart(pid){
   document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
-  var body={fields:{},typecast:true};
-  body.fields["כרטיס עבודה"]=[CUR.id]; body.fields["חלף"]=[pid]; body.fields["כמות"]=1;
-  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
-   .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(d){LINES.push(d);paneParts();toast("✓ נוסף");})
+  var b={fields:{},typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];b.fields["חלף"]=[pid];b.fields["כמות"]=1;
+  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+   .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);pParts();toast("✓ נוסף");})
    .catch(function(){toast("ההוספה נכשלה",1);});
 }
 document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
 
-/* ---------- boot ---------- */
 async function boot(){
-  try{
-    WOS=await all(T.wo);
-    drawTabs(); draw();
-    document.getElementById("stamp").textContent=WOS.length+" כרטיסים";
-  }catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
-  try{ LINES=await all(T.ln); if(CUR)paneParts(); }catch(e){}
+  try{WOS=await all(T.wo);drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
+  catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
+  try{LINES=await all(T.ln);if(CUR)pParts();}catch(e){}
+  try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
+  try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
+  try{EMP=(await all(T.emp)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מלא"]||""};});}catch(e){}
   try{
     var c=await all(T.cat,"&fields%5B%5D=%D7%A4%D7%A8%D7%99%D7%98&fields%5B%5D=%D7%9E%D7%A7%22%D7%98");
     CATALOG=c.map(function(r){var f=r.fields||{};return {id:r.id,name:(f["פריט"]||"").trim(),sku:(f['מק"ט']||"").trim()};}).filter(function(x){return x.name;});
