@@ -7,18 +7,21 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#1d2130;direction:rtl}
-.wrap{max-width:760px;margin:0 auto;padding:0 12px 40px}
-.top{background:#c8102e;color:#fff;padding:16px 18px;border-radius:0 0 16px 16px}
-.top h1{font-size:19px;font-weight:bold}
-.top .sub{font-size:13.5px;opacity:.93;margin-top:5px;line-height:1.6}
-.card{background:#fff;border:1px solid #e2e6ee;border-radius:14px;margin-top:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,25,45,.05)}
-.card h2{font-size:16px;margin-bottom:10px}
-.row{display:flex;align-items:center;gap:9px;padding:11px 0;border-bottom:1px solid #eef0f5}
+.wrap{max-width:540px;margin:0 auto;padding:0 10px 22px}
+.top{background:#c8102e;color:#fff;padding:11px 14px;border-radius:0 0 12px 12px}
+.top h1{font-size:16px;font-weight:bold}
+.top .sub{font-size:12.5px;opacity:.93;margin-top:3px;line-height:1.5}
+.card{background:#fff;border:1px solid #e2e6ee;border-radius:12px;margin-top:11px;padding:11px 12px;box-shadow:0 2px 8px rgba(20,25,45,.05)}
+.card h2{display:none}
+.row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #eef0f5}
+.hd{display:flex;align-items:center;gap:6px;padding:0 0 6px;border-bottom:2px solid #1d2130;font-size:12px;font-weight:bold;color:#5b6172}
+.hd .nm{flex:1}.hd .c1{width:62px;text-align:center}.hd .c2{width:82px;text-align:center}.hd .c3{width:70px;text-align:center}.hd .c4{width:36px}
 .row:last-child{border-bottom:0}
-.nm{flex:1;font-size:14.5px;line-height:1.45}
+.nm{flex:1;font-size:13.5px;line-height:1.35}
 .nm small{display:block;color:#8a90a0;font-size:12px;margin-top:2px}
-input[type=number]{width:66px;padding:8px;text-align:center;font-size:15px;border:1px solid #cfd5e0;border-radius:8px}
-input.price{width:88px}
+input[type=number]{width:62px;padding:6px;text-align:center;font-size:14px;border:1px solid #cfd5e0;border-radius:7px}
+input.price{width:82px}
+.lt{width:70px;text-align:center;font-size:13.5px;font-weight:bold}
 .x{background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:8px;padding:7px 11px;font-size:15px;cursor:pointer}
 .x:hover{background:#fdecef}
 .srch{position:relative;margin-top:12px}
@@ -98,20 +101,22 @@ async function loadLines(){
 
 function render(){
   var el=document.getElementById("lines"),sum=0;
-  if(!ROWS.length){el.innerHTML='<div class="empty">אין חלפים בכרטיס. חפש חלף למטה כדי להוסיף.</div>';document.getElementById("sum").textContent="₪0.00";return;}
-  el.innerHTML=ROWS.map(function(r){
+  var HEAD='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span><span class="c2">מחיר ליח</span><span class="c3">סהכ</span><span class="c4"></span></div>';
+  if(!ROWS.length){el.innerHTML=HEAD+'<div class="empty">אין חלפים בכרטיס. חפש חלף למטה כדי להוסיף.</div>';document.getElementById("sum").textContent="0.00";return;}
+  el.innerHTML=HEAD+ROWS.map(function(r){
     var f=r.fields||{};
     var nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
     var q=f["כמות"]==null?1:f["כמות"], pr=f["מחיר ליחידה (בזמן השימוש)"]||0;
-    sum+=q*pr;
+    var lt=q*pr; sum+=lt;
     return '<div class="row">'
-      +'<div class="nm">'+esc(nm)+(pr?'':'<small>⚠️ אין מחיר</small>')+'</div>'
-      +'<input type="number" min="1" step="1" value="'+q+'" title="כמות" onchange="setQty(\''+r.id+'\',this.value)">'
-      +'<input type="number" min="0" step="0.01" class="price" value="'+pr+'" title="מחיר ליחידה" onchange="setPrice(\''+r.id+'\',this.value)">'
-      +'<button class="x" title="הסר" onclick="del(\''+r.id+'\')">✕</button>'
+      +'<div class="nm">'+esc(nm)+(pr?'':'<small>אין מחיר</small>')+'</div>'
+      +'<input type="number" min="1" step="1" value="'+q+'" onchange="setQty(\''+r.id+'\',this.value)">'
+      +'<input type="number" min="0" step="0.01" class="price" value="'+pr+'" onchange="setPrice(\''+r.id+'\',this.value)">'
+      +'<div class="lt">'+lt.toFixed(2)+'</div>'
+      +'<button class="x" title="הסר" onclick="del(\''+r.id+'\')">X</button>'
       +'</div>';
   }).join("");
-  document.getElementById("sum").textContent="₪"+sum.toFixed(2);
+  document.getElementById("sum").textContent=sum.toFixed(2);
 }
 
 async function patch(id,fields){
