@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ABN — ניהול מוסך</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#1d2130;direction:rtl;font-size:14px}
+.bar{background:#c8102e;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
+.bar h1{font-size:17px;font-weight:bold;white-space:nowrap}
+.bar input{flex:1;min-width:170px;padding:8px 11px;border:0;border-radius:8px;font-size:14px}
+.bar button{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13.5px}
+.bar button:hover{background:rgba(255,255,255,.28)}
+.tabs{display:flex;gap:7px;padding:11px 16px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e2e6ee;position:sticky;top:47px;z-index:35}
+.tabs button{background:#f2f4f9;border:1px solid #e2e6ee;border-radius:20px;padding:7px 15px;cursor:pointer;font-size:13.5px;color:#3a4152}
+.tabs button.on{background:#c8102e;color:#fff;border-color:#c8102e;font-weight:bold}
+.tabs .cnt{opacity:.72;font-size:12px;margin-inline-start:4px}
+.wrap{padding:12px 16px 40px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:11px;overflow:hidden;box-shadow:0 1px 4px rgba(20,25,45,.07)}
+th{background:#f7f9fc;padding:9px 10px;text-align:right;font-size:12.5px;color:#5b6172;border-bottom:2px solid #e2e6ee;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f0f2f7;font-size:13.5px}
+tr.r{cursor:pointer}
+tr.r:hover td{background:#fdf4f5}
+.pill{display:inline-block;padding:3px 9px;border-radius:11px;font-size:12px;font-weight:bold;white-space:nowrap}
+.muted{color:#8a90a0}
+.empty{text-align:center;padding:40px;color:#8a90a0}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(15,19,32,.5);display:none;z-index:60;overflow:auto;padding:18px}
+.ov.on{display:block}
+.md{max-width:840px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.mh{background:#1f2a44;color:#fff;padding:13px 17px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+.mh .t{flex:1}
+.mh .t b{font-size:16px}
+.mh .t span{display:block;font-size:12.5px;opacity:.85;margin-top:2px}
+.mh button{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13px}
+.mt{display:flex;gap:5px;padding:9px 14px 0;background:#f7f9fc;border-bottom:1px solid #e2e6ee;flex-wrap:wrap;position:sticky;top:52px;z-index:4}
+.mt button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 13px;cursor:pointer;font-size:14px;color:#5b6172}
+.mt button.on{color:#c8102e;border-bottom-color:#c8102e;font-weight:bold}
+.pane{display:none;padding:15px 17px}
+.pane.on{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px 18px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.md{max-width:100%}}
+.f label{display:block;font-size:12px;color:#5b6172;margin-bottom:3px}
+.f .v{font-size:14px;padding:6px 0;min-height:29px}
+.f input,.f select,.f textarea{width:100%;padding:7px 9px;border:1px solid #cfd5e0;border-radius:7px;font-size:14px;font-family:inherit}
+.hd{display:flex;gap:6px;padding:0 0 6px;border-bottom:2px solid #1d2130;font-size:12px;font-weight:bold;color:#5b6172}
+.hd .nm{flex:1}.hd .c1{width:62px;text-align:center}.hd .c2{width:84px;text-align:center}.hd .c3{width:72px;text-align:center}.hd .c4{width:34px}
+.ln{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #eef0f5}
+.ln .nm{flex:1;font-size:13.5px;line-height:1.35}
+.ln .nm small{display:block;color:#c8102e;font-size:11.5px}
+.ln input{width:62px;padding:6px;text-align:center;border:1px solid #cfd5e0;border-radius:7px;font-size:14px}
+.ln input.pr{width:84px}
+.ln .lt{width:72px;text-align:center;font-size:13px;font-weight:bold}
+.ln .x{width:34px;background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:7px;padding:5px 0;cursor:pointer}
+.srch{position:relative;margin-top:11px}
+.srch input{width:100%;padding:11px;border:1.5px solid #c8102e;border-radius:9px;font-size:14.5px}
+.dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:250px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
+.dd.on{display:block}
+.dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8}
+.dd div:hover{background:#fdecef}
+.tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:11px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d7a33;color:#fff;padding:10px 18px;border-radius:9px;z-index:99;display:none;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.toast.err{background:#c8102e}
+.toast.on{display:block}
+.boot{text-align:center;padding:70px 20px;color:#5b6172}
+.boot .sp{font-size:34px}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1>🔧 ABN</h1>
+  <input id="q" placeholder="חיפוש: לקוח, רכב, מספר כרטיס…" oninput="draw()">
+  <button onclick="reload()">↻ רענן</button>
+  <span id="stamp" style="font-size:12px;opacity:.8"></span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="wrap">
+  <div id="list"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען כרטיסי עבודה…</div></div></div>
+</div>
+
+<div class="ov" id="ov" onclick="if(event.target.id==='ov')closeCard()">
+  <div class="md">
+    <div class="mh">
+      <div class="t"><b id="mTitle">—</b><span id="mSub"></span></div>
+      <button onclick="closeCard()">✕ סגור</button>
+    </div>
+    <div class="mt" id="mTabs"></div>
+    <div class="pane on" id="p0"></div>
+    <div class="pane" id="p1"></div>
+    <div class="pane" id="p2"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PX="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/";
+var B="appX4z91yKZGwz6ap";
+var T={wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",veh:"tbl9CnyPSqTookRT5",cus:"tblnCFvGEpL75AVRl",svc:"tblKlDFqJ1lRHV4gI"};
+var WOS=[], LINES=[], CATALOG=[], CUR=null, FILTER="today", CACHE={};
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2400);}
+function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
+function dt(v){var s=txt(v);var m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
+function dkey(v){var s=txt(v);var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:"";}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+async function api(path,opt){var r=await fetch(PX+B+path,opt||{});if(!r.ok)throw new Error((await r.text()).slice(0,140));return r.json();}
+async function all(tbl,extra){var out=[],off=null,n=0;do{var u="/"+tbl+"?pageSize=100"+(extra||"")+(off?"&offset="+encodeURIComponent(off):"");var d=await api(u);out=out.concat(d.records||[]);off=d.offset;n++;}while(off&&n<60);return out;}
+
+/* ---------- list ---------- */
+var TABS=[["today","היום"],["tomorrow","מחר"],["open","בטיפול"],["pay","מוכן לתשלום"],["all","הכל"]];
+function match(r,k){
+  var f=r.fields||{}, d=dkey(f["תאריך ושעה"]), st=txt(f["סטטוס"]);
+  if(k==="today")return d===today();
+  if(k==="tomorrow")return d===tomorrow();
+  if(k==="open")return st.indexOf("בטיפול")>=0||st.indexOf("מחכה")>=0;
+  if(k==="pay")return st.indexOf("מוכן")>=0||txt(f["סטטוס חשבון"]).indexOf("מאושר")>=0;
+  return true;
+}
+function drawTabs(){
+  document.getElementById("tabs").innerHTML=TABS.map(function(t){
+    var n=WOS.filter(function(r){return match(r,t[0]);}).length;
+    return '<button class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="cnt">'+n+'</span></button>';
+  }).join("");
+}
+function setF(k){FILTER=k;drawTabs();draw();}
+function rows(){
+  var q=(document.getElementById("q").value||"").trim().toLowerCase();
+  var toks=q.split(/\s+/).filter(Boolean);
+  return WOS.filter(function(r){
+    if(!match(r,FILTER))return false;
+    if(!toks.length)return true;
+    var f=r.fields||{};
+    var hay=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
+    return toks.every(function(t){return hay.indexOf(t)>=0;});
+  }).sort(function(a,b){return String(dkey(b.fields["תאריך ושעה"])).localeCompare(String(dkey(a.fields["תאריך ושעה"])));});
+}
+function stColor(s){
+  if(s.indexOf("שולם")>=0)return"background:#e8f6ea;color:#1d7a33";
+  if(s.indexOf("בוטל")>=0)return"background:#fdecec;color:#c8102e";
+  if(s.indexOf("בטיפול")>=0)return"background:#fff4e0;color:#8a5b00";
+  return"background:#eef1f5;color:#5b6172";
+}
+function draw(){
+  var rs=rows(), el=document.getElementById("list");
+  if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
+  el.innerHTML='<table><tr><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>סטטוס</th><th>סה"כ</th></tr>'
+   +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
+     return '<tr class="r" onclick="openCard(\''+r.id+'\')">'
+      +'<td class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
+      +'<td><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td>'
+      +'<td>'+esc(f["שם להצגה"]||"")+'</td>'
+      +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td>'
+      +'<td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
+      +'<td>'+esc(txt(f["סוג טיפול"]))+'</td>'
+      +'<td><span class="pill" style="'+stColor(st)+'">'+esc(st)+'</span></td>'
+      +'<td>'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td>'
+      +'</tr>';}).join("")+'</table>';
+}
+
+/* ---------- card ---------- */
+var MTABS=[["פרטים",0],["חלפים",1],["תשלום",2]];
+function openCard(id){
+  CUR=WOS.filter(function(r){return r.id===id;})[0]; if(!CUR)return;
+  var f=CUR.fields||{};
+  document.getElementById("mTitle").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
+  document.getElementById("mSub").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["סוג טיפול"])].filter(Boolean).join(" · ");
+  document.getElementById("mTabs").innerHTML=MTABS.map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mtab('+i+')">'+t[0]+'</button>';}).join("");
+  mtab(0); paneDetails(); paneParts(); panePay();
+  document.getElementById("ov").classList.add("on");
+}
+function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
+function mtab(i){
+  [].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
+  [0,1,2].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});
+}
+function fld(lab,val){return '<div class="f"><label>'+esc(lab)+'</label><div class="v">'+esc(val||"—")+'</div></div>';}
+function paneDetails(){
+  var f=CUR.fields||{};
+  document.getElementById("p0").innerHTML='<div class="grid">'
+   +fld("לקוח",f["שם להצגה"])+fld("טלפון",txt(f["מספר טלפון"]))
+   +fld("מספר רכב",f["מספר רכב_disp"])+fld("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
+   +fld("שנת ייצור",txt(f["שנת ייצור"]))+fld("קילומטראז'",f["עדכון קילומטרז' ידני"]?Number(f["עדכון קילומטרז' ידני"]).toLocaleString("en-US"):"")
+   +fld("תאריך התור",dt(f["תאריך ושעה"]))+fld("סטטוס",txt(f["סטטוס"]))
+   +fld("סוג טיפול",txt(f["סוג טיפול"]))+fld("מכונאי אחראי",txt(f["מכונאי אחראי"]))
+   +'</div><div class="f" style="margin-top:12px"><label>סיבת הגעה</label><div class="v">'+esc(f["סיבת הגעה"]||"—")+'</div></div>'
+   +'<div class="f"><label>הערות מכונאי</label><div class="v">'+esc(f["הערות מכונאי"]||"—")+'</div></div>';
+}
+function myLines(){return LINES.filter(function(x){var w=(x.fields||{})["כרטיס עבודה"]||[];return w.some&&w.some(function(y){return ((y&&y.id)||y)===CUR.id;});});}
+function paneParts(){
+  var ls=myLines(), sum=0;
+  var head='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span><span class="c2">מחיר ליח\'</span><span class="c3">סה"כ</span><span class="c4"></span></div>';
+  var body=ls.map(function(r){
+    var f=r.fields||{}, nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
+    var q=f["כמות"]==null?1:f["כמות"], pr=f["מחיר ליחידה (בזמן השימוש)"]||0, lt=q*pr; sum+=lt;
+    return '<div class="ln"><div class="nm">'+esc(nm)+(pr?"":"<small>אין מחיר</small>")+'</div>'
+      +'<input type="number" min="1" step="1" value="'+q+'" onchange="setQ(\''+r.id+'\',this.value)">'
+      +'<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
+      +'<div class="lt">'+lt.toFixed(2)+'</div>'
+      +'<button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';
+  }).join("")||'<div class="empty" style="padding:18px">אין חלפים. חפש חלף להוספה.</div>';
+  document.getElementById("p1").innerHTML=head+body
+   +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף להוספה…" autocomplete="off" oninput="sq()"><div class="dd" id="pdd"></div></div>'
+   +'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>';
+}
+function panePay(){
+  var f=CUR.fields||{};
+  document.getElementById("p2").innerHTML='<div class="grid">'
+   +fld("סך חלקי חילוף",f["סך עלות חלקי חילוף"]!=null?"₪"+Number(f["סך עלות חלקי חילוף"]).toFixed(2):"")
+   +fld("סך שירותים",f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"")
+   +fld("עלות עבודה",f["עלות עבודה"]!=null?"₪"+Number(f["עלות עבודה"]).toFixed(2):"")
+   +fld('סה"כ לפני מע"מ',f['סה"כ לפני מע"מ']!=null?"₪"+Number(f['סה"כ לפני מע"מ']).toFixed(2):"")
+   +fld('מע"מ',f['סכום מע"מ']!=null?"₪"+Number(f['סכום מע"מ']).toFixed(2):"")
+   +fld('סה"כ לתשלום',f['סה"כ לתשלום']!=null?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"")
+   +fld("אמצעי תשלום",txt(f["אמצעי תשלום"]))
+   +fld("מוכנות לחשבונית",txt(f["מוכנות לחשבונית"]))
+   +'</div>';
+}
+
+/* ---------- edits (optimistic) ---------- */
+function patchLine(id,fields){
+  var i=-1; LINES.forEach(function(r,n){if(r.id===id)i=n;});
+  if(i>=0){Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});}
+  paneParts();
+  fetch(PX+B+"/"+T.ln+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
+    .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");})
+    .catch(function(){toast("השמירה נכשלה — רענן",1);});
+}
+function setQ(id,v){var q=parseInt(v,10);if(!q||q<1)q=1;patchLine(id,{"כמות":q});}
+function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
+function rmLine(id){
+  LINES=LINES.filter(function(r){return r.id!==id;}); paneParts();
+  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה — רענן",1);});
+}
+function sq(){
+  var q=(document.getElementById("pq").value||"").trim().toLowerCase(),dd=document.getElementById("pdd");
+  if(q.length<2){dd.classList.remove("on");return;}
+  var toks=q.split(/\s+/).filter(Boolean);
+  var hits=CATALOG.filter(function(o){var h=(o.name+" "+o.sku).toLowerCase();return toks.every(function(t){return h.indexOf(t)>=0;});}).slice(0,20);
+  dd.innerHTML=hits.length?hits.map(function(o){return '<div onclick="addPart(\''+o.id+'\')">'+esc(o.name)+(o.sku?' <span class="muted">· '+esc(o.sku)+'</span>':'')+'</div>';}).join(""):'<div class="muted">לא נמצא</div>';
+  dd.classList.add("on");
+}
+function addPart(pid){
+  document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
+  var body={fields:{},typecast:true};
+  body.fields["כרטיס עבודה"]=[CUR.id]; body.fields["חלף"]=[pid]; body.fields["כמות"]=1;
+  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(d){LINES.push(d);paneParts();toast("✓ נוסף");})
+   .catch(function(){toast("ההוספה נכשלה",1);});
+}
+document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
+
+/* ---------- boot ---------- */
+async function boot(){
+  try{
+    WOS=await all(T.wo);
+    drawTabs(); draw();
+    document.getElementById("stamp").textContent=WOS.length+" כרטיסים";
+  }catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
+  try{ LINES=await all(T.ln); if(CUR)paneParts(); }catch(e){}
+  try{
+    var c=await all(T.cat);
+    CATALOG=c.map(function(r){var f=r.fields||{};return {id:r.id,name:(f["פריט"]||"").trim(),sku:(f['מק"ט']||"").trim()};}).filter(function(x){return x.name;});
+  }catch(e){}
+}
+function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
+boot();
+</script>
+</body>
+</html>
