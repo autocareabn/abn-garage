@@ -81,12 +81,18 @@ async function loadCard(){
 }
 
 async function loadLines(){
-  var f=(CARD&&CARD.fields)||{};
-  var ids=(f["➕ חלפים שהותקנו (עם כמות)"]||f["שורות חלקים בכרטיס עבודה"]||[]).map(function(x){return (x&&x.id)||x;});
   ROWS=[];
-  for(var i=0;i<ids.length;i++){
-    try{ROWS.push(await get(P+BASE+"/"+LN+"/"+ids[i]));}catch(e){}
-  }
+  var off=null, page=0;
+  do{
+    var u=P+BASE+"/"+LN+"?pageSize=100"+(off?"&offset="+encodeURIComponent(off):"");
+    var d=await get(u);
+    (d.records||[]).forEach(function(x){
+      var w=(x.fields||{})["כרטיס עבודה"]||[];
+      var hit=w.some&&w.some(function(y){return ((y&&y.id)||y)===REC;});
+      if(hit)ROWS.push(x);
+    });
+    off=d.offset; page++;
+  }while(off&&page<40);
   render();
 }
 
