@@ -36,6 +36,9 @@ input.price{width:82px}
 .err{background:#fdecec;color:#8a1220;border:1px solid #f0c2c2}
 .empty{color:#8a90a0;padding:14px 0;font-size:14.5px}
 .load{text-align:center;padding:36px;color:#8a90a0}
+#done{width:100%;margin-top:14px;padding:13px;background:#1d7a33;color:#fff;border:0;border-radius:10px;font-size:15.5px;font-weight:bold;cursor:pointer}
+#done:hover{background:#166128}
+#done:disabled{background:#9bb7a2;cursor:default}
 </style>
 </head>
 <body>
@@ -58,6 +61,7 @@ input.price{width:82px}
     <div class="tot"><span>סה"כ חלפים</span><span id="sum">₪0.00</span></div>
     <div class="msg ok" id="ok">✓ נשמר</div>
     <div class="msg err" id="err"></div>
+    <button id="done" onclick="finish()">✓ סיימתי — עדכן כרטיס עבודה</button>
   </div>
 </div>
 
@@ -157,6 +161,28 @@ async function add(partId){
   }catch(e){fail("ההוספה נכשלה: "+String(e.message).slice(0,90));}
 }
 
+async function finish(){
+  var b=document.getElementById("done");
+  b.disabled=true;b.textContent="שומר…";
+  try{
+    var el=document.activeElement; if(el&&el.blur)el.blur();
+    await new Promise(function(r){setTimeout(r,700);});
+    var n=ROWS.length, sum=0;
+    ROWS.forEach(function(r){var f=r.fields||{};var q=f["כמות"]==null?1:f["כמות"];sum+=q*(f["מחיר ליחידה (בזמן השימוש)"]||0);});
+    b.textContent="✓ הכרטיס עודכן";
+    flash("ok","✓ "+n+" חלפים · סה\"כ "+sum.toFixed(2)+" ₪ — הכרטיס עודכן");
+    setTimeout(function(){
+      try{window.close();}catch(e){}
+      setTimeout(function(){
+        document.body.innerHTML='<div style="text-align:center;padding:60px 20px;font-family:Arial;direction:rtl">'
+          +'<div style="font-size:44px">✓</div>'
+          +'<h2 style="margin:12px 0;color:#1d7a33">כרטיס העבודה עודכן</h2>'
+          +'<p style="color:#5b6172;font-size:15px">'+n+' חלפים · סה"כ '+sum.toFixed(2)+' ₪</p>'
+          +'<p style="color:#8a90a0;font-size:13.5px;margin-top:16px">אפשר לסגור את החלונית ולחזור לכרטיס.</p></div>';
+      },400);
+    },900);
+  }catch(e){b.disabled=false;b.textContent="✓ סיימתי — עדכן כרטיס עבודה";fail("לא הצלחתי לסיים: "+String(e.message).slice(0,80));}
+}
 async function loadCatalog(){
   var out=[],off=null;
   do{
