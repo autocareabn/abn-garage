@@ -460,7 +460,12 @@ function pDet(){var f=CUR.fields||{};
   +'</div><div class="sec">תיאור</div>'
   +area("סיבת הגעה","סיבת הגעה",f["סיבת הגעה"])
   +area("הערות מכונאי","הערות מכונאי",f["הערות מכונאי"])
-  +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:#ED1E24">'+esc(f["⚠️ התראה"])+'</div></div>':'');}
+  +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:var(--red)">'+esc(f["⚠️ התראה"])+'</div></div>':'')
+  +'<div class="sec">צילומים</div><div class="g3">'
+  +photoBox("km","צילום הקילומטרז'",f["צילום הקילומטרז'"])
+  +photoBox("problem","צילום הבעיה",f["צילום הבעיה"])
+  +photoBox("parts","סריקה של חלקים שהותקנו",f["סריקה של חלקים שהותקנו"])
+  +'</div>';}
 
 function myLines(){return LINES.filter(function(x){return ids((x.fields||{})["כרטיס עבודה"]).indexOf(CUR.id)>=0;});}
 function pParts(){var ls=myLines(),sum=0;
