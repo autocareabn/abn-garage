@@ -73,6 +73,9 @@ tr.r{cursor:pointer}tr.r:hover td{background:#FDF2F2}
 .dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8}
 .dd div:hover{background:#fdecef}
 .tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
+.selbar{position:fixed;bottom:0;right:0;left:0;background:var(--red);color:#fff;padding:11px 16px;display:none;align-items:center;gap:12px;z-index:70;box-shadow:0 -3px 14px rgba(0,0,0,.25)}
+.selbar.on{display:flex}
+.selbar button{background:#fff;color:var(--red);border:0;border-radius:8px;padding:7px 14px;font-weight:bold;cursor:pointer}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d7a33;color:#fff;padding:10px 18px;border-radius:9px;z-index:99;display:none;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 .toast.err{background:#ED1E24}.toast.on{display:block}
 
@@ -127,12 +130,13 @@ tr.r{transition:background .12s}
 
 <div class="ov" id="ov" onclick="if(event.target.id==='ov')closeCard()">
   <div class="md">
-    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button onclick="closeCard()">✕ סגור</button></div>
+    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
     <div class="mt" id="mTabs"></div>
     <div class="pane on" id="p0"></div><div class="pane" id="p1"></div>
     <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div>
   </div>
 </div>
+<div class="selbar" id="selbar"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -171,9 +175,169 @@ async function all(t,x){var out=[],off=null,n=0;do{var d=await api("/"+t+"?pageS
 async function find(tbl,formula,n){var d=await api("/"+tbl+"?pageSize="+(n||20)+"&filterByFormula="+encodeURIComponent(formula));return d.records||[];}
 function q(s){return '"'+String(s).replace(/"/g,'')+'"';}
 
+
+/* ============ PRINT (identical wording to the field app) ============ */
+function cardRows(r){
+  var f=r.fields||{};
+  function T(v){return txt(v);}
+  function num(v){return v==null?"":Number(v).toLocaleString("en-US");}
+  function apt(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
+  return [
+    ["מספר רכב",       T(f["מספר רכב_disp"])||T(f["מספר רכב"])],
+    ["קוד",            T(f["קוד רכב"])],
+    ["יצרן",           f["יצרן (מלל חופשי)"]||T(f["יצרן רכב"])],
+    ["דגם",            f["דגם (מלל חופשי)"]||T(f["דגם"])],
+    ["שנת ייצור",      T(f["שנת ייצור"])],
+    ["ק\"מ",           num(f["עדכון קילומטרז' ידני"])],
+    ["תאריך התור",     apt(f["תאריך ושעה"])],
+    ["שם לקוח",        f["שם להצגה"]||T(f["שם לקוח"])],
+    ["טלפון",          T(f["מספר טלפון"])],
+    ["סוג טיפול",      T(f["סוג טיפול"])],
+    ["סיבת הגעה",      f["סיבת הגעה"]||""],
+    ["סטטוס",          T(f["סטטוס"])],
+    ["מכונאי אחראי",   T(f["מכונאי אחראי"])],
+    ["כניסה",          T(f["מיקום לפני טיפול"])],
+    ["יציאה",          T(f["מיקום בסוף הטיפול"])]
+  ];
+}
+function printDocs(recs){
+  if(!recs||!recs.length){toast("לא נבחרו כרטיסים להדפסה",1);return;}
+  var cards=recs.map(function(r,i){
+    return '<div class="card"'+(i<recs.length-1?' style="page-break-after:always"':'')
+     +'><h1>ABN — כרטיס עבודה</h1><p class="sub">מוסך אמיר בן ניסן</p><table>'
+     +cardRows(r).map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>';}).join("")
+     +'</table></div>';}).join("");
+  var html='<html dir="'+(LANG==="he"?"rtl":"ltr")+'"><head><meta charset="utf-8"><title>כרטיס עבודה</title>'
+   +'<style>body{font-family:Arial,sans-serif;padding:24px;margin:0}h1{color:#ED1E24;margin:0 0 4px}'
+   +'.sub{color:#666;font-size:13px;margin:0 0 16px}table{width:100%;border-collapse:collapse}'
+   +'td{border:1px solid #ccc;padding:8px 10px;font-size:15px;vertical-align:top;height:18px}'
+   +'td:first-child{background:#f5f5f5;font-weight:bold;width:34%;white-space:nowrap}'
+   +'.card{padding:0 0 10px}@media print{body{padding:0}}</style></head><body>'+cards+'</body></html>';
+  var old=document.getElementById("abnPrintFrame"); if(old)old.parentNode.removeChild(old);
+  var fr=document.createElement("iframe"); fr.id="abnPrintFrame"; fr.setAttribute("aria-hidden","true");
+  fr.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(fr);
+  var doc=fr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+  setTimeout(function(){try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){toast("שגיאה בהדפסה",1);}},350);
+}
+function printCard(){if(CUR)printDocs([CUR]);}
+function printSelected(){var rs=WOS.filter(function(r){return SEL.indexOf(r.id)>=0;});printDocs(rs);}
+
+/* ============ MULTI-SELECT ============ */
+var SEL=[];
+function toggleSel(id,ev){if(ev)ev.stopPropagation();
+ var i=SEL.indexOf(id); if(i>=0)SEL.splice(i,1); else SEL.push(id); selBar();}
+function selAll(on){SEL=on?woRows().map(function(r){return r.id;}):[];draw();selBar();}
+function selBar(){
+  var b=document.getElementById("selbar");
+  if(!SEL.length){b.className="selbar";return;}
+  b.className="selbar on";
+  b.innerHTML='<span>נבחרו '+SEL.length+' כרטיסים</span>'
+   +'<button onclick="printSelected()">🖨 הדפס</button>'
+   +'<button onclick="SEL=[];draw();selBar()">בטל</button>';
+}
+
+/* ============ MARK DONE ============ */
+async function markDone(){
+  if(!CUR)return;
+  var f=CUR.fields||{};
+  if(!f["מיקום בסוף הטיפול"]||!ids(f["מיקום בסוף הטיפול"]).length){
+    if(!confirm("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
+  }
+  var st=txt(f["סטטוס"]);
+  var upd={"בעיית הלקוח טופלה":true};
+  if(!f["תאריך סגירה"])upd["תאריך סגירה"]=new Date().toISOString();
+  if(st!=="מוכן לתשלום"&&st!=="שולם"){
+    if(confirm("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))
+      upd["סטטוס"]="מוכן לתשלום";
+  }
+  patchWO(upd,function(){pDet();pChecks();pPay();}, upd["סטטוס"]?statusNote(st,upd["סטטוס"]):"סומן שהבעיה טופלה");
+}
+
+/* ============ PHOTOS ============ */
+var PHOTO_FIELDS={"km":"צילום הקילומטרז'","problem":"צילום הבעיה","parts":"סריקה של חלקים שהותקנו"};
+var PHOTO_IDS={"km":"fldnWrR52EfVxadMv","problem":"fldHE3eBcZFWjKsIL","parts":"fldu6rG1Arn40gdf3"};
+function downscaleImage(file,maxW,quality){
+  return new Promise(function(res,rej){
+    var img=new Image(), url=URL.createObjectURL(file);
+    img.onload=function(){
+      var sc=Math.min(1,maxW/img.width), w=Math.round(img.width*sc), hh=Math.round(img.height*sc);
+      var c=document.createElement("canvas");c.width=w;c.height=hh;
+      c.getContext("2d").drawImage(img,0,0,w,hh);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){b?res(new File([b],file.name,{type:"image/jpeg"})):rej(new Error("blob"));},"image/jpeg",quality);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("img"));};
+    img.src=url;
+  });
+}
+async function uploadPhoto(inp,kind){
+  var file=inp.files&&inp.files[0]; if(!file||!CUR)return;
+  var fld=PHOTO_FIELDS[kind], rid=CUR.id;
+  toast("מעלה תמונה…");
+  try{
+    var up=file;
+    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1600,0.82);}catch(e){up=file;}}
+    var b64=await new Promise(function(res,rej){var rd=new FileReader();
+      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
+    var fid=PHOTO_IDS[kind];
+    if(!fid)throw new Error("no field id");
+    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
+    var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,120));
+    toast("✓ התמונה הועלתה"+(kind==="parts"?" · מזהה חלפים…":(kind==="km"?" · קורא קילומטראז'…":"")));
+    refetchCard(rid,0);
+    if(kind==="parts")setTimeout(function(){pollParts(rid,0);},6000);
+  }catch(e){toast("ההעלאה נכשלה: "+String(e.message).slice(0,60),1);}
+  inp.value="";
+}
+function pollParts(rid,n){
+  if(n>6)return;
+  fetch(PX+B+"/"+T.wo+"/"+rid).then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(d){
+     var got=(d.fields||{})["🔧 חלפים שהותקנו (תצוגה)"];
+     if(got&&CUR&&CUR.id===rid){CUR=d;
+       var i=-1;WOS.forEach(function(x,k){if(x.id===rid)i=k;});if(i>=0)WOS[i]=d;
+       all(T.ln).then(function(L){LINES=L;pParts();pPay();toast("✓ החלפים זוהו והתווספו");});
+     } else setTimeout(function(){pollParts(rid,n+1);},5000);
+   }).catch(function(){});
+}
+function photoBox(kind,label,val){
+  var has=(val&&val.length)?val:null;
+  return '<div class="f"><label>'+esc(label)+'</label>'
+   +(has?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'
+      +has.map(function(a){var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
+        return '<a href="'+esc(a.url)+'" target="_blank"><img src="'+esc(u)+'" style="height:78px;border-radius:8px;border:1px solid #dfe3ea"></a>';}).join("")
+      +'</div>':'')
+   +'<input type="file" accept="image/*" capture="environment" onchange="uploadPhoto(this,\''+kind+'\')" style="font-size:13px">'
+   +'</div>';
+}
+
+/* ============ I18N ============ */
+var LANG="he";
+var UI={
+ he:{work:"עבודה",cus:"לקוחות",veh:"רכבים",loc:"מיקומים",set:"הגדרות",search:"חיפוש…",
+     details:"פרטים",parts:"חלפים",services:"שירותים",checks:"בדיקות",pay:"תשלום",
+     print:"🖨 הדפס כרטיס",done:"✓ סיימתי את העבודה",close:"✕ סגור",newcard:"+ כרטיס חדש"},
+ en:{work:"Work",cus:"Customers",veh:"Vehicles",loc:"Locations",set:"Settings",search:"Search…",
+     details:"Details",parts:"Parts",services:"Services",checks:"Inspections",pay:"Payment",
+     print:"🖨 Print card",done:"✓ Work finished",close:"✕ Close",newcard:"+ New card"},
+ th:{work:"งาน",cus:"ลูกค้า",veh:"รถ",loc:"ตำแหน่ง",set:"ตั้งค่า",search:"ค้นหา…",
+     details:"รายละเอียด",parts:"อะไหล่",services:"บริการ",checks:"ตรวจสอบ",pay:"ชำระเงิน",
+     print:"🖨 พิมพ์บัตร",done:"✓ งานเสร็จแล้ว",close:"✕ ปิด",newcard:"+ บัตรใหม่"}};
+function t(k){return (UI[LANG]||UI.he)[k]||(UI.he[k]||k);}
+function setLang(l){LANG=l;try{localStorage.setItem("abnLang",l);}catch(e){}
+ document.documentElement.dir=(l==="he"?"rtl":"ltr");
+ drawNav();drawTabs();draw();if(CUR){var id=CUR.id;closeCard();openCard(id);}
+ document.getElementById("q").placeholder=t("search");}
 /* ============ NAV ============ */
 function drawNav(){document.getElementById("nav").innerHTML=VIEWS.map(function(v){
- return '<button class="'+(VIEW===v[0]?"on":"")+'" onclick="setV(\''+v[0]+'\')">'+v[1]+'</button>';}).join("");}
+ return '<button class="'+(VIEW===v[0]?"on":"")+'" onclick="setV(\''+v[0]+'\')">'+esc(t(v[0]))+'</button>';}).join("")
+ +'<span style="margin-inline-start:8px"></span>'
+ +["he","en","th"].map(function(l){return '<button class="'+(LANG===l?"on":"")+'" style="padding:6px 9px" onclick="setLang(\''+l+'\')">'+l.toUpperCase()+'</button>';}).join("");}
 function setV(v){VIEW=v;FOUND=[];document.getElementById("q").value="";drawNav();
  document.getElementById("q").placeholder=v==="cus"?"חפש לקוח לפי שם או טלפון…":(v==="veh"?"חפש רכב לפי מספר…":"חיפוש…");
  drawTabs();draw();}
@@ -203,10 +367,11 @@ function draw(){
   var el=document.getElementById("list");
   if(VIEW==="work"){var rs=woRows();
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
-    el.innerHTML='<table><tr><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th></tr>'
+    el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
-      return '<tr class="r" onclick="openCard(\''+r.id+'\')"><td class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
-       +'<td><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td>'+esc(f["שם להצגה"]||"")+'</td>'
+      return '<tr class="r"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
+       +'<td class="muted" onclick="openCard(\''+r.id+'\')">'+esc(dt(f["תאריך ושעה"]))+'</td>'
+       +'<td onclick="openCard(\''+r.id+'\')"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td onclick="openCard(\''+r.id+'\')">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td><td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
        +'<td>'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
        +'<td>'+tag("סטטוס",st)+'</td>'
@@ -252,13 +417,14 @@ async function remoteSearch(){
 }
 
 /* ============ CARD ============ */
+function MTL(){return [t("details"),t("parts"),t("services"),t("checks"),t("pay")];}
 var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
   CUR=WOS.filter(function(r){return r.id===id;})[0];if(!CUR)return;
   var f=CUR.fields||{};
   document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
   document.getElementById("mS").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
-  document.getElementById("mTabs").innerHTML=MT.map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
+  document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
   mt(0);pDet();pParts();pSvc();pChecks();pPay();
   document.getElementById("ov").classList.add("on");
 }
@@ -647,6 +813,8 @@ function createCard(){
 
 /* ============ BOOT ============ */
 async function boot(){
+  try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
+  document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
   drawNav();
   try{WOS=await all(T.wo);drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
   catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
