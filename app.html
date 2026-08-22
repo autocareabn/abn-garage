@@ -2,7 +2,8 @@
 <html dir="rtl" lang="he">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#161A22">
 <title>ABN — ניהול מוסך</title>
 <style>
 
@@ -70,7 +71,8 @@ tr.r{cursor:pointer}tr.r:hover td{background:#FDF2F2}
 .srch input{width:100%;padding:11px;border:1.5px solid var(--red);border-radius:9px;font-size:14.5px}
 .dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:240px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
 .dd.on{display:block}
-.dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8}
+.dd{max-height:320px}
+.dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8;white-space:normal;line-height:1.45;font-size:13.5px}
 .dd div:hover{background:#fdecef}
 .tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
 .selbar{position:fixed;bottom:0;right:0;left:0;background:var(--red);color:#fff;padding:11px 16px;display:none;align-items:center;gap:12px;z-index:70;box-shadow:0 -3px 14px rgba(0,0,0,.25)}
@@ -110,6 +112,58 @@ tr.r{transition:background .12s}
 .f select:focus,.f input:focus,.f textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
 .ln input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
 .sm{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1024px){
+ .wrap{padding:10px 10px 60px}
+ th,td{padding:8px 6px;font-size:13px}
+}
+@media(max-width:860px){
+ .bar{padding:8px 10px;gap:8px}
+ .bar input{order:3;flex-basis:100%;min-width:0}
+ .brand .mark{height:32px}
+ .nav button{padding:6px 10px;font-size:13px}
+ .tabs{top:auto;position:static;padding:8px 10px;overflow-x:auto;flex-wrap:nowrap}
+ .tabs button{flex:0 0 auto}
+ /* table -> cards */
+ table,thead,tbody,tr,th,td{display:block}
+ thead{display:none}
+ table{background:transparent;box-shadow:none}
+ tr.r{background:#fff;border:1px solid #e2e6ee;border-radius:12px;margin-bottom:10px;padding:10px 12px;box-shadow:0 1px 5px rgba(20,25,45,.07)}
+ tr.r td{border:0;padding:3px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}
+ tr.r td::before{content:attr(data-l);color:var(--steel-lt);font-size:12px;font-weight:bold;flex:0 0 auto}
+ tr.r td:first-child{justify-content:flex-start}
+ .md{max-width:100%;border-radius:12px}
+ .mt{top:auto;position:static;overflow-x:auto;flex-wrap:nowrap}
+ .mt button{flex:0 0 auto}
+ .mh{position:static}
+}
+@media(max-width:560px){
+ .grid,.g3{grid-template-columns:1fr}
+ .ov{padding:0}
+ .md{border-radius:0;min-height:100vh}
+ .ln{flex-wrap:wrap}
+ .ln .nm{flex:1 1 100%;margin-bottom:5px}
+ .ln input{flex:1;min-width:64px}
+ .hd{display:none}
+ .bar h1,.brand .nm{display:none}
+ .mh .t b{font-size:14.5px}
+ .save,.selbar button{min-height:46px}
+}
+/* ===== ACCESSIBILITY ===== */
+:focus-visible{outline:3px solid #2d7ff9;outline-offset:2px;border-radius:6px}
+button,select,input,textarea,a{min-height:38px}
+.chk{min-height:44px}
+.tabs button,.nav button,.mt button{min-height:40px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(prefers-contrast:more){
+ .muted{color:#3a4152}
+ td{border-bottom:1px solid #9aa3b2}
+ .pill{outline:1px solid rgba(0,0,0,.35)}
+}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;right:-9999px;top:6px;background:#fff;color:var(--red);padding:9px 15px;border-radius:8px;z-index:200;font-weight:bold}
+.skip:focus{right:10px}
 .boot{text-align:center;padding:60px 20px;color:#5b6172}.boot .sp{font-size:32px}
 .hint{background:#eef4fd;border-right:4px solid #1246a0;padding:9px 12px;border-radius:8px;font-size:13px;color:#1246a0;margin-bottom:12px}
 .save{background:#1B7F35;color:#fff;border:0;border-radius:9px;padding:11px 20px;font-size:15px;font-weight:bold;cursor:pointer;width:100%;margin-top:14px}
@@ -118,30 +172,33 @@ tr.r{transition:background .12s}
 </head>
 <body>
 
-<div class="bar">
+<a href="#list" class="skip">דלג לתוכן</a>
+<header class="bar" role="banner">
   <div class="brand"><img class="mark" alt="ABN Garage" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCABMALQDASIAAhEBAxEB/8QAHAAAAgIDAQEAAAAAAAAAAAAAAAcGCAIEBQMB/8QAQhAAAQMDAgMEBwUGAgsAAAAAAQIDBAAFEQYhBxIxE0FRYRQiMnGBkaFCUmLB4QgVIzOCsReyFiQ0Q1NjcpKU0dL/xAAbAQACAgMBAAAAAAAAAAAAAAAAAQQGAgMFB//EADMRAAEDAgQDBgUDBQAAAAAAAAEAAgMEEQUSITEGUWETFDJBgeEWcZGh0RUiM1JiscHw/9oADAMBAAIRAxEAPwC1NFV41LxP1zpPU9ytLlzQ8iO+oN9rHRu2d0nIA7iK0Rx41qP99ble+N+tQzXRAlpurRFwjXyxtljykOFxrz9FZWiq1HjvrUnd63geUb9a1n+NeuHs8t1aZB+5Gb/MVicQi6ra3grETvlHr7Kz1FVV/wAWtcc3N/pC/nw7JGPliu/ZOPupoDiRc2otzZ78o7Jz4FO30obiERNinNwXiDG5m5XdAfyArF1g++3GaU68sIQkZKj3VHdGcQLLreKXLe6W5CBl2K7gON+eO8eYr5fpcjtnIL4SlpxJWh84ASB13Owx4n4CprXBwuFVZoXwvMcgsR5FQjW/E5+d6Ra7SpyIkjl7botf/wAg/Ouhwl16ibBXYru+lubCTzILqsFbeehz3j54xSx4hSoOnXFyFv8AZcuFFfKedWTgFKeoB+8dz3CvCzokuWmNqWCWi1zhaHmgfWO+5zuTsQaystSslGv9umTBEYkdo6oFQwk4IHXBxitqZLZgRXZUhfIyygrWrwApVWbUqX0RLuyCVsr/AIrYO+ftJ+IO3wre19ryDcrEq3W5TqlyCA6VI5eVAOSPedhRZNS+NrvTkuO4+1dY4S2guKS4eRQAHgrBpPPcSbtcNVu32JIcZhI/htNg8yVNjokjoSep7xUd7Jy5TG4jAClKUAM+Pj8K5N4uMaxagRYZL7TEhwg9kEHCienP5nuI3p2SVkdH63iapjDKPR5I6oJylXmk/l1qTUpdENMQoaJzCwcp7TsyebtB4jHtjzHrDvFMu3y3Tb/S53KwCCshRACE+ZrEprfozSg1fx9iQHnImnIqJ60EpMp0kNZ/COqvfsKXk3jLreY4VC8CMk/YYYQAPmCaiSV0TDa91ZaLhPEKlgflDQf6jb7alWioqrLPGDXLJ2vy1jwWw2r8q3m+OetUJwZkRZ8Vxk/litYxGLqpT+CcQGxafX2VmKKrV/jxrX/jW7/xv1rBfHTWriSPSoaCe9EYfnmn+oQrD4LxLk36qzFFLThq/qzVmm/3vcb662p99YaCWUAFsYAIAHiFUVLY/M0OA3VdqaUwSuhe4XabG1/L0Wnxs4dyL+yi/wBpZLs6MjkfZQPWebG4I8VJ327x7qr+QQSCCCDggjcHwNXXIzUX1Fwz0rqh1T9wtTfpKur7JLaz7ynr8c1CqaHtDmZoVacB4rNDEKeoaXMGxG46dQqn0VYCXwR0FDeKZN3nR1DctuTkJ29xTmtdWjeDtpVyzLnFeWN+V24EqPwSRULuEg3ICtI4xpHfxxvceg90h6KeTt+4KW49m3bYssp7hDW59V7fWtMa24PS19k5pNUdPTtfQEJA+KVZpGkaN5AtjeI53atpJLfJKS1XWbZLgxcbfIXHlMK5kLT9QR3g94qzGlNRW/idphuSppsS46x2zKtw08Nwcd4PUfpUAk8MNF61iuSdDXtDMlI5vRXFlSfcUq9dPv3rDhtpjU2ib3HuCvR3YcpBbmRkO+skZOCAdlEEZznoalUrJYXW3aeSr/ENXh+JU5kvkmb5OFieh/11+aleo+GVp1lJlyLkx25fCEyGFEpPMnYKBG46CuBabNEstwVp6VAQzCiJ7OI0lR7MIJzkD7RPeTvTVjhUuUqZyFhITy8ivaVt1ONqTnEriRa2NdRNNsoCpDP8+ZzYSw4rHK2fHPf4ZFdULz9YX2+aR0a4605OjRH3NlMIWVq2/CM4qFu8RdNS1lDc8pBPVxpSR88VytaaBZTPVeLe0RHlKPbN9Sw73g+RqOp0k6+tLTLRccWQlKUjcmndCaFkSzMIdgOtqa5cqdQrICffXfsui7NrS9InXWChV3YT/q8lajnkT7JUOhI7j1qHhiBwy0o6lKUSJBIU/g4D7x6Nj8IHX3edSLR2rWpURi/R+ZYzlaM4UDghSae6SbGndKwokGNbkNh2JCcLoUoe06TkkeG9KfjJxKcvs5ywWqQU2yOopfWg/wC0uDqM/cB+ZrtXXi0+/pORaoUVUa7OgtB5JHZoSTusHrzY+u9QnQvDVWqp0hEu5sQ4kNCXH1jdeDnGM7dx3NQKwSuGSMb7q0cNOoIZDU1rtW+EWvrz/HVQmjPmKdC18GdJ8zBYN6fT7SgFSMn3khHyrJnWvByUCl7S6Io8V21I/wAhJrm90Gzni6vXxJI4Zo6SQt52SVop6+j8EbykK7SDGPcVOOx8fPAr0HCnhjck88S+LQn/AJNxRj6g0+4uPhcCtfxdAzSaF7fmPdIau/ozRlx1td24MJtSWAQZEnl9RlHfv97wFPK1cDdEshD/ACy7gg+skvSeZKv+3GantttUGzxUxLfFZisI9ltpASB8q3xYcb3kOi5WJcbsMZZRtOY+Z8vTVY2q2RbPbY1uht9nHjNpabT4AD+9FbmKK6oC84LiTcooooppJQcedCG5w29TwmAuTDTySQE5UpnuV/SfofKkMMd2KuutCXElKwFJIwQRkEUndX8AGp8xybpyY1DDhKjEfB7MH8KhuB5YNcysoy852bq+cMcTR0sfdas2aNjy6FIqjvx3mnBZv2dp63gu93iOyyPaRDSVKP8AUoAD5V3ZGoOG3C1sx7ZEauFyQMHssOuZ/E4dk/D5VEbROAzSHKFZJ+KoHO7KiYZX9BYfX2STjQb5AdRNiwrpHcRuh9thxPL/AFY6U39F8SouppIhPxPQ5LbQIAcCkuADfHQ5GMkVxnf2iL+qRlmz2xEfP8tRWpWPDOcfSpHcbFH10zEuUuwvabvKHEr9JZdTlSdjnCeuR44I8TUulAabQuvzFlXuIJHysacTgDCfC4OBI+Y8xz5KE8d+PGp+HOoY1h0+1BQlcRMhb77faKJUSMAdANqr5br/AHXU18lSpUhllbnPKkSEshRKick756k0x/2rrNcnNdw57UCS5ENvbQHkNlSeYKORkd9KuyzoNntE1UttDsiQoNiMolKijvz4Cp8pcGft3VQwyKKSoHbkZBcm/Qbc9Tppquq/ctSStS/uaRqS49k4RhaVkBSeXI26V4yXrlEiruFt1JdMMyBHWHFFCsk4yk53rNN4tkq8WW5h9lgpQW32yvJbAG2TXy7XOMq2OsTZ8ac8ZAXGDO/Yp5s7nHhUXtZMzfT3VjNBQCKU6HVxab7DKC3z5kjY3Ohst+6qvzc23w3b2/NivudmVSEJWW1nr18RWnC4j3vSb8yBDTEWx2p5wpsjnI2zsdjXo3qW3m/vNuyWzBc7N1t37KHEj86itwYeuFzluRGXX0OOrUlSEEhQz41sp3yE2fyUDGqaiYzPS28RFr3tYW+h3B62T001d1X9JfWG2g2yH3VLVhLacA9fjgDvNebkm4XVbrUJqUttYCXGo6VL5xnbmAH0rjaFisqfYROYU8w32ZdZSvkK8JGU8w6e+nLcONStOJat+mtMQIMZKRguknPjsnHzJOaKoOLTc2b5pYA+JkrckfaTE6AmwH5KU8mHKhEJlRZEcnoHmlI/uK8addm482+6j0PVlkYDLmynWU9q38UK3x7s1uz+EmjNaxl3DSdybiLX62GFdoznzQd0/DFczugeLwuur38SSUr8mJQGP+4aj/vqkPXX0ppWTrG+xrTGbz2qsuuFOQ02PaUfh088VP2P2d9Qqlcj10tjcfP8xHOpWP8ApwP703dEaCtmhbeY0IKefd3fkuAc7p/IDuFZQULy67xYLRi/F1LFARSOzPO29h11/wALt2u2xrPbo1vhthqPGbS02gDokDFbVFFdteUkkm5RRRRQkiiiihCKKKKEKN6+0m5rDT7tvYuEiC+PXbW24UpUr7qwOqT+tVevmmrvpqYqHdYD0Z0E4PKShfmlQ2Iq4prFbSHByrSlQ64IyKi1FI2axJsVYcE4imwwFjWhzT5bfdVa0TwuvmspCFdi5Bt325jqCNvwA7qP0p8wrBcYrbUUN9qmOgMh5xwJLgSMBWBnqKl2KweeRHZW84rlQ2kqUcdAOtZU9O2EabqPjONz4m8OlAAGwHkuC9Z2Lm05CuLCQtKeYDPMFA94qs3G7hRK0rcXb/aA6/Z3zmQ1jmEZfjj7h8e41aiE4qWpyYtJTzpAbQfso67+Z/8AVL7ihfZ9qjsCAnnYUXBKU2wJDgwn1EBvp6yjgk7DyzmpC4yqMzbrfJR68aIrI6hsJ/y4oNgtjR5kRI3xKj9CqmTqGzaJmz7gltmVb34LCHJD8EpSy44XEtqSlpRPLhSgCc4yFb7VHXdO6cYLRcu9zdS7FVMQnsAglCeb1c7+seRWPEDNNCizFudky0RLcw2X3TgJZaSD88be+mxYuHse22fEt9ciRjmcUVEjJ7h5CuHZpjVmuEVu329CGVEJk9mC87zEcyQpeNwUnIxtkdcUznEKbhuJWhSCQFAKSQSPHfuphBWxpbgrPnWtq4syosRLw5m2nEKJKe4kjpmvl34GahkxJEpD8VUpjZmOlWQ+nG55jjlVnoD86l/CfW5lFOm5oUp5pJVGcAJ5kDcpV4EdxpnYrXIwPaWu2Umjq5KSZs8XiaqYTrbOtklUWbDkxpCTgtuNKCv7U0OEXDG9P3Nq+T1S7VCaIWhKFltySe4EDfk8c9afqmkLKVKQlRT0JGcVlUKKgax+a91aMQ4xqKqnMAYG33O/05fdAGKKKKnqnIooooQiiiihCKKKKEIooooQiiiihCKCARg7iiihC5qbW6yossPBuIvcpHtIH3UnuB+ndXnfY0dmyPpQ0hHIn+HgY5VZ2I88mutWvcILVwiqYe5gkkKyk4II3BoQlLftOW67LQ25b2XnVqS2gcuM+uFAbd3MAfhXN1PwUgaftiLu2hiSuIG0qyg5aQnIHKSfZHMcjvqeW+C2jVjDBUtxDJWtPNjOQNicDzqW3eO3KtUth0ZQ4ytJH9Jp3SSD0FBtsDU1taTDjtMLkAFtDYCVKOwJHvxTy1DpuDqOCqLKRyqx/DeSPWbPl5eVQjQmhbTMabuEkyXXWlApSXMJyOh2ApmUFNRzRuiYWkYqw2Q/Me/nSCnBV4JA7k+VSOiikhFFFFCEUUUUIRRRRQhFFFFCF//Z"></div>
-  <div class="nav" id="nav"></div>
-  <input id="q" placeholder="חיפוש…" oninput="onSearch()">
-  <button class="b2" onclick="reload()">↻</button>
+  <div class="nav" id="nav" role="navigation" aria-label="מסכים ראשיים"></div>
+  <label for="q" class="sr">חיפוש</label><input id="q" type="search" aria-label="חיפוש" placeholder="חיפוש…" oninput="onSearch()">
+  <button class="b2" onclick="reload()" aria-label="רענן נתונים" title="רענן">↻</button>
   <span class="st" id="stamp"></span>
 </div>
-<div class="tabs" id="tabs"></div>
-<div class="wrap"><div id="list"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען…</div></div></div></div>
+</header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="מסנני כרטיסים"></nav>
+<main class="wrap" id="main"><div id="list" role="region" aria-live="polite" aria-label="רשימת כרטיסים"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען…</div></div></div></div>
 
-<div class="ov" id="ov" onclick="if(event.target.id==='ov')closeCard()">
+</main>
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="mT" onclick="if(event.target.id==='ov')closeCard()">
   <div class="md">
-    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
+    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button onclick="cancelAppt()" style="background:rgba(255,255,255,.12)">✕ בטל תור</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
     <div class="mt" id="mTabs"></div>
     <div class="pane on" id="p0"></div><div class="pane" id="p1"></div>
     <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div>
   </div>
 </div>
 <div class="selbar" id="selbar"></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="assertive"></div>
 
 <script>
 var PX="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/", B="appX4z91yKZGwz6ap";
-var T={wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
+var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
 
@@ -162,7 +219,36 @@ var CLR={
 "נוזל בלמים":{"תקין":"blueLight2","הוספה":"cyanLight2","החלפה":"tealLight2"},
 "נוזל קירור":{"מצב תקין":"blueLight2","הוספה":"cyanLight2","החלפה":"tealLight2"}};
 function tag(fld,val){var v=txt(val);if(!v)return '<span class="muted">—</span>';
- var c=(CLR[fld]||{})[v]||"gray";return '<span class="pill at-'+c+'">'+esc(v)+'</span>';}
+ var c=(CLR[fld]||{})[v]||"gray";return '<span class="pill at-'+c+'">'+esc(L(v))+'</span>';}
+
+var D={
+"חדש":{en:"New",th:"ใหม่"},"מחכה לטיפול":{en:"Waiting",th:"รอซ่อม"},"בטיפול":{en:"In service",th:"กำลังซ่อม"},
+"מוכן לתשלום":{en:"Ready to pay",th:"พร้อมชำระ"},"שולם":{en:"Paid",th:"ชำระแล้ว"},"בוטל":{en:"Cancelled",th:"ยกเลิก"},
+"ממתין לאישור אמיר":{en:"Awaiting Amir",th:"รออนุมัติ"},
+"טיפול תקופתי":{en:"Periodic service",th:"บริการตามระยะ"},"הכנה לטסט + טסט":{en:"Test prep + test",th:"เตรียมตรวจ+ตรวจ"},
+"הכנה לטסט":{en:"Test prep",th:"เตรียมตรวจ"},"תקלות ברכב":{en:"Faults",th:"ปัญหารถ"},
+"טיפול תקופתי + הכנה לטסט":{en:"Service + test prep",th:"บริการ+เตรียมตรวจ"},"נכשלת בטסט?":{en:"Failed test?",th:"ตรวจไม่ผ่าน?"},
+"טיפול תקופתי + טסט":{en:"Service + test",th:"บริการ+ตรวจ"},"רכב נגרר":{en:"Towed",th:"รถลาก"},
+"מזומן":{en:"Cash",th:"เงินสด"},"כרטיס אשראי":{en:"Credit card",th:"บัตรเครดิต"},"העברה בנקאית":{en:"Bank transfer",th:"โอนเงิน"},"צ'ק":{en:"Cheque",th:"เช็ค"},
+"תקין":{en:"OK",th:"ปกติ"},"מצב תקין":{en:"OK",th:"ปกติ"},"לא תקין":{en:"Not OK",th:"ไม่ปกติ"},"הוספה":{en:"Top up",th:"เติม"},"החלפה":{en:"Replace",th:"เปลี่ยน"},
+"בדיקת לחץ אויר":{en:"Tyre pressure",th:"ลมยาง"},"בדיקת שמשות":{en:"Windscreen",th:"กระจก"},
+"בדיקת גומיות ריקות":{en:"Wiper rubbers",th:"ยางปัดน้ำฝน"},"בדיקת חופשים":{en:"Play/slack",th:"ระยะฟรี"},
+"בדיקת צמיגים":{en:"Tyres",th:"ยางรถ"},"בדיקת אורות":{en:"Lights",th:"ไฟ"},
+"בדיקת מיסבים (סיבוב גלגלים)":{en:"Wheel bearings",th:"ลูกปืนล้อ"},"איפוס טיפול":{en:"Service reset",th:"รีเซ็ต"},
+"סימון בורג אגן שמן":{en:"Sump bolt mark",th:"ทำเครื่องหมายน็อต"},"בעיית הלקוח טופלה":{en:"Customer issue solved",th:"แก้ปัญหาแล้ว"},
+"מערכת בלמים קידמית":{en:"Front brakes",th:"เบรกหน้า"},"מערכת בלמים אחורית":{en:"Rear brakes",th:"เบรกหลัง"},
+"נוזל בלמים":{en:"Brake fluid",th:"น้ำมันเบรก"},"נוזל קירור":{en:"Coolant",th:"น้ำหล่อเย็น"},
+"לקוח":{en:"Customer",th:"ลูกค้า"},"טלפון":{en:"Phone",th:"โทรศัพท์"},"מספר רכב":{en:"Plate",th:"ทะเบียน"},
+"יצרן / דגם":{en:"Make / Model",th:"ยี่ห้อ/รุ่น"},"שנת ייצור":{en:"Year",th:"ปี"},"קוד רכב":{en:"Start code",th:"รหัสสตาร์ท"},
+"סטטוס":{en:"Status",th:"สถานะ"},"סוג טיפול":{en:"Service type",th:"ประเภทบริการ"},"מכונאי אחראי":{en:"Mechanic",th:"ช่าง"},
+"קילומטראז'":{en:"Odometer",th:"เลขไมล์"},"מיקום לפני טיפול":{en:"Bay in",th:"ช่องเข้า"},"מיקום בסוף הטיפול":{en:"Bay out",th:"ช่องออก"},
+"סיבת הגעה":{en:"Reason for visit",th:"เหตุผล"},"הערות מכונאי":{en:"Mechanic notes",th:"บันทึกช่าง"},
+"תאריך התור":{en:"Appointment",th:"นัดหมาย"},"צילומים":{en:"Photos",th:"รูปภาพ"},
+"חלף":{en:"Part",th:"อะไหล่"},"כמות":{en:"Qty",th:"จำนวน"},"מערכות":{en:"Systems",th:"ระบบ"},"בדיקות":{en:"Inspections",th:"ตรวจสอบ"},
+"עלות עבודה":{en:"Labour",th:"ค่าแรง"},"אמצעי תשלום":{en:"Payment method",th:"วิธีชำระ"},
+"סך חלקי חילוף":{en:"Parts total",th:"รวมอะไหล่"},"סך שירותים":{en:"Services total",th:"รวมบริการ"},
+"עבודות":{en:"Labour",th:"ค่าแรง"},"חלקים":{en:"Parts",th:"อะไหล่"},"שירותים נוספים":{en:"Extra services",th:"บริการเสริม"}};
+function L(v){var k=txt(v); if(LANG==="he"||!k)return k; var e=D[k]; return e&&e[LANG]?e[LANG]:k;}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2300);}
 function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
@@ -256,8 +342,8 @@ async function markDone(){
 }
 
 /* ============ PHOTOS ============ */
-var PHOTO_FIELDS={"km":"צילום הקילומטרז'","problem":"צילום הבעיה","parts":"סריקה של חלקים שהותקנו"};
-var PHOTO_IDS={"km":"fldnWrR52EfVxadMv","problem":"fldHE3eBcZFWjKsIL","parts":"fldu6rG1Arn40gdf3"};
+var PHOTO_FIELDS={"km":"'צילום הקילומטרז","problem":"צילום הבעיה","parts":"סריקה של חלקים שהותקנו","defects":"העלאת טופס ליקויים"};
+var PHOTO_IDS={"km":"fldVyfwBLzsgwulMr","problem":"fldHE3eBcZFWjKsIL","parts":"fldu6rG1Arn40gdf3","defects":"fldDYKHKsKELiTnlH"};
 function downscaleImage(file,maxW,quality){
   return new Promise(function(res,rej){
     var img=new Image(), url=URL.createObjectURL(file);
@@ -316,6 +402,67 @@ function photoBox(kind,label,val){
    +'</div>';
 }
 
+
+/* ===== GPS + מפה ===== */
+var GPS_FIELDS={"in":"GPS כניסה","out":"GPS יציאה"};
+var PHOTO_LOC={"in":{f:"צילום מיקום כניסה",id:"fldRuzEWO6WEig1kW"},"out":{f:"צילום מיקום יציאה",id:"fldi7Vrm5y33A7wZH"}};
+function getPos(){
+  return new Promise(function(res){
+    if(!navigator.geolocation){res(null);return;}
+    navigator.geolocation.getCurrentPosition(
+      function(p){res(p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6));},
+      function(){res(null);},{enableHighAccuracy:true,timeout:9000,maximumAge:30000});
+  });
+}
+function mapBox(coords,label){
+  if(!coords)return '<div class="muted" style="font-size:12.5px">אין מיקום מתועד</div>';
+  var c=String(coords).split(",");
+  var lat=c[0],lon=c[1];
+  var d=0.0025;
+  var bb=(parseFloat(lon)-d)+","+(parseFloat(lat)-d)+","+(parseFloat(lon)+d)+","+(parseFloat(lat)+d);
+  return '<div style="border:1px solid #dfe3ea;border-radius:9px;overflow:hidden">'
+   +'<iframe title="'+esc(label)+'" loading="lazy" style="width:100%;height:150px;border:0" '
+   +'src="https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent(bb)+'&layer=mapnik&marker='+lat+','+lon+'"></iframe>'
+   +'<a href="https://www.google.com/maps?q='+lat+','+lon+'" target="_blank" rel="noopener" '
+   +'style="display:block;padding:7px 10px;font-size:12.5px;background:#f7f9fc;color:#1246a0;text-decoration:none">'
+   +'📍 '+esc(lat)+', '+esc(lon)+' · פתח בגוגל מפות</a></div>';
+}
+async function uploadLoc(inp,which){
+  var file=inp.files&&inp.files[0]; if(!file||!CUR)return;
+  var rid=CUR.id, cfg=PHOTO_LOC[which];
+  toast("מעלה ומאתר מיקום…");
+  try{
+    var coords=await getPos();
+    var up=file;
+    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1600,0.82);}catch(e){up=file;}}
+    var b64=await new Promise(function(res,rej){var rd=new FileReader();
+      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
+    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
+    var r=await fetch(CT+B+"/"+rid+"/"+cfg.id+"/uploadAttachment",
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,110));
+    if(coords){var o={};o[GPS_FIELDS[which]]=coords;
+      await fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({fields:o,typecast:true})});}
+    toast("✓ תועד"+(coords?" עם מיקום מדויק":" · GPS לא זמין"));
+    refetchCard(rid,0);
+  }catch(e){toast("התיעוד נכשל: "+String(e.message).slice(0,55),1);}
+  inp.value="";
+}
+function locBlock(which,title,f){
+  var cfg=PHOTO_LOC[which], atts=f[cfg.f]||[], coords=f[GPS_FIELDS[which]];
+  return '<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:11px 12px">'
+   +'<div style="font-weight:bold;font-size:13.5px;margin-bottom:7px">'+esc(title)+'</div>'
+   +(atts.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">'
+      +atts.map(function(a){var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
+        return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener"><img alt="תיעוד רכב" src="'+esc(u)+'" style="height:82px;border-radius:8px;border:1px solid #dfe3ea"></a>';}).join("")
+      +'</div>':'')
+   +mapBox(coords,title)
+   +'<input type="file" accept="image/*" capture="environment" aria-label="'+esc(title)+'" '
+   +'onchange="uploadLoc(this,\''+which+'\')" style="font-size:13px;margin-top:8px">'
+   +'</div>';
+}
 /* ============ I18N ============ */
 var LANG="he";
 var UI={
@@ -335,7 +482,7 @@ function setLang(l){LANG=l;try{localStorage.setItem("abnLang",l);}catch(e){}
  document.getElementById("q").placeholder=t("search");}
 /* ============ NAV ============ */
 function drawNav(){document.getElementById("nav").innerHTML=VIEWS.map(function(v){
- return '<button class="'+(VIEW===v[0]?"on":"")+'" onclick="setV(\''+v[0]+'\')">'+esc(t(v[0]))+'</button>';}).join("")
+ return '<button class="'+(VIEW===v[0]?"on":"")+'" aria-current="'+(VIEW===v[0]?"page":"false")+'" onclick="setV(\''+v[0]+'\')">'+esc(t(v[0]))+'</button>';}).join("")
  +'<span style="margin-inline-start:8px"></span>'
  +["he","en","th"].map(function(l){return '<button class="'+(LANG===l?"on":"")+'" style="padding:6px 9px" onclick="setLang(\''+l+'\')">'+l.toUpperCase()+'</button>';}).join("");}
 function setV(v){VIEW=v;FOUND=[];document.getElementById("q").value="";drawNav();
@@ -353,7 +500,7 @@ function match(r,k){var f=r.fields||{},d=dk(f["תאריך ושעה"]),st=txt(f["
 function drawTabs(){var el=document.getElementById("tabs");
  if(VIEW!=="work"){el.style.display="none";return;}el.style.display="flex";
  el.innerHTML=TABS.map(function(t){var n=WOS.filter(function(r){return match(r,t[0]);}).length;
-  return '<button class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c">'+n+'</span></button>';}).join("")
+  return '<button role="tab" aria-selected="'+(FILTER===t[0]?"true":"false")+'" class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c" aria-label="'+n+' כרטיסים">'+n+'</span></button>';}).join("")
   +'<button style="background:#1B7F35;color:#fff;border-color:#1B7F35;font-weight:bold" onclick="newCard()">+ כרטיס חדש</button>';}
 function setF(k){FILTER=k;drawTabs();draw();}
 function woRows(){var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -370,17 +517,17 @@ function draw(){
     el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
       return '<tr class="r"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
-       +'<td class="muted" onclick="openCard(\''+r.id+'\')">'+esc(dt(f["תאריך ושעה"]))+'</td>'
-       +'<td onclick="openCard(\''+r.id+'\')"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td onclick="openCard(\''+r.id+'\')">'+esc(f["שם להצגה"]||"")+'</td>'
-       +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td><td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
-       +'<td>'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
-       +'<td>'+tag("סטטוס",st)+'</td>'
-       +'<td>'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td></tr>';}).join("")+'</table>';return;}
+       +'<td data-l="תאריך" class="muted" onclick="openCard(\''+r.id+'\')">'+esc(dt(f["תאריך ושעה"]))+'</td>'
+       +'<td data-l="כרטיס" onclick="openCard(\''+r.id+'\')"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח" onclick="openCard(\''+r.id+'\')">'+esc(f["שם להצגה"]||"")+'</td>'
+       +'<td data-l="רכב">'+esc(f["מספר רכב_disp"]||"")+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
+       +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
+       +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
+       +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
     el.innerHTML='<table><tr><th>שם</th><th>טלפון</th><th>דוא"ל</th><th>כרטיסים</th><th>רכבים</th><th>סטטוס</th></tr>'
      +FOUND.map(function(r){var f=r.fields||{};
-      return '<tr><td><b>'+esc(f["שם לקוח"]||"")+'</b></td><td>'+esc(f["מספר טלפון"]||"")+'</td>'
+      return '<tr class="r" onclick="openCus(FOUND["+FOUND.indexOf(r)+"])"><td data-l="שם"><b>'+esc(f["שם לקוח"]||"")+'</b></td><td data-l="טלפון">'+esc(f["מספר טלפון"]||"")+'</td>'
        +'<td class="muted">'+esc(f['דוא"ל']||"")+'</td><td>'+esc(txt(f["מספר כרטיסי עבודה"]))+'</td>'
        +'<td>'+esc(txt(f["מספר רכבים"]))+'</td><td>'+esc(txt(f["סטטוס לקוח"]))+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="veh"){
@@ -399,7 +546,7 @@ function draw(){
   if(VIEW==="set"){
     el.innerHTML='<div class="sec" style="margin-top:0">עובדים ('+EMP.length+')</div>'
      +'<table><tr><th>שם</th><th>תפקיד</th><th>סטטוס</th><th>כרטיסים</th></tr>'
-     +EMP.map(function(e){return '<tr><td><b>'+esc(e.name)+'</b></td><td>'+esc(e.role||"")+'</td><td>'+esc(e.status||"")+'</td><td>'+(e.cards||0)+'</td></tr>';}).join("")+'</table>'
+     +EMP.map(function(e){return '<tr class="r" onclick="openEmp(\''+e.id+'\')"><td data-l="שם"><b>'+esc(e.name)+'</b></td><td data-l="תפקיד">'+esc(e.role||"")+'</td><td data-l="סטטוס">'+esc(e.status||"")+'</td><td data-l="כרטיסים">'+(e.cards||0)+'</td></tr>';}).join("")+'</table>'
      +'<div class="sec">קטלוג שירותים נוספים ('+SVC.length+')</div>'
      +'<table><tr><th>שירות</th><th>מחיר</th></tr>'
      +SVC.map(function(s){return '<tr><td>'+esc(s.name)+'</td><td>₪'+Number(s.price||0).toFixed(2)+'</td></tr>';}).join("")+'</table>';return;}
@@ -424,20 +571,48 @@ function openCard(id){
   var f=CUR.fields||{};
   document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
   document.getElementById("mS").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
-  document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
+  document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
   mt(0);pDet();pParts();pSvc();pChecks();pPay();
   document.getElementById("ov").classList.add("on");
 }
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("ov").classList.contains("on"))closeCard();});
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
 function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
-function dtl(l,fld,v){var s=txt(v),m=s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
- var val=m?(m[1]+"T"+m[2]):"";
- return '<div class="f"><label>'+esc(l)+'</label><input type="datetime-local" value="'+val+'" onchange="setDt(\''+fld+'\',this.value)"></div>';}
-function setDt(fld,v){var o={};o[fld]=v||null;patchWO(o,pDet,"");}
-function ro(l,v){return '<div class="f"><label>'+esc(l)+'</label><div class="v">'+esc(v||"—")+'</div></div>';}
-function sel(l,fld,opts,cur){return '<div class="f"><label>'+esc(l)+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
- +'<option value=""></option>'+opts.map(function(o){return '<option'+(o===cur?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';}
+var SLOTS=[];
+function slotLabel(r){var f=r.fields||{};var s=txt(f["תאריך ושעה"]);
+ var m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+ return (m?(m[3]+"/"+m[2]+" "+m[4]+":"+m[5]):s)+" · עמדה "+txt(f["מספר עמדה"])+" · "+txt(f["סטטוס"]);}
+async function loadSlots(){
+  try{SLOTS=await find(T.slot,'AND({עתידי}="פתוח",OR({סטטוס}="פנוי",{סטטוס}="טסט פנוי",{סטטוס}="דחוף פנוי"))',100);
+    SLOTS.sort(function(a,b){return String(txt((a.fields||{})["תאריך ושעה"])).localeCompare(String(txt((b.fields||{})["תאריך ושעה"])));});
+  }catch(e){SLOTS=[];}
+}
+function slotPicker(f){
+  var cur=txt(f["תאריך ושעה"]);
+  var opts=SLOTS.map(function(r){return '<option value="'+r.id+'">'+esc(slotLabel(r))+'</option>';}).join("");
+  return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b></div></div>'
+   +'<div class="f"><label>העבר לתור אחר (סלוט פנוי)</label>'
+   +'<select onchange="moveSlot(this.value);this.value=\'\'">'
+   +'<option value="">— בחר מועד חדש —</option>'+opts+'</select>'
+   +'<div style="font-size:11.5px;color:var(--steel);margin-top:3px">'
+   +(SLOTS.length?SLOTS.length+' סלוטים פנויים · המערכת תשחרר את הישן ותתפוס את החדש':'טוען סלוטים…')+'</div></div>';
+}
+function moveSlot(id){
+  if(!id||!CUR)return;
+  var r=SLOTS.filter(function(x){return x.id===id;})[0];
+  if(!confirm("להעביר את הכרטיס ל: "+slotLabel(r)+" ?\n\nהסלוט הנוכחי ישוחרר והלקוח יקבל הודעה."))return;
+  patchWO({"בחר תור חדש":[id]},pDet,"התור מועבר · הסלוט הישן משתחרר");
+  loadSlots();
+}
+function cancelAppt(){
+  if(!CUR)return;
+  if(!confirm("לבטל את התור?\n\nהסלוט ישוחרר והלקוח יקבל הודעת ביטול."))return;
+  patchWO({"סטטוס":"בוטל"},pDet,"הסלוט ביומן שוחרר");
+}
+function ro(l,v){return '<div class="f"><label>'+esc(L(l))+'</label><div class="v">'+esc(L(v)||"—")+'</div></div>';}
+function sel(l,fld,opts,cur){return '<div class="f"><label>'+esc(L(l))+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
+ +'<option value=""></option>'+opts.map(function(o){return '<option value="'+esc(o)+'"'+(o===cur?" selected":"")+'>'+esc(L(o))+'</option>';}).join("")+'</select></div>';}
 function selLink(l,fld,list,curIds){var c=curIds[0]||"";
  return '<div class="f"><label>'+esc(l)+'</label><select onchange="setLink(\''+fld+'\',this.value)">'
  +'<option value=""></option>'+list.map(function(o){return '<option value="'+o.id+'"'+(o.id===c?" selected":"")+'>'+esc(o.name)+'</option>';}).join("")+'</select></div>';}
@@ -449,7 +624,7 @@ function pDet(){var f=CUR.fields||{};
   +ro("לקוח",f["שם להצגה"])+ro("טלפון",txt(f["מספר טלפון"]))
   +ro("מספר רכב",f["מספר רכב_disp"])+ro("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
-  +dtl("תאריך ושעה","תאריך ושעה",f["תאריך ושעה"])
+  +slotPicker(f)
   +'<div class="f"><label>סטטוס נוכחי</label><div class="v">'+tag("סטטוס",f["סטטוס"])+'</div></div>' 
   +sel("סטטוס","סטטוס",STATUS,txt(f["סטטוס"]))+sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
@@ -494,7 +669,7 @@ function pSvc(){var f=CUR.fields||{},cur=ids(f["שירותים נוספים:"]);
   +'<option value="">— בחר שירות —</option>'+avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+' · ₪'+Number(s.price||0).toFixed(2)+'</option>';}).join("")+'</select></div>'
   +'<div class="tot"><span>סך שירותים</span><span>'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</span></div>';}
 
-function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(name)+'</span></label>';}
+function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(L(name))+'</span></label>';}
 function pChecks(){var f=CUR.fields||{};
  document.getElementById("p3").innerHTML='<div class="sec" style="margin-top:0">מערכות</div><div class="grid">'
   +sel("מערכת בלמים קידמית","מערכת בלמים קידמית",BRAKE,txt(f["מערכת בלמים קידמית"]))
@@ -628,23 +803,26 @@ function patchLine(id,fields){var i=-1;LINES.forEach(function(r,n){if(r.id===id)
   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה",1);});}
 function setQ(id,v){var n=parseInt(v,10);if(!n||n<1)n=1;patchLine(id,{"כמות":n});}
 function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
-function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});pParts();
+function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});pParts();pPay();
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה",1);});}
 async function sq(){
   var s=(document.getElementById("pq").value||"").trim(),dd=document.getElementById("pdd");
   if(s.length<2){dd.classList.remove("on");return;}
   dd.innerHTML='<div class="muted">מחפש…</div>';dd.classList.add("on");
   try{
-    var recs=await find(T.cat,'OR(SEARCH('+q(s)+',{פריט}),SEARCH('+q(s)+',{מק"ט}))',20);
+    var recs=await find(T.cat,'OR(SEARCH('+q(s)+',{פריט}),SEARCH('+q(s)+',{מק"ט}),SEARCH('+q(s)+',{ברקוד}))',20);
     dd.innerHTML=recs.length?recs.map(function(r){var f=r.fields||{};
-      return '<div onclick="addPart(\''+r.id+'\')">'+esc(f["פריט"]||"")+(f['מק"ט']?' <span class="muted">· '+esc(f['מק"ט'])+'</span>':'')+'</div>';}).join("")
+      return '<div onclick="addPart(\''+r.id+'\')"><b>'+esc(f["פריט"]||"")+'</b>'
+        +'<div class="muted" style="font-size:12px">'+(f['מק"ט']?'מק"ט '+esc(f['מק"ט']):'')
+        +(f["יצרן"]?' · '+esc(f["יצרן"]):'')+(f["מחיר"]?' · ₪'+Number(f["מחיר"]).toFixed(2):' · ללא מחיר')
+        +(f["כמות במלאי"]!=null?' · במלאי '+f["כמות במלאי"]:'')+'</div></div>';}).join("")
      :'<div class="muted">לא נמצא חלף</div>';
   }catch(e){dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
 }
 function addPart(pid){document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
  var b={fields:{},typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];b.fields["חלף"]=[pid];b.fields["כמות"]=1;
  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
-  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);pParts();toast("✓ נוסף");})
+  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);pParts();pPay();toast("✓ נוסף");})
   .catch(function(){toast("ההוספה נכשלה",1);});}
 document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
 
@@ -816,6 +994,121 @@ function createCard(){
    .catch(function(){btn.disabled=false;btn.textContent="✓ צור כרטיס עבודה";toast("היצירה נכשלה",1);});
 }
 
+
+/* ===== עריכת עובדים ולקוחות ===== */
+var EMP_PHOTO="fldKyyQxgLFuUNTgw", CUS_PHOTO="fldHrLC1LLtjETGZO";
+var EDIT_KIND=null, EDIT_REC=null;
+function openEmp(id){
+  EDIT_KIND="emp";
+  var e=EMP.filter(function(x){return x.id===id;})[0]; if(!e)return;
+  EDIT_REC=e.raw||{id:id,fields:{}};
+  var f=EDIT_REC.fields||{};
+  document.getElementById("mT").textContent="עובד · "+(f["שם מלא"]||"");
+  document.getElementById("mS").textContent=txt(f["תפקיד"])||"";
+  document.getElementById("mTabs").innerHTML="";
+  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
+  var ph=f["תמונה"]||[];
+  document.getElementById("p0").innerHTML='<div class="grid">'
+   +'<div class="f"><label>שם מלא *</label><input id="eN" value="'+esc(f["שם מלא"]||"")+'"></div>'
+   +'<div class="f"><label>טלפון</label><input id="eP" value="'+esc(f["טלפון"]||"")+'"></div>'
+   +'<div class="f"><label>דוא"ל</label><input id="eM" type="email" value="'+esc(f['דוא"ל']||"")+'"></div>'
+   +'<div class="f"><label>תפקיד</label><select id="eR"><option value=""></option>'
+     +["מכונאי","מנהל","פקידה","חשמלאי רכב","שוליה"].map(function(o){return '<option'+(txt(f["תפקיד"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+   +'<div class="f"><label>סטטוס</label><select id="eS"><option value=""></option>'
+     +["פעיל","לא פעיל"].map(function(o){return '<option'+(txt(f["סטטוס"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+   +'<div class="f"><label>תאריך תחילת עבודה</label><input id="eD" type="date" value="'+esc(txt(f["תאריך תחילת עבודה"]).slice(0,10))+'"></div>'
+   +'</div>'
+   +'<div class="f"><label>הערות</label><textarea id="eNote">'+esc(f["הערות"]||"")+'</textarea></div>'
+   +'<div class="sec">תמונת עובד</div>'
+   +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת עובד" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
+   +'<input type="file" accept="image/*" capture="user" aria-label="תמונת עובד" onchange="upPhoto(this,\''+T.emp+'\',\''+id+'\',\''+EMP_PHOTO+'\',\'emp\')">'
+   +'<button class="save" onclick="saveEmp(\''+id+'\')">✓ שמור עובד</button>';
+  document.getElementById("ov").classList.add("on");
+}
+function saveEmp(id){
+  var o={"שם מלא":document.getElementById("eN").value.trim(),
+         "טלפון":document.getElementById("eP").value.trim(),
+         "הערות":document.getElementById("eNote").value};
+  var m=document.getElementById("eM").value.trim(); if(m)o['דוא"ל']=m;
+  var r=document.getElementById("eR").value; if(r)o["תפקיד"]=r;
+  var st=document.getElementById("eS").value; if(st)o["סטטוס"]=st;
+  var d=document.getElementById("eD").value; if(d)o["תאריך תחילת עבודה"]=d;
+  if(!o["שם מלא"]){toast("צריך שם מלא",1);return;}
+  fetch(PX+B+"/"+T.emp+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:o,typecast:true})})
+   .then(function(r2){return r2.ok?r2.json():Promise.reject();})
+   .then(function(){toast("✓ העובד עודכן");closeCard();reloadEmp();})
+   .catch(function(){toast("השמירה נכשלה",1);});
+}
+function openCus(rec){
+  EDIT_KIND="cus"; EDIT_REC=rec;
+  var f=rec.fields||{}, ph=f["תמונה"]||[];
+  document.getElementById("mT").textContent="לקוח · "+(f["שם לקוח"]||"");
+  document.getElementById("mS").textContent=(f["מספר טלפון"]||"")+" · "+txt(f["מספר רכבים"])+" רכבים";
+  document.getElementById("mTabs").innerHTML="";
+  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
+  document.getElementById("p0").innerHTML='<div class="grid">'
+   +'<div class="f"><label>שם לקוח *</label><input id="cN" value="'+esc(f["שם לקוח"]||"")+'"></div>'
+   +'<div class="f"><label>טלפון *</label><input id="cP" value="'+esc(f["מספר טלפון"]||"")+'"></div>'
+   +'<div class="f"><label>טלפון נוסף</label><input id="cP2" value="'+esc(f["טלפון נוסף"]||"")+'"></div>'
+   +'<div class="f"><label>דוא"ל</label><input id="cM" type="email" value="'+esc(f['דוא"ל']||"")+'"></div>'
+   +'<div class="f"><label>כתובת</label><input id="cA" value="'+esc(f["כתובת"]||"")+'"></div>'
+   +'<div class="f"><label>ח.פ / ת.ז</label><input id="cV" value="'+esc(f["ח.פ / ת.ז"]||"")+'"></div>'
+   +'<div class="f"><label>סוג לקוח (לחשבונית)</label><select id="cT"><option value=""></option>'
+     +["לקוח פרטי","עוסק מורשה / חברה","לא ידוע"].map(function(o){return '<option'+(txt(f["סוג לקוח (לחשבונית)"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+   +'<div class="f"><label>סטטוס לקוח</label><select id="cS"><option value=""></option>'
+     +["פעיל","מחכה לאישור","חסום"].map(function(o){return '<option'+(txt(f["סטטוס לקוח"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+   +'</div>'
+   +'<div class="f"><label>הערות</label><textarea id="cNote">'+esc(f["הערות"]||"")+'</textarea></div>'
+   +'<div class="sec">תמונה</div>'
+   +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת לקוח" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
+   +'<input type="file" accept="image/*" aria-label="תמונת לקוח" onchange="upPhoto(this,\''+T.cus+'\',\''+rec.id+'\',\''+CUS_PHOTO+'\',\'cus\')">'
+   +'<button class="save" onclick="saveCus(\''+rec.id+'\')">✓ שמור לקוח</button>';
+  document.getElementById("ov").classList.add("on");
+}
+function saveCus(id){
+  var o={"שם לקוח":document.getElementById("cN").value.trim(),
+         "מספר טלפון":document.getElementById("cP").value.trim(),
+         "כתובת":document.getElementById("cA").value.trim(),
+         "הערות":document.getElementById("cNote").value};
+  var p2=document.getElementById("cP2").value.trim(); if(p2)o["טלפון נוסף"]=p2;
+  var m=document.getElementById("cM").value.trim(); if(m)o['דוא"ל']=m;
+  var v=document.getElementById("cV").value.trim(); if(v)o["ח.פ / ת.ז"]=v;
+  var t2=document.getElementById("cT").value; if(t2)o["סוג לקוח (לחשבונית)"]=t2;
+  var st=document.getElementById("cS").value; if(st)o["סטטוס לקוח"]=st;
+  if(!o["שם לקוח"]){toast("צריך שם",1);return;}
+  if(o["מספר טלפון"]&&!validPhone(o["מספר טלפון"])){toast("טלפון לא תקין",1);return;}
+  fetch(PX+B+"/"+T.cus+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:o,typecast:true})})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(d){FOUND=FOUND.map(function(x){return x.id===d.id?d:x;});toast("✓ הלקוח עודכן");closeCard();draw();})
+   .catch(function(){toast("השמירה נכשלה",1);});
+}
+async function upPhoto(inp,tbl,rid,fid,kind){
+  var file=inp.files&&inp.files[0]; if(!file)return;
+  toast("מעלה תמונה…");
+  try{
+    var up=file;
+    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1200,0.85);}catch(e){up=file;}}
+    var b64=await new Promise(function(res,rej){var rd=new FileReader();
+      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
+    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
+    var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,110));
+    toast("✓ התמונה הועלתה");
+    if(kind==="emp"){reloadEmp();setTimeout(function(){openEmp(rid);},900);}
+    else{var d=await (await fetch(PX+B+"/"+tbl+"/"+rid)).json();openCus(d);}
+  }catch(e){toast("ההעלאה נכשלה",1);}
+  inp.value="";
+}
+function reloadEmp(){
+  all(T.emp).then(function(rs){
+    EMP=rs.map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||"",role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});
+    if(VIEW==="set")draw();
+  });
+}
 /* ============ BOOT ============ */
 async function boot(){
   try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
@@ -823,10 +1116,11 @@ async function boot(){
   drawNav();
   try{WOS=await all(T.wo);drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
   catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
-  try{LINES=await all(T.ln);if(CUR)pParts();}catch(e){}
+  try{LINES=await all(T.ln);if(CUR){pParts();pPay();}}catch(e){}
+  loadSlots().then(function(){if(CUR)pDet();});
   try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
   try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
-  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||"",role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0};});}catch(e){}
+  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||"",role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
   if(VIEW!=="work")draw();
   document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים";
 }
