@@ -5,37 +5,47 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ABN — ניהול מוסך</title>
 <style>
+
+:root{
+ --red:#ED1E24;        /* exact logo red */
+ --red-dk:#B3161B;
+ --steel:#5A6472;      /* gear steel */
+ --steel-lt:#8A94A3;
+ --ink:#161A22;        /* logo black ring */
+ --ink-2:#232A38;
+ --paper:#EDF0F4;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,Helvetica,sans-serif;background:#eef1f5;color:#1d2130;direction:rtl;font-size:14px}
-.bar{background:#c8102e;color:#fff;padding:9px 15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--paper);color:var(--ink);direction:rtl;font-size:14px}
+.bar{background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 55%,#2E3646 100%);color:#fff;border-bottom:3px solid var(--red);padding:9px 15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
 .bar h1{font-size:17px;font-weight:bold;white-space:nowrap}
 .nav{display:flex;gap:4px;flex-wrap:wrap}
 .nav button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13.5px}
-.nav button.on{background:#fff;color:#c8102e;font-weight:bold;border-color:#fff}
+.nav button.on{background:var(--red);color:#fff;box-shadow:0 2px 8px rgba(237,30,36,.45);font-weight:bold;border-color:#fff}
 .bar input{flex:1;min-width:150px;padding:8px 11px;border:0;border-radius:8px;font-size:14px}
 .bar .b2{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13.5px}
 .bar .b2:hover{background:rgba(255,255,255,.3)}
 .bar .st{font-size:12px;opacity:.85;white-space:nowrap}
 .tabs{display:flex;gap:6px;padding:10px 15px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e2e6ee;position:sticky;top:46px;z-index:35}
 .tabs button{background:#f2f4f9;border:1px solid #e2e6ee;border-radius:18px;padding:6px 13px;cursor:pointer;font-size:13px;color:#3a4152;white-space:nowrap}
-.tabs button.on{background:#c8102e;color:#fff;border-color:#c8102e;font-weight:bold}
+.tabs button.on{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 2px 7px rgba(237,30,36,.3);font-weight:bold}
 .tabs .c{opacity:.72;font-size:11.5px;margin-inline-start:4px}
 .wrap{padding:12px 15px 40px}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:11px;overflow:hidden;box-shadow:0 1px 4px rgba(20,25,45,.07)}
-th{background:#f7f9fc;padding:9px;text-align:right;font-size:12.5px;color:#5b6172;border-bottom:2px solid #e2e6ee;white-space:nowrap}
+th{background:#F4F6F9;padding:9px;text-align:right;font-size:12.5px;color:#5b6172;border-bottom:2px solid #e2e6ee;white-space:nowrap}
 td{padding:9px;border-bottom:1px solid #f0f2f7;font-size:13.5px}
-tr.r{cursor:pointer}tr.r:hover td{background:#fdf4f5}
+tr.r{cursor:pointer}tr.r:hover td{background:#FDF2F2}
 .pill{display:inline-block;padding:3px 9px;border-radius:11px;font-size:12px;font-weight:bold;white-space:nowrap}
 .muted{color:#8a90a0}.empty{text-align:center;padding:40px;color:#8a90a0}
 .ov{position:fixed;inset:0;background:rgba(15,19,32,.5);display:none;z-index:60;overflow:auto;padding:16px}
 .ov.on{display:block}
 .md{max-width:880px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)}
-.mh{background:#1f2a44;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:6}
+.mh{background:linear-gradient(135deg,var(--ink) 0%,var(--ink-2) 100%);border-bottom:3px solid var(--red);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:6}
 .mh .t{flex:1}.mh .t b{font-size:16px}.mh .t span{display:block;font-size:12.5px;opacity:.85;margin-top:2px}
 .mh button{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:6px 11px;cursor:pointer}
 .mt{display:flex;gap:4px;padding:8px 12px 0;background:#f7f9fc;border-bottom:1px solid #e2e6ee;flex-wrap:wrap;position:sticky;top:50px;z-index:5}
 .mt button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;cursor:pointer;font-size:14px;color:#5b6172}
-.mt button.on{color:#c8102e;border-bottom-color:#c8102e;font-weight:bold}
+.mt button.on{color:var(--red);border-bottom-color:var(--red);font-weight:bold}
 .pane{display:none;padding:14px 16px}.pane.on{display:block}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 14px}
@@ -44,7 +54,7 @@ tr.r{cursor:pointer}tr.r:hover td{background:#fdf4f5}
 .f .v{font-size:14px;padding:6px 0;min-height:28px}
 .f select,.f input,.f textarea{width:100%;padding:7px 9px;border:1px solid #cfd5e0;border-radius:7px;font-size:14px;font-family:inherit;background:#fff}
 .f textarea{min-height:64px;resize:vertical}
-.sec{font-size:14px;font-weight:bold;margin:16px 0 8px;padding-bottom:5px;border-bottom:2px solid #e2e6ee;color:#1f2a44}
+.sec{font-size:14px;font-weight:bold;margin:16px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--red);color:var(--ink);letter-spacing:.2px}
 .chk{display:flex;align-items:center;gap:8px;padding:8px 9px;border:1px solid #e2e6ee;border-radius:8px;cursor:pointer;font-size:13.5px;background:#fff}
 .chk:hover{background:#f7f9fc}.chk.on{background:#e8f6ea;border-color:#a8ddb4}
 .chk input{width:17px;height:17px;cursor:pointer;flex:0 0 auto}
@@ -52,29 +62,61 @@ tr.r{cursor:pointer}tr.r:hover td{background:#fdf4f5}
 .hd .nm{flex:1}.hd .c1{width:60px;text-align:center}.hd .c2{width:82px;text-align:center}.hd .c3{width:70px;text-align:center}.hd .c4{width:32px}
 .ln{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #eef0f5}
 .ln .nm{flex:1;font-size:13.5px;line-height:1.35}
-.ln .nm small{display:block;color:#c8102e;font-size:11.5px}
+.ln .nm small{display:block;color:#ED1E24;font-size:11.5px}
 .ln input{width:60px;padding:6px;text-align:center;border:1px solid #cfd5e0;border-radius:7px;font-size:14px}
 .ln input.pr{width:82px}.ln .lt{width:70px;text-align:center;font-size:13px;font-weight:bold}
-.ln .x{width:32px;background:#fff;border:1px solid #e0d0d3;color:#c8102e;border-radius:7px;padding:5px 0;cursor:pointer}
+.ln .x{width:32px;background:#fff;border:1px solid #e0d0d3;color:#ED1E24;border-radius:7px;padding:5px 0;cursor:pointer}
 .srch{position:relative;margin-top:10px}
-.srch input{width:100%;padding:11px;border:1.5px solid #c8102e;border-radius:9px;font-size:14.5px}
+.srch input{width:100%;padding:11px;border:1.5px solid var(--red);border-radius:9px;font-size:14.5px}
 .dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:240px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
 .dd.on{display:block}
 .dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8}
 .dd div:hover{background:#fdecef}
 .tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
 .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d7a33;color:#fff;padding:10px 18px;border-radius:9px;z-index:99;display:none;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
-.toast.err{background:#c8102e}.toast.on{display:block}
+.toast.err{background:#ED1E24}.toast.on{display:block}
+
+/* --- Airtable colour palette (exact) --- */
+.at-blueLight2{background:#cfdfff;color:#2750ae}
+.at-cyanLight2{background:#d0f0fd;color:#0b76b7}
+.at-tealLight2{background:#c2f5e9;color:#06a09b}
+.at-greenLight2{background:#d1f7c4;color:#338a17}
+.at-yellowLight2{background:#ffeab6;color:#b87503}
+.at-orangeLight2{background:#fee2d5;color:#d74d26}
+.at-redLight2{background:#ffdce5;color:#d31b5c}
+.at-pinkLight2{background:#ffdaf6;color:#b2158b}
+.at-yellowBright{background:#fcb400;color:#fff}
+.at-orangeBright{background:#ff6f2c;color:#fff}
+.at-blueBright{background:#2d7ff9;color:#fff}
+.at-greenBright{background:#20c933;color:#fff}
+.at-redBright{background:#f82b60;color:#fff}
+.at-gray{background:#eef1f5;color:#5b6172}
+/* --- brand --- */
+.brand{display:flex;align-items:center;gap:9px;white-space:nowrap}
+.brand .mark{height:38px;width:auto;flex:0 0 auto;display:block;
+   background:#fff;padding:3px 7px;border-radius:8px;box-shadow:0 2px 9px rgba(0,0,0,.28)}
+.brand .nm{line-height:1.15}
+.brand .nm b{display:block;font-size:15.5px;letter-spacing:.3px}
+.brand .nm span{display:block;font-size:10.5px;opacity:.85;letter-spacing:.6px}
+.bar{box-shadow:0 3px 14px rgba(22,26,34,.32)}
+.tabs{box-shadow:0 1px 3px rgba(20,25,45,.05)}
+table{box-shadow:0 2px 10px rgba(20,25,45,.08)}
+tr.r{transition:background .12s}
+.md{animation:pop .16s ease-out}
+@keyframes pop{from{transform:translateY(8px);opacity:.6}to{transform:none;opacity:1}}
+.f select:focus,.f input:focus,.f textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
+.ln input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
+.sm{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px}
 .boot{text-align:center;padding:60px 20px;color:#5b6172}.boot .sp{font-size:32px}
 .hint{background:#eef4fd;border-right:4px solid #1246a0;padding:9px 12px;border-radius:8px;font-size:13px;color:#1246a0;margin-bottom:12px}
-.save{background:#1d7a33;color:#fff;border:0;border-radius:9px;padding:11px 20px;font-size:15px;font-weight:bold;cursor:pointer;width:100%;margin-top:14px}
+.save{background:#1B7F35;color:#fff;border:0;border-radius:9px;padding:11px 20px;font-size:15px;font-weight:bold;cursor:pointer;width:100%;margin-top:14px}
 .save:disabled{background:#9bb7a2}
 </style>
 </head>
 <body>
 
 <div class="bar">
-  <h1>🔧 ABN</h1>
+  <div class="brand"><img class="mark" alt="ABN Garage" src="data:image/jpeg;base64,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"></div>
   <div class="nav" id="nav"></div>
   <input id="q" placeholder="חיפוש…" oninput="onSearch()">
   <button class="b2" onclick="reload()">↻</button>
@@ -106,6 +148,17 @@ var BRAKE=["תקין","25%","50%","לא תקין"], FLUID=["תקין","הוספ�
 var CHECKS=["בדיקת לחץ אויר","בדיקת שמשות","בדיקת גומיות ריקות","בדיקת חופשים","בדיקת צמיגים","בדיקת אורות","בדיקת מיסבים (סיבוב גלגלים)","איפוס טיפול","סימון בורג אגן שמן","בעיית הלקוח טופלה"];
 var VIEWS=[["work","עבודה"],["cus","לקוחות"],["veh","רכבים"],["loc","מיקומים"],["set","הגדרות"]];
 
+
+var CLR={
+"סטטוס":{"חדש":"yellowLight2","מחכה לטיפול":"yellowBright","בטיפול":"orangeBright","מוכן לתשלום":"blueBright","שולם":"greenBright","בוטל":"redBright","ממתין לאישור אמיר":"blueLight2"},
+"סוג טיפול":{"טיפול תקופתי":"blueLight2","הכנה לטסט + טסט":"cyanLight2","הכנה לטסט":"greenLight2","תקלות ברכב":"tealLight2","טיפול תקופתי + הכנה לטסט":"yellowLight2","נכשלת בטסט?":"orangeLight2","טיפול תקופתי + טסט":"redLight2","רכב נגרר":"pinkLight2"},
+"אמצעי תשלום":{"מזומן":"blueLight2","כרטיס אשראי":"cyanLight2","העברה בנקאית":"tealLight2","צ'ק":"greenLight2"},
+"מערכת בלמים קידמית":{"תקין":"blueLight2","25%":"cyanLight2","50%":"tealLight2","לא תקין":"greenLight2"},
+"מערכת בלמים אחורית":{"תקין":"blueLight2","25%":"cyanLight2","50%":"tealLight2","לא תקין":"greenLight2"},
+"נוזל בלמים":{"תקין":"blueLight2","הוספה":"cyanLight2","החלפה":"tealLight2"},
+"נוזל קירור":{"מצב תקין":"blueLight2","הוספה":"cyanLight2","החלפה":"tealLight2"}};
+function tag(fld,val){var v=txt(val);if(!v)return '<span class="muted">—</span>';
+ var c=(CLR[fld]||{})[v]||"gray";return '<span class="pill at-'+c+'">'+esc(v)+'</span>';}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2300);}
 function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
@@ -137,15 +190,14 @@ function drawTabs(){var el=document.getElementById("tabs");
  if(VIEW!=="work"){el.style.display="none";return;}el.style.display="flex";
  el.innerHTML=TABS.map(function(t){var n=WOS.filter(function(r){return match(r,t[0]);}).length;
   return '<button class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c">'+n+'</span></button>';}).join("")
-  +'<button style="background:#1d7a33;color:#fff;border-color:#1d7a33;font-weight:bold" onclick="newCard()">+ כרטיס חדש</button>';}
+  +'<button style="background:#1B7F35;color:#fff;border-color:#1B7F35;font-weight:bold" onclick="newCard()">+ כרטיס חדש</button>';}
 function setF(k){FILTER=k;drawTabs();draw();}
 function woRows(){var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
  return WOS.filter(function(r){if(!match(r,FILTER))return false;if(!toks.length)return true;var f=r.fields||{};
   var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
   return toks.every(function(t){return h.indexOf(t)>=0;});})
   .sort(function(a,b){return String(dk(b.fields["תאריך ושעה"])).localeCompare(String(dk(a.fields["תאריך ושעה"])));});}
-function sc(s){if(s==="שולם")return"background:#e8f6ea;color:#1d7a33";if(s==="בוטל")return"background:#fdecec;color:#c8102e";
- if(s==="בטיפול")return"background:#fff4e0;color:#8a5b00";if(s==="מוכן לתשלום")return"background:#e6f0fd;color:#1246a0";return"background:#eef1f5;color:#5b6172";}
+
 
 function draw(){
   var el=document.getElementById("list");
@@ -156,8 +208,8 @@ function draw(){
       return '<tr class="r" onclick="openCard(\''+r.id+'\')"><td class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
        +'<td><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td>'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td>'+esc(f["מספר רכב_disp"]||"")+'</td><td class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
-       +'<td>'+esc(txt(f["סוג טיפול"]))+'</td><td class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
-       +'<td><span class="pill" style="'+sc(st)+'">'+esc(st)+'</span></td>'
+       +'<td>'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
+       +'<td>'+tag("סטטוס",st)+'</td>'
        +'<td>'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
@@ -213,6 +265,10 @@ function openCard(id){
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
 function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
+function dtl(l,fld,v){var s=txt(v),m=s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+ var val=m?(m[1]+"T"+m[2]):"";
+ return '<div class="f"><label>'+esc(l)+'</label><input type="datetime-local" value="'+val+'" onchange="setDt(\''+fld+'\',this.value)"></div>';}
+function setDt(fld,v){var o={};o[fld]=v||null;patchWO(o,pDet,"");}
 function ro(l,v){return '<div class="f"><label>'+esc(l)+'</label><div class="v">'+esc(v||"—")+'</div></div>';}
 function sel(l,fld,opts,cur){return '<div class="f"><label>'+esc(l)+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
  +'<option value=""></option>'+opts.map(function(o){return '<option'+(o===cur?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';}
@@ -227,6 +283,8 @@ function pDet(){var f=CUR.fields||{};
   +ro("לקוח",f["שם להצגה"])+ro("טלפון",txt(f["מספר טלפון"]))
   +ro("מספר רכב",f["מספר רכב_disp"])+ro("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
+  +dtl("תאריך ושעה","תאריך ושעה",f["תאריך ושעה"])
+  +'<div class="f"><label>סטטוס נוכחי</label><div class="v">'+tag("סטטוס",f["סטטוס"])+'</div></div>' 
   +sel("סטטוס","סטטוס",STATUS,txt(f["סטטוס"]))+sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
   +num("קילומטראז'","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
@@ -236,7 +294,7 @@ function pDet(){var f=CUR.fields||{};
   +'</div><div class="sec">תיאור</div>'
   +area("סיבת הגעה","סיבת הגעה",f["סיבת הגעה"])
   +area("הערות מכונאי","הערות מכונאי",f["הערות מכונאי"])
-  +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:#c8102e">'+esc(f["⚠️ התראה"])+'</div></div>':'');}
+  +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:#ED1E24">'+esc(f["⚠️ התראה"])+'</div></div>':'');}
 
 function myLines(){return LINES.filter(function(x){return ids((x.fields||{})["כרטיס עבודה"]).indexOf(CUR.id)>=0;});}
 function pParts(){var ls=myLines(),sum=0;
@@ -272,30 +330,119 @@ function pChecks(){var f=CUR.fields||{};
   +sel("מערכת בלמים אחורית","מערכת בלמים אחורית",BRAKE,txt(f["מערכת בלמים אחורית"]))
   +sel("נוזל בלמים","נוזל בלמים",FLUID,txt(f["נוזל בלמים"]))
   +sel("נוזל קירור","נוזל קירור",COOL,txt(f["נוזל קירור"]))
-  +'</div><div class="sec">בדיקות</div><div class="g3">'+CHECKS.map(function(c){return chk(c,!!f[c]);}).join("")+'</div>';}
-
-function pPay(){var f=CUR.fields||{};
- document.getElementById("p4").innerHTML='<div class="grid">'
-  +ro("סך חלקי חילוף",f["סך עלות חלקי חילוף"]!=null?"₪"+Number(f["סך עלות חלקי חילוף"]).toFixed(2):"")
-  +ro("סך שירותים",f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"")
-  +num("עלות עבודה","עלות עבודה",f["עלות עבודה"])
-  +ro('סה"כ לפני מע"מ',f['סה"כ לפני מע"מ']!=null?"₪"+Number(f['סה"כ לפני מע"מ']).toFixed(2):"")
-  +ro('מע"מ',f['סכום מע"מ']!=null?"₪"+Number(f['סכום מע"מ']).toFixed(2):"")
-  +ro('סה"כ לתשלום',f['סה"כ לתשלום']!=null?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"")
-  +sel("אמצעי תשלום","אמצעי תשלום",PAY,txt(f["אמצעי תשלום"]))
-  +ro("מוכנות לחשבונית",txt(f["מוכנות לחשבונית"]))
+  +'</div><div class="sec">בדיקות</div><div class="g3">'+CHECKS.map(function(c){return chk(c,!!f[c]);}).join("")+'</div>'
+  +'<div class="sec">שדות נוספים</div><div class="grid">'
+  +'<div class="f"><label>בונוס לטיפול</label><input type="number" value="'+(f["בונוס לטיפול"]==null?"":f["בונוס לטיפול"])+'" onchange="setNum(\'בונוס לטיפול\',this.value)"></div>'
+  +'<div class="f"><label>תור</label><div class="v">'+esc(txt(f["תור"]))+'</div></div>'
   +'</div>';}
 
+function money(n){return "\u20aa"+Number(n||0).toLocaleString("he-IL",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function pPay(){
+  var f=CUR.fields||{};
+  var ls=myLines();
+  var partsSum=0, noPrice=0;
+  var partRows=ls.map(function(r){
+    var g=r.fields||{}, nm=(g["\u05d7\u05dc\u05e3"]&&g["\u05d7\u05dc\u05e3"][0]&&g["\u05d7\u05dc\u05e3"][0].name)||g["\u05ea\u05d9\u05d0\u05d5\u05e8 \u05e9\u05d5\u05e8\u05d4"]||"(\u05d7\u05dc\u05e3)";
+    var q=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"], pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0, lt=q*pr;
+    partsSum+=lt; if(!pr)noPrice++;
+    return '<tr><td>'+esc(nm)+(pr?'':' <span style="color:var(--red);font-size:11.5px">\u26a0 \u05d0\u05d9\u05df \u05de\u05d7\u05d9\u05e8</span>')+'</td>'
+      +'<td style="text-align:center">'+q+'</td><td style="text-align:left">'+money(pr)+'</td>'
+      +'<td style="text-align:left"><b>'+money(lt)+'</b></td></tr>';}).join("");
+
+  var svcIds=ids(f["\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd:"]), svcSum=0;
+  var svcRows=svcIds.map(function(id){
+    var sv=SVC.filter(function(x){return x.id===id;})[0]; var pr=sv?Number(sv.price||0):0; svcSum+=pr;
+    return '<tr><td>'+esc(sv?sv.name:"(\u05e9\u05d9\u05e8\u05d5\u05ea)")+'</td><td style="text-align:center">1</td>'
+      +'<td style="text-align:left">'+money(pr)+'</td><td style="text-align:left"><b>'+money(pr)+'</b></td></tr>';}).join("");
+
+  var labour=Number(f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"]||0);
+  var net=partsSum+svcSum+labour;
+  var vat=net*0.18, gross=net+vat;
+  var atNet=f['\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de'], atGross=f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd'];
+  var drift=(atGross!=null)&&Math.abs(Number(atGross)-gross)>0.5;
+
+  var warn="";
+  if(noPrice)warn+='<div class="hint" style="background:#FDECEC;border-color:var(--red);color:#8a1220">\u26a0\ufe0f '+noPrice+' \u05d7\u05dc\u05e4\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8 \u2014 \u05d4\u05dd \u05d9\u05d5\u05e4\u05d9\u05e2\u05d5 \u05d1\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05d1-0.00 \u20aa</div>';
+  if(!labour)warn+='<div class="hint" style="background:#FFF7E6;border-color:#B87503;color:#8a5b00">\u26a0\ufe0f \u05dc\u05d0 \u05d4\u05d5\u05d6\u05e0\u05d4 \u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</div>';
+  if(drift)warn+='<div class="hint" style="background:#FFF7E6;border-color:#B87503;color:#8a5b00">\u26a0\ufe0f \u05d4\u05d7\u05d9\u05e9\u05d5\u05d1 \u05db\u05d0\u05df ('+money(gross)+') \u05e9\u05d5\u05e0\u05d4 \u05de\u05d4\u05e1\u05db\u05d5\u05dd \u05d1-Airtable ('+money(atGross)+') \u2014 \u05d9\u05d9\u05ea\u05db\u05df \u05e9\u05d4\u05e9\u05d3\u05d5\u05ea \u05d4\u05de\u05d7\u05d5\u05e9\u05d1\u05d9\u05dd \u05d8\u05e8\u05dd \u05d4\u05ea\u05e2\u05d3\u05db\u05e0\u05d5</div>';
+
+  var ready=txt(f["\u05de\u05d5\u05db\u05e0\u05d5\u05ea \u05dc\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea"]);
+  var okInv=ready.indexOf("\u2705")>=0;
+
+  document.getElementById("p4").innerHTML=
+   '<div class="sec" style="margin-top:0">\u05d7\u05e9\u05d1\u05d5\u05df \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
+   +'<div style="font-size:13px;color:var(--steel);margin-bottom:10px">'
+     +esc(f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")+' \u00b7 \u05e8\u05db\u05d1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1_disp"]||"")
+     +' \u00b7 \u05db\u05e8\u05d8\u05d9\u05e1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")+'</div>'
+   +warn
+   +'<table style="margin-bottom:14px"><tr><th>\u05e2\u05d1\u05d5\u05d3\u05d5\u05ea</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
+   +(labour?('<tr><td>'+esc(txt(f["\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc"])||"\u05e2\u05d1\u05d5\u05d3\u05d4")+'</td><td style="text-align:center">1</td><td style="text-align:left">'+money(labour)+'</td><td style="text-align:left"><b>'+money(labour)+'</b></td></tr>')
+      :'<tr><td colspan="4" class="muted">\u05dc\u05d0 \u05d4\u05d5\u05d6\u05e0\u05d4 \u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</td></tr>')+'</table>'
+   +'<table style="margin-bottom:14px"><tr><th>\u05d7\u05dc\u05e7\u05d9\u05dd</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\'</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
+   +(partRows||'<tr><td colspan="4" class="muted">\u05d0\u05d9\u05df \u05d7\u05dc\u05e4\u05d9\u05dd</td></tr>')+'</table>'
+   +'<table style="margin-bottom:14px"><tr><th>\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
+   +(svcRows||'<tr><td colspan="4" class="muted">\u05d0\u05d9\u05df \u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd</td></tr>')+'</table>'
+   +'<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:13px 15px">'
+     +'<div class="sm"><span>\u05e1\u05d4"\u05db \u05e2\u05d1\u05d5\u05d3\u05d5\u05ea</span><span>'+money(labour)+'</span></div>'
+     +'<div class="sm"><span>\u05e1\u05d4"\u05db \u05d7\u05dc\u05e7\u05d9\u05dd</span><span>'+money(partsSum)+'</span></div>'
+     +'<div class="sm"><span>\u05e1\u05d4"\u05db \u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd</span><span>'+money(svcSum)+'</span></div>'
+     +'<div class="sm" style="border-top:1px solid #e2e6ee;padding-top:7px;margin-top:5px"><span>\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de</span><span><b>'+money(net)+'</b></span></div>'
+     +'<div class="sm"><span>\u05de\u05e2"\u05de 18%</span><span>'+money(vat)+'</span></div>'
+     +'<div class="sm" style="border-top:2px solid var(--ink);padding-top:9px;margin-top:7px;font-size:18px;font-weight:bold"><span>\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</span><span style="color:var(--red)">'+money(gross)+'</span></div>'
+   +'</div>'
+   +'<div class="grid" style="margin-top:14px">'
+     +num("\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4","\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4",f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"])
+     +sel("\u05d0\u05de\u05e6\u05e2\u05d9 \u05ea\u05e9\u05dc\u05d5\u05dd","\u05d0\u05de\u05e6\u05e2\u05d9 \u05ea\u05e9\u05dc\u05d5\u05dd",PAY,txt(f["\u05d0\u05de\u05e6\u05e2\u05d9 \u05ea\u05e9\u05dc\u05d5\u05dd"]))
+     +sel("\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df","\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df",["\u05d8\u05d9\u05d5\u05d8\u05d4","\u05de\u05d0\u05d5\u05e9\u05e8","\u05e0\u05e9\u05dc\u05d7 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd","\u05e9\u05d5\u05dc\u05dd","\u05d1\u05d5\u05d8\u05dc"],txt(f["\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df"]))
+     +'<div class="f"><label>\u05de\u05d5\u05db\u05e0\u05d5\u05ea \u05dc\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea</label><div class="v">'
+       +'<span class="pill '+(okInv?"at-greenBright":"at-redBright")+'">'+esc(ready||"\u2014")+'</span></div></div>'
+   +'</div>';
+}
 /* ============ WRITES ============ */
-function patchWO(fields,rd){
+function patchWO(fields,rd,note){
+  var rid=CUR.id;
   Object.keys(fields).forEach(function(k){CUR.fields[k]=fields[k];});
   if(rd)rd();draw();drawTabs();
-  fetch(PX+B+"/"+T.wo+"/"+CUR.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
+  fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
    .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(d){var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;CUR=d;toast("✓ נשמר");draw();drawTabs();})
+   .then(function(d){var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
+     if(CUR&&CUR.id===d.id)CUR=d;
+     toast("✓ נשמר"+(note?" · "+note:""));draw();drawTabs();
+     if(note)refetchCard(rid,0);})
    .catch(function(){toast("השמירה נכשלה — רענן",1);});}
-function setF2(fld,v){var o={};o[fld]=v||null;
- patchWO(o,(fld.indexOf("בלמים")>=0||fld.indexOf("נוזל")>=0)?pChecks:(fld==="אמצעי תשלום"?pPay:pDet));}
+var ORDER=["חדש","מחכה לטיפול","בטיפול","מוכן לתשלום","שולם"];
+function statusNote(from,to){
+  if(to==="מוכן לתשלום")return "נשלחה הודעה ללקוח · נקבע תאריך סגירה";
+  if(to==="בוטל")return "הסלוט ביומן שוחרר";
+  if(to==="בטיפול")return "נקבע תאריך פתיחה";
+  if(to==="שולם"&&ORDER.indexOf(from)<ORDER.indexOf("מוכן לתשלום"))return "לא נשלחה הודעה ללקוח";
+  return "";
+}
+function setF2(fld,v){
+  if(fld==="סטטוס"){
+    var from=txt((CUR.fields||{})["סטטוס"]);
+    if(v==="שולם"&&ORDER.indexOf(from)>=0&&ORDER.indexOf(from)<ORDER.indexOf("מוכן לתשלום")){
+      if(!confirm("הכרטיס עובר ל\"שולם\" בלי לעבור ב\"מוכן לתשלום\".\n\nהלקוח לא יקבל הודעת וואטסאפ ולא ייקבע תאריך סגירה.\n\nלהמשיך?")){pDet();return;}
+    }
+  }
+  var o={};o[fld]=v||null;
+  patchWO(o,(fld.indexOf("בלמים")>=0||fld.indexOf("נוזל")>=0)?pChecks:(fld==="אמצעי תשלום"?pPay:pDet),
+          fld==="סטטוס"?statusNote(txt((CUR.fields||{})["סטטוס"]),v):"");
+}
+/* re-read the record after Airtable automations have run */
+function refetchCard(id,tries){
+  tries=tries||0;
+  setTimeout(function(){
+    fetch(PX+B+"/"+T.wo+"/"+id).then(function(r){return r.ok?r.json():Promise.reject();})
+     .then(function(d){
+       var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
+       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();
+         if(d.fields["⚠️ התראה"])toast("⚠️ "+d.fields["⚠️ התראה"],1);}
+       draw();drawTabs();
+       if(tries<1)refetchCard(id,tries+1);
+     }).catch(function(){});
+  },tries===0?2200:4000);
+}
 function setChk(name,on){var o={};o[name]=!!on;patchWO(o,pChecks);}
 function setLink(fld,id){var o={};o[fld]=id?[id]:[];patchWO(o,pDet);}
 function setNum(fld,v){var o={};var n=parseFloat(v);o[fld]=isNaN(n)?null:n;patchWO(o,fld==="עלות עבודה"?pPay:pDet);}
@@ -331,6 +478,112 @@ function addPart(pid){document.getElementById("pdd").classList.remove("on");docu
 document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
 
 /* ============ NEW CARD ============ */
+
+/* ===== יצירת לקוח / רכב — משכפל את אוטומציית "צור לקוח חדש" ומשפר אותה ===== */
+function normPhone(v){return String(v||"").replace(/[^0-9]/g,"");}
+function validPhone(v){var d=normPhone(v);return d.length===10&&d.slice(0,2)==="05";}
+function validPlate(v){var d=normPhone(v);return d.length===7||d.length===8;}
+function fmtPlate(v){var d=normPhone(v);
+ if(d.length===8)return d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5);
+ if(d.length===7)return d.slice(0,2)+"-"+d.slice(2,5)+"-"+d.slice(5);return d;}
+
+function newCusForm(){
+  document.getElementById("p0").innerHTML='<div class="sec" style="margin-top:0">לקוח חדש</div>'
+   +'<div class="grid">'
+   +'<div class="f"><label>שם מלא *</label><input id="ncnName" oninput="cusDupCheck()"></div>'
+   +'<div class="f"><label>טלפון נייד *</label><input id="ncnPhone" placeholder="05XXXXXXXX" oninput="cusDupCheck()"></div>'
+   +'<div class="f"><label>דוא"ל</label><input id="ncnMail" type="email"></div>'
+   +'<div class="f"><label>כתובת</label><input id="ncnAddr"></div>'
+   +'</div><div id="dupBox"></div>'
+   +'<button class="save" id="ncnSave" onclick="createCustomer()">✓ צור לקוח</button>'
+   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה</button>';
+  window.__dupList=[];
+}
+async function cusDupCheck(){
+  var nm=(document.getElementById("ncnName").value||"").trim();
+  var ph=normPhone(document.getElementById("ncnPhone").value);
+  var box=document.getElementById("dupBox"); if(!box)return;
+  if(ph.length<9&&nm.length<2){box.innerHTML="";window.__dupList=[];return;}
+  try{
+    var f=[];
+    if(ph.length>=9)f.push('SEARCH("'+ph.slice(-9)+'",SUBSTITUTE({מספר טלפון},"-",""))');
+    if(nm.length>=2)f.push('SEARCH("'+nm.replace(/"/g,'')+'",{שם לקוח})');
+    var recs=await find(T.cus,'OR('+f.join(",")+')',10);
+    window.__dupList=recs;
+    if(!recs.length){box.innerHTML='<div class="hint" style="background:#e8f6ea;border-color:#1d7a33;color:#1d7a33">✓ לא נמצא לקוח קיים דומה</div>';return;}
+    var exactSame=recs.filter(function(r){var g=r.fields||{};
+      return (g["שם לקוח"]||"").trim()===nm && normPhone(g["מספר טלפון"]).slice(-9)===ph.slice(-9);});
+    box.innerHTML='<div class="hint">'+(exactSame.length
+       ?'⚠️ קיים כבר לקוח <b>עם אותו שם ואותו טלפון</b> — כנראה אותו אדם. בחר אותו במקום ליצור כפילות.'
+       :'נמצאו לקוחות עם טלפון או שם דומים. <b>טלפון משותף אינו כפילות</b> — משפחות ועסקים חולקים קו. בחר קיים רק אם זה באמת אותו אדם.')+'</div>'
+     +recs.map(function(r){var g=r.fields||{};
+       return '<div class="ln"><div class="nm"><b>'+esc(g["שם לקוח"]||"")+'</b><small style="color:#5b6172">'+esc(g["מספר טלפון"]||"")+' · '+esc(txt(g["מספר רכבים"]))+' רכבים</small></div>'
+        +'<button class="x" style="width:auto;padding:5px 10px;color:#1d7a33;border-color:#a8ddb4" onclick="useExistingCus(\''+r.id+'\',\''+esc((g["שם לקוח"]||"")+" · "+(g["מספר טלפון"]||"")).replace(/\'/g,"")+'\')">זה הוא</button></div>';}).join("");
+  }catch(e){box.innerHTML='<div class="hint">בדיקת הכפילויות נכשלה — אפשר להמשיך</div>';}
+}
+function useExistingCus(id,lbl){window.__ncCus=id;newCard();
+ setTimeout(function(){var el=document.getElementById("ncCusPick");if(el)el.textContent="✓ "+lbl;},120);
+ toast("✓ נבחר לקוח קיים");}
+function createCustomer(){
+  var nm=(document.getElementById("ncnName").value||"").trim();
+  var ph=(document.getElementById("ncnPhone").value||"").trim();
+  if(nm.length<2){toast("צריך שם מלא",1);return;}
+  if(!validPhone(ph)){toast("טלפון נייד לא תקין — 10 ספרות שמתחילות ב-05",1);return;}
+  var b={fields:{},typecast:true};
+  b.fields["שם לקוח"]=nm; b.fields["מספר טלפון"]=normPhone(ph);
+  var m=document.getElementById("ncnMail").value.trim(); if(m)b.fields['דוא"ל']=m;
+  var a=document.getElementById("ncnAddr").value.trim(); if(a)b.fields["כתובת"]=a;
+  b.fields["סטטוס לקוח"]="מחכה לאישור";
+  var btn=document.getElementById("ncnSave");btn.disabled=true;btn.textContent="יוצר…";
+  fetch(PX+B+"/"+T.cus,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(rec){window.__ncCus=rec.id;toast("✓ נוצר לקוח "+nm);newCard();
+     setTimeout(function(){var el=document.getElementById("ncCusPick");if(el)el.textContent="✓ "+nm+" · "+normPhone(ph);},120);})
+   .catch(function(){btn.disabled=false;btn.textContent="✓ צור לקוח";toast("היצירה נכשלה",1);});
+}
+
+function newVehForm(){
+  document.getElementById("p0").innerHTML='<div class="sec" style="margin-top:0">רכב חדש</div>'
+   +'<div class="hint">לאחר היצירה, פרטי הרכב יושלמו אוטומטית מרשם הרכב (gov.il).</div>'
+   +'<div class="grid">'
+   +'<div class="f"><label>מספר רכב * (7 או 8 ספרות)</label><input id="nvPlate" oninput="vehDupCheck()"></div>'
+   +'<div class="f"><label>קוד רכב (קוד התנעה)</label><input id="nvCode"></div>'
+   +'</div><div id="vdupBox"></div>'
+   +'<button class="save" id="nvSave" onclick="createVehicle()">✓ צור רכב</button>'
+   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה</button>';
+}
+async function vehDupCheck(){
+  var pl=normPhone(document.getElementById("nvPlate").value);
+  var box=document.getElementById("vdupBox"); if(!box)return;
+  if(pl.length<6){box.innerHTML="";return;}
+  if(!validPlate(pl)){box.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">⚠️ מספר רכב חייב להיות 7 או 8 ספרות</div>';return;}
+  try{
+    var recs=await find(T.veh,'SEARCH("'+pl+'",SUBSTITUTE({מספר רכב},"-",""))',5);
+    if(recs.length){var g=recs[0].fields||{};
+      box.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">⚠️ הרכב כבר קיים במערכת</div>'
+       +'<div class="ln"><div class="nm"><b>'+esc(g["מספר רכב"]||"")+'</b><small style="color:#5b6172">'+esc((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||""))+'</small></div>'
+       +'<button class="x" style="width:auto;padding:5px 10px;color:#1d7a33;border-color:#a8ddb4" onclick="useExistingVeh(\''+recs[0].id+'\',\''+esc(g["מספר רכב"]||"").replace(/\'/g,"")+'\')">בחר אותו</button></div>';
+    } else box.innerHTML='<div class="hint" style="background:#e8f6ea;border-color:#1d7a33;color:#1d7a33">✓ מספר רכב פנוי · '+esc(fmtPlate(pl))+'</div>';
+  }catch(e){box.innerHTML="";}
+}
+function useExistingVeh(id,lbl){window.__ncVeh=id;newCard();
+ setTimeout(function(){var el=document.getElementById("ncVehPick");if(el)el.textContent="✓ "+lbl;},120);
+ toast("✓ נבחר רכב קיים");}
+function createVehicle(){
+  var pl=normPhone(document.getElementById("nvPlate").value);
+  if(!validPlate(pl)){toast("מספר רכב חייב 7 או 8 ספרות",1);return;}
+  if(!window.__ncCus){toast("צריך לבחור לקוח קודם",1);return;}
+  var b={fields:{},typecast:true};
+  b.fields["מספר רכב"]=fmtPlate(pl);
+  b.fields["לקוח"]=[window.__ncCus];
+  var c=document.getElementById("nvCode").value.trim(); if(c)b.fields["קוד רכב"]=c;
+  var btn=document.getElementById("nvSave");btn.disabled=true;btn.textContent="יוצר…";
+  fetch(PX+B+"/"+T.veh,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(rec){window.__ncVeh=rec.id;toast("✓ נוצר רכב — פרטיו יושלמו מגוב.יל");newCard();
+     setTimeout(function(){var el=document.getElementById("ncVehPick");if(el)el.textContent="✓ "+fmtPlate(pl);},120);})
+   .catch(function(){btn.disabled=false;btn.textContent="✓ צור רכב";toast("היצירה נכשלה",1);});
+}
 function newCard(){
   CUR=null;
   document.getElementById("mT").textContent="כרטיס עבודה חדש";
@@ -339,9 +592,9 @@ function newCard(){
   document.getElementById("p0").className="pane on";[1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane";});
   document.getElementById("p0").innerHTML='<div class="hint">בחר לקוח ורכב קיימים. אם הם לא קיימים — צור אותם קודם ב-Airtable.</div>'
    +'<div class="srch" style="margin-top:0"><input id="ncCus" placeholder="🔍 חפש לקוח (שם או טלפון)…" autocomplete="off" oninput="ncSearch(\'cus\')"><div class="dd" id="ddCus"></div></div>'
-   +'<div class="f" style="margin-top:6px"><div class="v" id="ncCusPick">— לא נבחר לקוח —</div></div>'
+   +'<div class="f" style="margin-top:6px"><div class="v" id="ncCusPick">— לא נבחר לקוח —</div></div>'+'<button class="x" style="width:auto;padding:7px 13px;margin-bottom:8px" onclick="newCusForm()">+ לקוח חדש</button>'
    +'<div class="srch"><input id="ncVeh" placeholder="🔍 חפש רכב (מספר רכב)…" autocomplete="off" oninput="ncSearch(\'veh\')"><div class="dd" id="ddVeh"></div></div>'
-   +'<div class="f" style="margin-top:6px"><div class="v" id="ncVehPick">— לא נבחר רכב —</div></div>'
+   +'<div class="f" style="margin-top:6px"><div class="v" id="ncVehPick">— לא נבחר רכב —</div></div>'+'<button class="x" style="width:auto;padding:7px 13px;margin-bottom:8px" onclick="newVehForm()">+ רכב חדש</button>'
    +'<div class="grid" style="margin-top:12px">'
    +'<div class="f"><label>תאריך ושעה</label><input type="datetime-local" id="ncDate"></div>'
    +'<div class="f"><label>סוג טיפול</label><select id="ncType"><option value=""></option>'+TREAT.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></div>'
@@ -349,7 +602,7 @@ function newCard(){
    +'<div class="f"><label>קילומטראז\'</label><input type="number" id="ncKm"></div>'
    +'</div><div class="f"><label>סיבת הגעה</label><textarea id="ncReason"></textarea></div>'
    +'<button class="save" id="ncSave" onclick="createCard()">✓ צור כרטיס עבודה</button>';
-  window.__ncCus=null;window.__ncVeh=null;
+  if(window.__keepPicks!==true){window.__ncCus=window.__ncCus||null;window.__ncVeh=window.__ncVeh||null;}
   document.getElementById("ov").classList.add("on");
 }
 async function ncSearch(kind){
