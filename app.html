@@ -332,13 +332,14 @@ async function markDone(){
     if(!confirm("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
   }
   var st=txt(f["סטטוס"]);
-  var upd={"בעיית הלקוח טופלה":true};
-  if(!f["תאריך סגירה"])upd["תאריך סגירה"]=new Date().toISOString();
-  if(st!=="מוכן לתשלום"&&st!=="שולם"){
-    if(confirm("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))
-      upd["סטטוס"]="מוכן לתשלום";
+  if(!f["בעיית הלקוח טופלה"]){
+    CUR.fields["בעיית הלקוח טופלה"]=true;
+    patchWO({"בעיית הלקוח טופלה":true},function(){pChecks();},"סומן שהבעיה טופלה");
   }
-  patchWO(upd,function(){pDet();pChecks();pPay();}, upd["סטטוס"]?statusNote(st,upd["סטטוס"]):"סומן שהבעיה טופלה");
+  if(st==="מוכן לתשלום"||st==="שולם"){pDet();pPay();return;}
+  if(!RULES.canMove(st,"מוכן לתשלום")){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
+  if(!confirm("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))return;
+  await changeStatus("מוכן לתשלום");
 }
 
 /* ============ PHOTOS ============ */
@@ -567,7 +568,13 @@ async function remoteSearch(){
 function MTL(){return [t("details"),t("parts"),t("services"),t("checks"),t("pay")];}
 var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
-  CUR=WOS.filter(function(r){return r.id===id;})[0];if(!CUR)return;
+  CUR=WOS.filter(function(r){return r.id===id;})[0];
+  if(!CUR){   /* כרטיס שאינו ברשימה הנוכחית (למשל מהיסטוריית הלקוח) — נטען מהשרת */
+    toast("טוען כרטיס…");
+    fetch(PX+B+"/"+T.wo+"/"+id).then(function(r){return r.ok?r.json():Promise.reject();})
+     .then(function(d){WOS.push(d);openCard(id);}).catch(function(){toast("הכרטיס לא נמצא",1);});
+    return;
+  }
   var f=CUR.fields||{};
   document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
   document.getElementById("mS").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
@@ -583,32 +590,79 @@ var SLOTS=[];
 function slotLabel(r){var f=r.fields||{};var s=txt(f["תאריך ושעה"]);
  var m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
  return (m?(m[3]+"/"+m[2]+" "+m[4]+":"+m[5]):s)+" · עמדה "+txt(f["מספר עמדה"])+" · "+txt(f["סטטוס"]);}
-async function loadSlots(){
-  try{SLOTS=await find(T.slot,'AND({עתידי}="פתוח",OR({סטטוס}="פנוי",{סטטוס}="טסט פנוי",{סטטוס}="דחוף פנוי"))',100);
-    SLOTS.sort(function(a,b){return String(txt((a.fields||{})["תאריך ושעה"])).localeCompare(String(txt((b.fields||{})["תאריך ושעה"])));});
-  }catch(e){SLOTS=[];}
+async function loadSlots(){return loadSlotsForDate(null);}
+/* טוען סלוטים פנויים; עם תאריך — רק ליום הזה (כמו הפילטר בטופס) */
+async function loadSlotsForDate(dateKey){
+  var free='OR({סטטוס}="פנוי",{סטטוס}="טסט פנוי",{סטטוס}="דחוף פנוי")';
+  var fx=dateKey
+    ? 'AND({עתידי}="פתוח",'+free+',DATETIME_FORMAT({תאריך ושעה},"YYYY-MM-DD")="'+dateKey+'")'
+    : 'AND({עתידי}="פתוח",'+free+')';
+  try{
+    var recs=await find(T.slot,fx,dateKey?80:100);
+    recs.sort(function(a,b){return String(txt((a.fields||{})["תאריך ושעה"]))
+      .localeCompare(String(txt((b.fields||{})["תאריך ושעה"])));});
+    if(dateKey){ /* מיזוג ליום המבוקש בלי לאבד ימים אחרים שכבר נטענו */
+      SLOTS=SLOTS.filter(function(r){return dk((r.fields||{})["תאריך ושעה"])!==dateKey;}).concat(recs);
+    } else SLOTS=recs;
+    return recs;
+  }catch(e){if(!dateKey)SLOTS=[];return [];}
 }
+/* שינוי תור בכרטיס: תאריך → שעה (כמו בטופס) */
 function slotPicker(f){
-  var cur=txt(f["תאריך ושעה"]);
-  var opts=SLOTS.map(function(r){return '<option value="'+r.id+'">'+esc(slotLabel(r))+'</option>';}).join("");
+  var cur=txt(f["תאריך ושעה"]), isTest=/טסט/.test(txt(f["סוג טיפול"]));
   return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b></div></div>'
-   +'<div class="f"><label>העבר לתור אחר (סלוט פנוי)</label>'
-   +'<select onchange="moveSlot(this.value);this.value=\'\'">'
-   +'<option value="">— בחר מועד חדש —</option>'+opts+'</select>'
-   +'<div style="font-size:11.5px;color:var(--steel);margin-top:3px">'
-   +(SLOTS.length?SLOTS.length+' סלוטים פנויים · המערכת תשחרר את הישן ותתפוס את החדש':'טוען סלוטים…')+'</div></div>';
+   +'<div class="f"><label>שינוי תור — בחר תאריך</label>'
+   +'<input type="date" id="mvDate" onchange="fillMoveTimes()"></div>'
+   +'<div class="f"><label>שינוי תור — בחר שעה</label>'
+   +'<label class="chk" style="margin:0 0 5px"><input type="checkbox" id="mvTest"'+(isTest?" checked":"")+' onchange="fillMoveTimes()"><span>תור טסט</span></label>'
+   +'<select id="mvSlot" onchange="moveSlot(this.value);this.value=\'\'">'
+   +'<option value="">— בחר קודם תאריך —</option></select>'
+   +'<div style="font-size:11.5px;color:var(--steel);margin-top:3px">המערכת תשחרר את הסלוט הישן ותתפוס את החדש</div></div>';
 }
-function moveSlot(id){
+async function fillMoveTimes(){
+  var d=document.getElementById("mvDate"), el=document.getElementById("mvSlot"); if(!d||!el)return;
+  var isTest=!!(document.getElementById("mvTest")||{}).checked;
+  if(!d.value){el.innerHTML='<option value="">— בחר קודם תאריך —</option>';return;}
+  el.innerHTML='<option value="">— טוען… —</option>';
+  await loadSlotsForDate(d.value);
+  el=document.getElementById("mvSlot"); d=document.getElementById("mvDate"); if(!el||!d||!d.value)return;
+  var list=slotsOnDate(d.value,isTest);
+  el.innerHTML=list.length
+    ? '<option value="">— בחר שעה —</option>'+list.map(function(r){
+        return '<option value="'+r.id+'">'+esc(slotTimeLabel(r))+'</option>';}).join("")
+    : '<option value="">— אין תורים פנויים בתאריך זה —</option>';
+}
+/* ===== שינוי תור — מבוצע בקוד: תופס חדש, משחרר ישן, שומר היסטוריה ===== */
+async function moveSlot(id){
   if(!id||!CUR)return;
   var r=SLOTS.filter(function(x){return x.id===id;})[0];
   if(!confirm("להעביר את הכרטיס ל: "+slotLabel(r)+" ?\n\nהסלוט הנוכחי ישוחרר והלקוח יקבל הודעה."))return;
-  patchWO({"בחר תור חדש":[id]},pDet,"התור מועבר · הסלוט הישן משתחרר");
+  var f=CUR.fields||{}, oldId=ids(f["תור"])[0]||null, woId=CUR.id;
+  if(oldId===id){toast("זה כבר התור הנוכחי");return;}
+  toast("מעביר תור…");
+  try{
+    await claimSlot(id,woId);                                  /* 1. תפיסה — נכשלת אם נתפס */
+    var oldDate=null;
+    if(oldId){try{oldDate=await releaseSlot(oldId);}catch(e){}} /* 2. שחרור הישן */
+    var upd={"תור":[id],"בחר תור חדש":[]};
+    if(oldDate)upd["תאריך תור (היסטורי)"]=oldDate;
+    if(txt(f["סטטוס"])===""||txt(f["סטטוס"])==="חדש")upd["סטטוס"]="מחכה לטיפול";
+    patchWO(upd,pDet,"התור הועבר · הסלוט הישן שוחרר");
+    RULES.fire("move",woId);
+  }catch(e){toast(e.message||"העברת התור נכשלה",1);}
   loadSlots();
 }
-function cancelAppt(){
+async function cancelAppt(){
   if(!CUR)return;
   if(!confirm("לבטל את התור?\n\nהסלוט ישוחרר והלקוח יקבל הודעת ביטול."))return;
-  patchWO({"סטטוס":"בוטל"},pDet,"הסלוט ביומן שוחרר");
+  await changeStatus("בוטל");
+  loadSlots();
+}
+/* רק יעדים חוקיים מוצגים בבורר הסטטוס */
+function allowedStatuses(cur){
+  cur=txt(cur)||"";
+  var out=[cur].concat(RULES.NEXT[cur]||[]);
+  return out.filter(function(x,i){return x&&out.indexOf(x)===i;});
 }
 function ro(l,v){return '<div class="f"><label>'+esc(L(l))+'</label><div class="v">'+esc(L(v)||"—")+'</div></div>';}
 function sel(l,fld,opts,cur){return '<div class="f"><label>'+esc(L(l))+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
@@ -626,7 +680,7 @@ function pDet(){var f=CUR.fields||{};
   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
   +slotPicker(f)
   +'<div class="f"><label>סטטוס נוכחי</label><div class="v">'+tag("סטטוס",f["סטטוס"])+'</div></div>' 
-  +sel("סטטוס","סטטוס",STATUS,txt(f["סטטוס"]))+sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
+  +sel("סטטוס","סטטוס",allowedStatuses(txt(f["סטטוס"])),txt(f["סטטוס"]))+sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
   +num("קילומטראז'","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
   +selLink("מיקום לפני טיפול","מיקום לפני טיפול",LOC,ids(f["מיקום לפני טיפול"]))
@@ -744,6 +798,103 @@ function pPay(){
        +'<span class="pill '+(okInv?"at-greenBright":"at-redBright")+'">'+esc(ready||"\u2014")+'</span></div></div>'
    +'</div>';
 }
+/* ============================================================
+   ============ RULES ENGINE (שכבת הקוד) — v5 =================
+   מחליף את אוטומציות Airtable. כל חוק שהיה באוטומציה נמצא כאן,
+   עם תיקון הבאגים שזוהו באודיט 22/08/2026.
+   ============================================================ */
+var RULES={
+  /* --- סלוטים: סטטוס נגזר מטווח העמדה (מתקן את באג "דחוף פנוי" שנעלם) --- */
+  slotStatus:function(station,taken){
+    var s=Number(station)||0;
+    if(s>=7)  return taken?"טסט תפוס":"טסט פנוי";
+    if(s>=5)  return taken?"דחוף תפוס":"דחוף פנוי";
+    return          taken?"תפוס":"פנוי";
+  },
+  FREE:["פנוי","דחוף פנוי","טסט פנוי"],
+  isFree:function(st){return RULES.FREE.indexOf(txt(st))>=0;},
+
+  /* --- מכונת מצבים: יעדים חוקיים מכל סטטוס (היה בסקריפט נעילה שמעולם לא הופעל) --- */
+  NEXT:{
+    "":                  ["חדש","מחכה לטיפול","בטיפול","ממתין לאישור אמיר","בוטל"],
+    "חדש":               ["מחכה לטיפול","בטיפול","ממתין לאישור אמיר","בוטל"],
+    "ממתין לאישור אמיר": ["מחכה לטיפול","בטיפול","בוטל"],
+    "מחכה לטיפול":       ["בטיפול","מוכן לתשלום","בוטל"],
+    "בטיפול":            ["מחכה לטיפול","מוכן לתשלום","בוטל"],
+    "מוכן לתשלום":       ["שולם","בוטל"],
+    "שולם":              [],
+    "בוטל":              []
+  },
+  canMove:function(from,to){
+    from=txt(from)||""; to=txt(to)||"";
+    if(from===to)return true;
+    return (RULES.NEXT[from]||[]).indexOf(to)>=0;
+  },
+  blockReason:function(from,to){
+    from=txt(from)||"";
+    if(from==="שולם")        return "🔒 כרטיס ששולם נעול לשינויים";
+    if(from==="בוטל")        return "🔒 כרטיס שבוטל נעול. יש לפתוח כרטיס חדש";
+    if(from==="מוכן לתשלום") return "⚠️ ממוכן לתשלום ניתן לעבור רק ל\"שולם\" או ל\"בוטל\"";
+    return "⚠️ מעבר סטטוס לא חוקי: "+from+" → "+to;
+  },
+
+  /* --- רכבי יוקרה: עצירה לאישור אמיר --- */
+  LUX:/מרצדס|מרסדס|ב\.מ\.וו|במוו|BMW|Mercedes/i,
+  isLuxury:function(f){
+    return RULES.LUX.test(txt(f["יצרן רכב (טקסט להודעות)"])||txt(f["יצרן (מלל חופשי)"])||"");
+  },
+
+  /* --- Webhooks (Make) --- */
+  HOOK:{
+    ready:  "https://hook.eu1.make.com/5d5v8xy923hymeo2c8wioroy8r0ygri1",
+    newCard:"https://hook.eu1.make.com/bc2p3hlplw8l4dk51dhkou9n6eg4mqry",
+    move:   "https://hook.eu1.make.com/fc6n5qcfrgu17odbq2qwumexi4w6csyr",
+    cancel: "https://hook.eu1.make.com/upa4tc2qr9tegf6jjwv4a8waka5v5mj2"
+  },
+  fire:function(kind,recId){
+    try{fetch(RULES.HOOK[kind],{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:recId})}).catch(function(){});}catch(e){}
+  }
+};
+
+/* --- חלפים ללא מחיר: חוסם סגירת כרטיס לתשלום ---
+   מגן מפני חשבונית עם שורת 0.00 ₪ (כמו בחשבונית 14980).
+   פועל גם כשקטלוג החלפים עדיין לא תומחר במלואו. */
+function unpricedParts(){
+  if(!CUR)return [];
+  return (typeof myLines==="function"?myLines():[]).filter(function(r){
+    var f=r.fields||{}, p=f["מחיר ליחידה (בזמן השימוש)"];
+    return p===undefined||p===null||p===""||Number(p)<=0;
+  }).map(function(r){
+    return txt((r.fields||{})["חלף"])||"חלף ללא שם";
+  });
+}
+
+/* --- קריאה/כתיבה גולמית לסלוט --- */
+async function getSlot(id){var r=await fetch(PX+B+"/"+T.slot+"/"+id);if(!r.ok)throw 0;return r.json();}
+async function patchRec(tbl,id,fields){
+  var r=await fetch(PX+B+"/"+tbl+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({fields:fields,typecast:true})});
+  if(!r.ok)throw new Error((await r.text()).slice(0,140));
+  return r.json();
+}
+
+/* --- תפיסת סלוט אטומית: בודק שהוא עדיין פנוי לפני התפיסה --- */
+async function claimSlot(slotId,woId){
+  var s=await getSlot(slotId), f=s.fields||{};
+  if(!RULES.isFree(f["סטטוס"])) throw new Error("הסלוט כבר נתפס על ידי כרטיס אחר — בחר מועד אחר");
+  var links=ids(f["כרטיסי עבודה"]);
+  if(links.length && links.indexOf(woId)<0) throw new Error("הסלוט משויך כבר לכרטיס אחר");
+  await patchRec(T.slot,slotId,{"סטטוס":RULES.slotStatus(f["מספר עמדה"],true)});
+  return s;
+}
+/* --- שחרור סלוט: סטטוס לפי טווח העמדה + ניקוי קישורים --- */
+async function releaseSlot(slotId){
+  var s=await getSlot(slotId), f=s.fields||{};
+  await patchRec(T.slot,slotId,{"סטטוס":RULES.slotStatus(f["מספר עמדה"],false),"לקוחות":[],"כרטיסי עבודה":[]});
+  return txt(f["תאריך ושעה"]);
+}
+
 /* ============ WRITES ============ */
 function patchWO(fields,rd,note){
   var rid=CUR.id;
@@ -765,15 +916,73 @@ function statusNote(from,to){
   return "";
 }
 function setF2(fld,v){
-  if(fld==="סטטוס"){
-    var from=txt((CUR.fields||{})["סטטוס"]);
-    if(v==="שולם"&&ORDER.indexOf(from)>=0&&ORDER.indexOf(from)<ORDER.indexOf("מוכן לתשלום")){
-      if(!confirm("הכרטיס עובר ל\"שולם\" בלי לעבור ב\"מוכן לתשלום\".\n\nהלקוח לא יקבל הודעת וואטסאפ ולא ייקבע תאריך סגירה.\n\nלהמשיך?")){pDet();return;}
-    }
-  }
+  if(fld==="סטטוס")return changeStatus(v);
   var o={};o[fld]=v||null;
-  patchWO(o,(fld.indexOf("בלמים")>=0||fld.indexOf("נוזל")>=0)?pChecks:(fld==="אמצעי תשלום"?pPay:pDet),
-          fld==="סטטוס"?statusNote(txt((CUR.fields||{})["סטטוס"]),v):"");
+  patchWO(o,(fld.indexOf("בלמים")>=0||fld.indexOf("נוזל")>=0)?pChecks:(fld==="אמצעי תשלום"?pPay:pDet),"");
+}
+
+/* ===== חוק מרכזי: שינוי סטטוס — כל תופעות הלוואי מתבצעות כאן בקוד ===== */
+async function changeStatus(to){
+  if(!CUR)return;
+  var f=CUR.fields||{}, from=txt(f["סטטוס"]), extra={}, note="";
+  if(!to||to===from){pDet();return;}
+
+  /* 1. מעבר חוקי? */
+  if(!RULES.canMove(from,to)){toast(RULES.blockReason(from,to),1);pDet();return;}
+
+  /* 2. תנאים מקדימים לכניסה ל"מוכן לתשלום" — נבדקים לפני, לא כתיקון בדיעבד */
+  if(to==="מוכן לתשלום"){
+    /* 2א. חסימה קשיחה: חלף ללא מחיר → חשבונית שגויה. אין דריסה. */
+    var noPrice=unpricedParts();
+    if(noPrice.length){
+      alert("⛔ לא ניתן לסגור לתשלום — "+noPrice.length+" חלפים ללא מחיר:\n\n• "
+        +noPrice.slice(0,8).join("\n• ")+(noPrice.length>8?"\n• ועוד "+(noPrice.length-8):"")
+        +"\n\nהשלם מחיר בלשונית \"חלפים\" ונסה שוב.\nחשבונית עם שורת 0.00 ₪ לא תצא מהמערכת.");
+      mt(1); pParts(); return;
+    }
+    if(!ids(f["מיקום בסוף הטיפול"]).length){
+      if(!confirm("⚠️ לא עודכן מיקום הרכב בסוף הטיפול.\n\nלהמשיך בכל זאת?")){pDet();return;}
+    }
+    if(!f["בעיית הלקוח טופלה"]){
+      if(!confirm("⚠️ \"בעיית הלקוח טופלה\" לא מסומן.\n\nלא ניתן לסגור כרטיס בלי לטפל בבעיית הלקוח.\nלסמן ולהמשיך?")){pDet();return;}
+      extra["בעיית הלקוח טופלה"]=true;
+    }
+    if(!f["תאריך סגירה"]){extra["תאריך סגירה"]=new Date().toISOString();}
+    note="נקבע תאריך סגירה · נשלחה הודעה ללקוח";
+  }
+
+  /* 3. כניסה ל"בטיפול" — חותמת תאריך פתיחה (פעם אחת בלבד) */
+  if(to==="בטיפול"&&!f["תאריך פתיחה"]){extra["תאריך פתיחה"]=new Date().toISOString();note="נקבע תאריך פתיחה";}
+
+  /* 4. ביטול — שחרור הסלוט ושמירת התאריך ההיסטורי */
+  var slotId=ids(f["תור"])[0]||null;
+  if(to==="בוטל"&&slotId){
+    try{var old=await releaseSlot(slotId); if(old)extra["תאריך תור (היסטורי)"]=old; note="הסלוט ביומן שוחרר";}
+    catch(e){toast("שחרור הסלוט נכשל — בדוק ידנית",1);}
+  }
+
+  /* 5. כתיבה */
+  extra["סטטוס"]=to;
+  extra["⚠️ התראה"]="";
+  patchWO(extra,pDet,note);
+
+  /* 6. הודעות יוצאות — פעם אחת בלבד (רק במעבר הראשון) */
+  if(to==="מוכן לתשלום"&&!f["תאריך סגירה"])RULES.fire("ready",CUR.id);
+  if(to==="בוטל")RULES.fire("cancel",CUR.id);
+}
+
+/* ===== חוק: שיוך מכונאי → "בטיפול" + שעת התחלה (לא מושך אחורה כרטיס סגור) ===== */
+function setMechanic(empId){
+  if(!CUR)return;
+  var f=CUR.fields||{}, st=txt(f["סטטוס"]), o={};
+  o["מכונאי אחראי"]=empId?[empId]:[];
+  if(empId&&(st===""||st==="חדש"||st==="מחכה לטיפול"||st==="ממתין לאישור אמיר")){
+    o["סטטוס"]="בטיפול";
+    if(!f["תאריך פתיחה"])o["תאריך פתיחה"]=new Date().toISOString();
+    patchWO(o,pDet,"הכרטיס עבר ל\"בטיפול\" · נקבעה שעת התחלה");
+    return;
+  }
+  patchWO(o,pDet,empId&&(st==="מוכן לתשלום"||st==="שולם")?"המכונאי עודכן · הסטטוס לא שונה":"");
 }
 /* re-read the record after Airtable automations have run */
 function refetchCard(id,tries){
@@ -790,7 +999,9 @@ function refetchCard(id,tries){
   },tries===0?2200:4000);
 }
 function setChk(name,on){var o={};o[name]=!!on;patchWO(o,pChecks);}
-function setLink(fld,id){var o={};o[fld]=id?[id]:[];patchWO(o,pDet);}
+function setLink(fld,id){
+  if(fld==="מכונאי אחראי")return setMechanic(id);
+  var o={};o[fld]=id?[id]:[];patchWO(o,pDet);}
 function setNum(fld,v){var o={};var n=parseFloat(v);o[fld]=isNaN(n)?null:n;patchWO(o,fld==="עלות עבודה"?pPay:pDet);}
 function setTxt(fld,v){var o={};o[fld]=v||"";patchWO(o,null);}
 function addSvc(id){if(!id)return;var cur=ids((CUR.fields||{})["שירותים נוספים:"]);if(cur.indexOf(id)<0)cur.push(id);
@@ -945,7 +1156,10 @@ function newCard(){
    +'<div class="srch"><input id="ncVeh" placeholder="🔍 חפש רכב (מספר רכב)…" autocomplete="off" oninput="ncSearch(\'veh\')"><div class="dd" id="ddVeh"></div></div>'
    +'<div class="f" style="margin-top:6px"><div class="v" id="ncVehPick">— לא נבחר רכב —</div></div>'+'<button class="x" style="width:auto;padding:7px 13px;margin-bottom:8px" onclick="newVehForm()">+ רכב חדש</button>'
    +'<div class="grid" style="margin-top:12px">'
-   +'<div class="f"><label>תאריך ושעה</label><input type="datetime-local" id="ncDate"></div>'
+   +'<div class="f"><label>בחר תאריך לתור *</label><input type="date" id="ncDate" onchange="fillSlotSelect()"></div>'
+   +'<div class="f"><label>האם הטיפול כולל טסט?</label>'
+     +'<label class="chk" style="margin:0"><input type="checkbox" id="ncTest" onchange="fillSlotSelect()"><span>כן — תור טסט (07:00)</span></label></div>'
+   +'<div class="f"><label>קביעת שעת התור *</label><select id="ncSlot"><option value="">— בחר קודם תאריך —</option></select></div>'
    +'<div class="f"><label>סוג טיפול</label><select id="ncType"><option value=""></option>'+TREAT.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></div>'
    +'<div class="f"><label>מכונאי אחראי</label><select id="ncEmp"><option value=""></option>'+EMP.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+'</option>';}).join("")+'</select></div>'
    +'<div class="f"><label>קילומטראז\'</label><input type="number" id="ncKm"></div>'
@@ -953,6 +1167,40 @@ function newCard(){
    +'<button class="save" id="ncSave" onclick="createCard()">✓ צור כרטיס עבודה</button>';
   if(window.__keepPicks!==true){window.__ncCus=window.__ncCus||null;window.__ncVeh=window.__ncVeh||null;}
   document.getElementById("ov").classList.add("on");
+  fillSlotSelect();
+}
+/* ===== בחירת תור: תאריך → שעה, בדיוק כמו בטופס Fillout =====
+   רגיל: סטטוס פנוי/דחוף פנוי · עמדות 1-6 (בטופס הציבורי רק 1-4)
+   טסט : סטטוס "טסט פנוי" · עמדות 7-16 · תמיד 07:00                       */
+function slotsOnDate(dateKey,isTest){
+  return SLOTS.filter(function(r){
+    var f=r.fields||{}, st=Number(f["מספר עמדה"])||0;
+    if(dk(f["תאריך ושעה"])!==dateKey)return false;
+    return isTest ? st>=7 : st<7;
+  }).sort(function(a,b){return String(txt((a.fields||{})["תאריך ושעה"]))
+      .localeCompare(String(txt((b.fields||{})["תאריך ושעה"])));});
+}
+function slotTimeLabel(r){
+  var f=r.fields||{}, s=txt(f["תאריך ושעה"]), st=Number(f["מספר עמדה"])||0;
+  var m=s.match(/T(\d{2}):(\d{2})/), hhmm=m?(m[1]+":"+m[2]):"";
+  if(st>=7)return "07:00 — במהלך היום · עמדה "+st+" (טסט)";
+  var h=m?Number(m[1]):0, mi=m?Number(m[2]):0, e=h*60+mi+150;
+  var end=String(Math.floor(e/60)).padStart(2,"0")+":"+String(e%60).padStart(2,"0");
+  return hhmm+" - "+end+" · עמדה "+st+(st>=5?" (דחוף)":"");
+}
+async function fillSlotSelect(){
+  var d=document.getElementById("ncDate"), el=document.getElementById("ncSlot");
+  if(!el)return;
+  var isTest=!!(document.getElementById("ncTest")||{}).checked;
+  if(!d.value){el.innerHTML='<option value="">— בחר קודם תאריך —</option>';return;}
+  el.innerHTML='<option value="">— טוען… —</option>';
+  await loadSlotsForDate(d.value);
+  el=document.getElementById("ncSlot"); d=document.getElementById("ncDate"); if(!el||!d||!d.value)return;
+  var list=slotsOnDate(d.value,isTest);
+  el.innerHTML=list.length
+    ? '<option value="">— בחר שעה —</option>'+list.map(function(r){
+        return '<option value="'+r.id+'">'+esc(slotTimeLabel(r))+'</option>';}).join("")
+    : '<option value="">— אין '+(isTest?"תורי טסט":"תורים")+' פנויים בתאריך זה —</option>';
 }
 async function ncSearch(kind){
   var inp=document.getElementById(kind==="cus"?"ncCus":"ncVeh"), dd=document.getElementById(kind==="cus"?"ddCus":"ddVeh");
@@ -975,23 +1223,50 @@ function ncPick(kind,id,lbl){
   if(kind==="cus"){window.__ncCus=id;document.getElementById("ncCusPick").textContent="✓ "+lbl;}
   else{window.__ncVeh=id;document.getElementById("ncVehPick").textContent="✓ "+lbl;}
 }
-function createCard(){
+async function createCard(){
   if(!window.__ncCus||!window.__ncVeh){toast("צריך לבחור גם לקוח וגם רכב",1);return;}
-  var b={fields:{},typecast:true};
-  b.fields["שם לקוח"]=[window.__ncCus];
-  b.fields["מספר רכב"]=[window.__ncVeh];
-  b.fields["סטטוס"]="חדש";
-  var d=document.getElementById("ncDate").value; if(d)b.fields["תאריך ושעה"]=d;
-  var t=document.getElementById("ncType").value; if(t)b.fields["סוג טיפול"]=t;
-  var e=document.getElementById("ncEmp").value; if(e)b.fields["מכונאי אחראי"]=[e];
-  var km=parseFloat(document.getElementById("ncKm").value); if(!isNaN(km))b.fields["עדכון קילומטרז' ידני"]=km;
-  var rs=document.getElementById("ncReason").value; if(rs)b.fields["סיבת הגעה"]=rs;
+  var slotId=document.getElementById("ncSlot").value||"";
+  var emp=document.getElementById("ncEmp").value||"";
   var btn=document.getElementById("ncSave");btn.disabled=true;btn.textContent="יוצר…";
-  fetch(PX+B+"/"+T.wo,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
-   .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(rec){WOS.push(rec);drawTabs();draw();toast("✓ נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||""));
-     closeCard();setTimeout(function(){openCard(rec.id);},400);})
-   .catch(function(){btn.disabled=false;btn.textContent="✓ צור כרטיס עבודה";toast("היצירה נכשלה",1);});
+
+  var fields={};
+  fields["שם לקוח"]=[window.__ncCus];
+  fields["מספר רכב"]=[window.__ncVeh];
+  fields["מקור"]="מוסך";                     /* נוצר בדלפק — לא שולח הודעת אישור ללקוח */
+  /* ⚠️ אין לכתוב "תאריך ושעה" — זהו שדה lookup מהסלוט (קריאה בלבד). התור נקבע ע"י הקישור "תור". */
+  var t=document.getElementById("ncType").value; if(t)fields["סוג טיפול"]=t;
+  var km=parseFloat(document.getElementById("ncKm").value); if(!isNaN(km))fields["עדכון קילומטרז' ידני"]=km;
+  var rs=document.getElementById("ncReason").value; if(rs)fields["סיבת הגעה"]=rs;
+
+  /* --- חוק רכבי יוקרה: עצירה לאישור אמיר --- */
+  var vehLbl=(document.getElementById("ncVehPick").textContent||"");
+  var lux=RULES.LUX.test(vehLbl);
+
+  try{
+    if(slotId){await claimSlot(slotId,"");fields["תור"]=[slotId];}
+
+    /* --- קדימויות סטטוס: יוקרה > מכונאי > תור > חדש --- */
+    if(lux){fields["סטטוס"]="ממתין לאישור אמיר";}
+    else if(emp){fields["מכונאי אחראי"]=[emp];fields["סטטוס"]="בטיפול";fields["תאריך פתיחה"]=new Date().toISOString();}
+    else if(slotId){fields["סטטוס"]="מחכה לטיפול";}
+    else {fields["סטטוס"]="חדש";}
+    if(lux&&emp)fields["מכונאי אחראי"]=[emp];
+
+    var r=await fetch(PX+B+"/"+T.wo,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({fields:fields,typecast:true})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,160));
+    var rec=await r.json();
+
+    WOS.push(rec);drawTabs();draw();
+    toast("✓ נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||"")+(slotId?"":" · ⚠️ ללא תור"));
+    if(lux)setTimeout(function(){alert("🚗 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
+    RULES.fire("newCard",rec.id);
+    closeCard();setTimeout(function(){openCard(rec.id);},400);
+  }catch(e){
+    if(slotId){try{await releaseSlot(slotId);}catch(x){}}   /* rollback: לא להשאיר סלוט תפוס ללא כרטיס */
+    btn.disabled=false;btn.textContent="✓ צור כרטיס עבודה";
+    toast(e.message||"היצירה נכשלה",1);
+  }
 }
 
 
@@ -1040,13 +1315,18 @@ function saveEmp(id){
    .then(function(){toast("✓ העובד עודכן");closeCard();reloadEmp();})
    .catch(function(){toast("השמירה נכשלה",1);});
 }
+/* ===== לקוח 360° — פרטים + רכבים + היסטוריית טיפולים ===== */
 function openCus(rec){
   EDIT_KIND="cus"; EDIT_REC=rec;
   var f=rec.fields||{}, ph=f["תמונה"]||[];
   document.getElementById("mT").textContent="לקוח · "+(f["שם לקוח"]||"");
   document.getElementById("mS").textContent=(f["מספר טלפון"]||"")+" · "+txt(f["מספר רכבים"])+" רכבים";
-  document.getElementById("mTabs").innerHTML="";
+  document.getElementById("mTabs").innerHTML=["פרטים","רכבים","היסטוריית טיפולים"]
+    .map(function(l,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+esc(l)+'</button>';}).join("");
   [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
+  document.getElementById("p1").innerHTML='<div class="boot">טוען רכבים…</div>';
+  document.getElementById("p2").innerHTML='<div class="boot">טוען היסטוריה…</div>';
+  loadCusHistory(rec);
   document.getElementById("p0").innerHTML='<div class="grid">'
    +'<div class="f"><label>שם לקוח *</label><input id="cN" value="'+esc(f["שם לקוח"]||"")+'"></div>'
    +'<div class="f"><label>טלפון *</label><input id="cP" value="'+esc(f["מספר טלפון"]||"")+'"></div>'
@@ -1066,6 +1346,53 @@ function openCus(rec){
    +'<button class="save" onclick="saveCus(\''+rec.id+'\')">✓ שמור לקוח</button>';
   document.getElementById("ov").classList.add("on");
 }
+/* טוען את כל הרכבים וכל כרטיסי העבודה של הלקוח */
+async function loadCusHistory(rec){
+  var f=rec.fields||{}, nm=f["שם לקוח"]||"", cid=rec.id;
+  /* --- רכבים --- */
+  try{
+    var vids=ids(f["רכבים"]||f["מספר רכב"]||[]);
+    var vehs=[];
+    if(vids.length){
+      vehs=await find(T.veh,"OR("+vids.map(function(v){return "RECORD_ID()="+q(v);}).join(",")+")",50);
+    }
+    var el1=document.getElementById("p1");
+    el1.innerHTML=vehs.length? '<table><thead><tr><th>מספר רכב</th><th>יצרן / דגם</th><th>שנה</th><th>טסט</th></tr></thead><tbody>'
+      +vehs.map(function(v){var g=v.fields||{};
+        return '<tr><td><b>'+esc(g["מספר רכב"]||"")+'</b></td><td>'
+          +esc(((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim()||"—")+'</td><td>'
+          +esc(txt(g["שנת ייצור"])||"—")+'</td><td>'+esc(dt(g["תאריך הטסט"])||"—")+'</td></tr>';}).join("")
+      +'</tbody></table>' : '<div class="muted" style="padding:12px">אין רכבים משויכים</div>';
+  }catch(e){document.getElementById("p1").innerHTML='<div class="muted" style="padding:12px">טעינת הרכבים נכשלה</div>';}
+
+  /* --- היסטוריית כרטיסי עבודה --- */
+  try{
+    var recs=nm?await find(T.wo,'SEARCH('+q(nm)+',ARRAYJOIN({שם לקוח}))',200):[];
+    recs=recs.filter(function(r){return ids((r.fields||{})["שם לקוח"]).indexOf(cid)>=0;});
+    recs.sort(function(a,b){
+      var A=txt((a.fields||{})["תאריך ושעה"])||txt((a.fields||{})["תאריך פתיחה"])||a.createdTime;
+      var Bv=txt((b.fields||{})["תאריך ושעה"])||txt((b.fields||{})["תאריך פתיחה"])||b.createdTime;
+      return String(Bv).localeCompare(String(A));});
+    var total=recs.reduce(function(s,r){return s+(Number((r.fields||{})['סה"כ לתשלום'])||0);},0);
+    var paid =recs.filter(function(r){return txt((r.fields||{})["סטטוס"])==="שולם";}).length;
+    var el2=document.getElementById("p2");
+    el2.innerHTML='<div class="grid" style="margin-bottom:10px">'
+      +'<div class="f"><label>סה"כ ביקורים</label><div class="v"><b>'+recs.length+'</b></div></div>'
+      +'<div class="f"><label>מתוכם שולמו</label><div class="v"><b>'+paid+'</b></div></div>'
+      +'<div class="f"><label>סה"כ הכנסות מהלקוח</label><div class="v"><b>'+money(total)+'</b></div></div>'
+      +'</div>'
+      +(recs.length?'<table><thead><tr><th>תאריך</th><th>רכב</th><th>סוג טיפול</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
+      +recs.map(function(r){var g=r.fields||{};
+        return '<tr style="cursor:pointer" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
+          +'<td>'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"—")+'</td>'
+          +'<td>'+esc(txt(g["מספר רכב"])||"—")+'</td>'
+          +'<td>'+esc(txt(g["סוג טיפול"])||"—")+'</td>'
+          +'<td>'+tag("סטטוס",g["סטטוס"])+'</td>'
+          +'<td>'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
+      +'</tbody></table>':'<div class="muted" style="padding:12px">אין היסטוריית טיפולים</div>');
+  }catch(e){document.getElementById("p2").innerHTML='<div class="muted" style="padding:12px">טעינת ההיסטוריה נכשלה</div>';}
+}
+
 function saveCus(id){
   var o={"שם לקוח":document.getElementById("cN").value.trim(),
          "מספר טלפון":document.getElementById("cP").value.trim(),
