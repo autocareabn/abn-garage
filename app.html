@@ -113,6 +113,10 @@ tr.r{transition:background .12s}
 .ln input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
 .sm{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px}
 
+.mini{font-size:11.5px;color:#6B7686;margin-top:3px}
+tr.rowlink{cursor:pointer}
+tr.rowlink:hover td{background:#fff7f7}
+td.opencell{color:var(--red);font-size:19px;font-weight:700;text-align:center}
 /* ===== GATE / GREETING / ROLES ===== */
 .gate{position:fixed;inset:0;z-index:9999;background:#161A22;display:flex;
   align-items:center;justify-content:center;padding:24px}
@@ -260,9 +264,12 @@ var PERMS={
   mechanic:{label:"מכונאי",     views:["work"],                          money:false, users:false,
             filters:["today","tomorrow","future"]}
 };
+var NAME_BY_EMAIL={"leoneld151174@gmail.com":"ליאו"};
 var ME={email:null,role:null,name:"",empId:null};
 
 function can(k){var p=PERMS[ME.role]; return !!(p&&p[k]);}
+/* הסטטוס נקבע אוטומטית ע"י החוקים. רק שרה (ואדמין) יכולים לשנות ידנית. */
+function canSetStatus(){return ME.role==="admin"||ME.email==="sarabn56@gmail.com";}
 function myViews(){var p=PERMS[ME.role]; return p?p.views:["work"];}
 function isMech(){return ME.role==="mechanic";}
 
@@ -288,6 +295,7 @@ function signInWithEmail(email){
   return finishSignIn();
 }
 function nameForEmail(email){
+  if(NAME_BY_EMAIL[email])return NAME_BY_EMAIL[email];
   var e=EMP.filter(function(x){return String(x.email||"").toLowerCase()===email;})[0];
   return e?e.name:(email.split("@")[0]);
 }
@@ -469,6 +477,11 @@ async function all(t,x){var out=[],off=null,n=0;do{var d=await api("/"+t+"?pageS
 async function find(tbl,formula,n){var d=await api("/"+tbl+"?pageSize="+(n||20)+"&filterByFormula="+encodeURIComponent(formula));return d.records||[];}
 function q(s){return '"'+String(s).replace(/"/g,'')+'"';}
 
+/* מסתיר מזהי רשומה (recXXXXXXXXXXXXXX) שדלפו לתצוגה */
+function noRec(v){var t=txt(v);return /^rec[A-Za-z0-9]{14}$/.test(t.trim())?"":t;}
+/* מספר הרכב האמיתי — השדה "מספר רכב" הוא קישור ולכן מחזיר מזהה רשומה */
+function plate(f){return noRec(f["מספר רכב (טקסט להודעות)"])||noRec(f["מספר רכב_disp"])||noRec(f["מספר רכב"]);}
+
 
 /* ============ PRINT (identical wording to the field app) ============ */
 function cardRows(r){
@@ -478,8 +491,8 @@ function cardRows(r){
   function apt(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
     return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
   return [
-    ["מספר רכב",       T(f["מספר רכב_disp"])||T(f["מספר רכב"])],
-    ["קוד",            T(f["קוד רכב"])],
+    ["מספר רכב",       plate(f)],
+    ["קוד",            noRec(f["קוד רכב"])],
     ["יצרן",           f["יצרן (מלל חופשי)"]||T(f["יצרן רכב"])],
     ["דגם",            f["דגם (מלל חופשי)"]||T(f["דגם"])],
     ["שנת ייצור",      T(f["שנת ייצור"])],
@@ -547,7 +560,9 @@ async function markDone(){
   if(st==="מוכן לתשלום"||st==="שולם"){pDet();pPay();return;}
   if(!RULES.canMove(st,"מוכן לתשלום")){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
   if(!confirm("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))return;
-  await changeStatus("מוכן לתשלום");
+  window.__viaDone=true;
+  try{ await changeStatus("מוכן לתשלום"); }
+  finally{ window.__viaDone=false; }
 }
 
 /* ============ PHOTOS ============ */
@@ -569,7 +584,12 @@ function downscaleImage(file,maxW,quality){
 }
 async function uploadPhoto(inp,kind){
   var file=inp.files&&inp.files[0]; if(!file||!CUR)return;
-  var fld=PHOTO_FIELDS[kind], rid=CUR.id;
+  await uploadPhotoFile(CUR.id,kind,file);
+  inp.value="";
+}
+/* העלאה לרשומה מפורשת — משמש גם לכרטיס שזה עתה נוצר (עוד לפני שהוא CUR) */
+async function uploadPhotoFile(rid,kind,file){
+  if(!file||!rid)return;
   toast("מעלה תמונה…");
   try{
     var up=file;
@@ -587,7 +607,6 @@ async function uploadPhoto(inp,kind){
     refetchCard(rid,0);
     if(kind==="parts")setTimeout(function(){pollParts(rid,0);},6000);
   }catch(e){toast("ההעלאה נכשלה: "+String(e.message).slice(0,60),1);}
-  inp.value="";
 }
 function pollParts(rid,n){
   if(n>6)return;
@@ -607,7 +626,7 @@ function photoBox(kind,label,val){
       +has.map(function(a){var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
         return '<a href="'+esc(a.url)+'" target="_blank"><img src="'+esc(u)+'" style="height:78px;border-radius:8px;border:1px solid #dfe3ea"></a>';}).join("")
       +'</div>':'')
-   +'<input type="file" accept="image/*" capture="environment" onchange="uploadPhoto(this,\''+kind+'\')" style="font-size:13px">'
+   +'<input type="file" accept="image/*,video/*" capture="environment" onchange="uploadPhoto(this,\''+kind+'\')" style="font-size:13px">'
    +'</div>';
 }
 
@@ -705,7 +724,7 @@ var TABS=[["today","היום"],["tomorrow","מחר"],["test","טסטים מחר"
 function match(r,k){var f=r.fields||{},d=dk(f["תאריך ושעה"]),st=txt(f["סטטוס"]),tp=txt(f["סוג טיפול"]);
  if(k==="today")return d===ds(0);if(k==="tomorrow")return d===ds(1);
  if(k==="test")return d===ds(1)&&tp.indexOf("טסט")>=0;if(k==="future")return d>ds(0);
- if(k==="work")return st==="בטיפול"||st==="מחכה לטיפול";if(k==="pay")return st==="מוכן לתשלום";
+ if(k==="work")return st==="בטיפול";   /* רק מה שבאמת עובדים עליו כרגע */if(k==="pay")return st==="מוכן לתשלום";
  if(k==="openc")return st!=="שולם"&&st!=="בוטל";if(k==="closed")return dk(f["תאריך סגירה"])===ds(0);return true;}
 function drawTabs(){var el=document.getElementById("tabs");
  if(VIEW!=="work"){el.style.display="none";return;}el.style.display="flex";
@@ -717,24 +736,26 @@ function setF(k){FILTER=k;drawTabs();draw();}
 function allowedFilters(){var p=PERMS[ME.role]; return p&&p.filters?p.filters:null;}
 function woRows(){var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
  return WOS.filter(function(r){if(!match(r,FILTER))return false;if(!toks.length)return true;var f=r.fields||{};
-  var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
+  var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],plate(f),f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
   return toks.every(function(t){return h.indexOf(t)>=0;});})
-  .sort(function(a,b){return String(dk(b.fields["תאריך ושעה"])).localeCompare(String(dk(a.fields["תאריך ושעה"])));});}
+  .sort(function(a,b){   /* הקרוב למעלה, הרחוק למטה */
+    var A=txt((a.fields||{})["תאריך ושעה"])||"9999",Bv=txt((b.fields||{})["תאריך ושעה"])||"9999";
+    return String(A).localeCompare(String(Bv));});}
 
 
 function draw(){
   var el=document.getElementById("list");
   if(VIEW==="work"){var rs=woRows();
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
-    el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th></tr>'
+    el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
-      return '<tr class="r"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
-       +'<td data-l="תאריך" class="muted" onclick="openCard(\''+r.id+'\')">'+esc(dt(f["תאריך ושעה"]))+'</td>'
-       +'<td data-l="כרטיס" onclick="openCard(\''+r.id+'\')"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח" onclick="openCard(\''+r.id+'\')">'+esc(f["שם להצגה"]||"")+'</td>'
-       +'<td data-l="רכב">'+esc(f["מספר רכב_disp"]||"")+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
+      return '<tr class="r rowlink" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
+       +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
+       +'<td data-l="כרטיס"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
+       +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
        +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
        +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
-       +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td></tr>';}).join("")+'</table>';return;}
+       +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
     el.innerHTML='<table><tr><th>שם</th><th>טלפון</th><th>דוא"ל</th><th>כרטיסים</th><th>רכבים</th><th>סטטוס</th></tr>'
@@ -776,7 +797,8 @@ async function remoteSearch(){
 }
 
 /* ============ CARD ============ */
-function MTL(){return [t("details"),t("parts"),t("services"),t("checks"),t("pay")];}
+/* "שירותים" מוסתר בשלב זה — הפאנל נשאר קיים אך לא מוצג */
+function MTL(){return [[t("details"),0],[t("parts"),1],[t("checks"),3],[t("pay"),4]];}
 var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
   CUR=WOS.filter(function(r){return r.id===id;})[0];
@@ -788,14 +810,14 @@ function openCard(id){
   }
   var f=CUR.fields||{};
   document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
-  document.getElementById("mS").textContent=[f["מספר רכב_disp"],(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
-  document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+t+'</button>';}).join("");
+  document.getElementById("mS").textContent=[plate(f),(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
+  document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" data-pane="'+t[1]+'" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+t[1]+')">'+t[0]+'</button>';}).join("");
   mt(0);pDet();pParts();pSvc();pChecks();pPay();
   document.getElementById("ov").classList.add("on");
 }
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("ov").classList.contains("on"))closeCard();});
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
-function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b,n){b.className=n===i?"on":"";});
+function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
 var SLOTS=[];
 function slotLabel(r){var f=r.fields||{};var s=txt(f["תאריך ושעה"]);
@@ -819,16 +841,25 @@ async function loadSlotsForDate(dateKey){
   }catch(e){if(!dateKey)SLOTS=[];return [];}
 }
 /* שינוי תור בכרטיס: תאריך → שעה (כמו בטופס) */
+function toggleMove(){
+  var b=document.getElementById("mvBox"); if(!b)return;
+  var open=b.style.display!=="none";
+  b.style.display=open?"none":"block";
+  document.getElementById("mvBtn").textContent=open?"↻ שנה תור":"✕ בטל שינוי";
+  if(!open)fillMoveTimes();
+}
 function slotPicker(f){
   var cur=txt(f["תאריך ושעה"]), isTest=/טסט/.test(txt(f["סוג טיפול"]));
-  return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b></div></div>'
-   +'<div class="f"><label>שינוי תור — בחר תאריך</label>'
-   +'<input type="date" id="mvDate" onchange="fillMoveTimes()"></div>'
-   +'<div class="f"><label>שינוי תור — בחר שעה</label>'
-   +'<label class="chk" style="margin:0 0 5px"><input type="checkbox" id="mvTest"'+(isTest?" checked":"")+' onchange="fillMoveTimes()"><span>תור טסט</span></label>'
-   +'<select id="mvSlot" onchange="moveSlot(this.value);this.value=\'\'">'
-   +'<option value="">— בחר קודם תאריך —</option></select>'
-   +'<div style="font-size:11.5px;color:var(--steel);margin-top:3px">המערכת תשחרר את הסלוט הישן ותתפוס את החדש</div></div>';
+  return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b>'
+   +' <button id="mvBtn" class="x" style="padding:4px 10px;font-size:12.5px;margin-inline-start:8px" onclick="toggleMove()">↻ שנה תור</button></div>'
+   +'<div id="mvBox" style="display:none;margin-top:8px;padding:12px;background:#f6f8fa;border:1px solid #dfe3ea;border-radius:10px">'
+     +'<div class="mini" style="margin-bottom:8px">בחר תאריך, ואז תוצג רשימת השעות הפנויות באותו יום</div>'
+     +'<label class="chk" style="margin:0 0 8px"><input type="checkbox" id="mvTest"'+(isTest?" checked":"")+' onchange="fillMoveTimes()"><span>תור טסט</span></label>'
+     +'<input type="date" id="mvDate" onchange="fillMoveTimes()" style="width:100%;margin-bottom:8px">'
+     +'<select id="mvSlot" onchange="moveSlot(this.value);this.value=\'\'">'
+     +'<option value="">— בחר קודם תאריך —</option></select>'
+     +'<div class="mini" style="margin-top:6px">הסלוט הישן ישוחרר והחדש ייתפס אוטומטית</div>'
+   +'</div></div>';
 }
 async function fillMoveTimes(){
   var d=document.getElementById("mvDate"), el=document.getElementById("mvSlot"); if(!d||!el)return;
@@ -875,6 +906,19 @@ function allowedStatuses(cur){
   var out=[cur].concat(RULES.NEXT[cur]||[]);
   return out.filter(function(x,i){return x&&out.indexOf(x)===i;});
 }
+/* סטטוס: תצוגה בלבד לכולם, בורר ידני רק לשרה */
+function statusBlock(f){
+  var cur=txt(f["סטטוס"]);
+  var html='<div class="f"><label>סטטוס</label><div class="v">'+tag("סטטוס",f["סטטוס"])+'</div>';
+  if(canSetStatus()){
+    html+='<select onchange="setF2(\'סטטוס\',this.value)" style="margin-top:6px">'
+      +allowedStatuses(cur).filter(function(o){return o!=="מוכן לתשלום"||cur==="מוכן לתשלום";}).map(function(o){return '<option'+(o===cur?" selected":"")+'>'+esc(o)+'</option>';}).join("")
+      +'</select><div class="mini">שינוי ידני — רק לשרה · "מוכן לתשלום" נקבע רק ע"י כפתור "סיימתי" של המכונאי</div>';
+  }else{
+    html+='<div class="mini">הסטטוס מתעדכן אוטומטית לפי החוקים</div>';
+  }
+  return html+'</div>';
+}
 function ro(l,v){return '<div class="f"><label>'+esc(L(l))+'</label><div class="v">'+esc(L(v)||"—")+'</div></div>';}
 function sel(l,fld,opts,cur){return '<div class="f"><label>'+esc(L(l))+'</label><select onchange="setF2(\''+fld+'\',this.value)">'
  +'<option value=""></option>'+opts.map(function(o){return '<option value="'+esc(o)+'"'+(o===cur?" selected":"")+'>'+esc(L(o))+'</option>';}).join("")+'</select></div>';}
@@ -887,25 +931,23 @@ function area(l,fld,v){return '<div class="f"><label>'+esc(l)+'</label><textarea
 function pDet(){var f=CUR.fields||{};
  document.getElementById("p0").innerHTML='<div class="grid">'
   +ro("לקוח",f["שם להצגה"])+ro("טלפון",txt(f["מספר טלפון"]))
-  +ro("מספר רכב",f["מספר רכב_disp"])+ro("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
+  +ro("מספר רכב",plate(f))+ro("יצרן / דגם",(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))
   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
   +slotPicker(f)
-  +'<div class="f"><label>סטטוס נוכחי</label><div class="v">'+tag("סטטוס",f["סטטוס"])+'</div></div>' 
-  +sel("סטטוס","סטטוס",allowedStatuses(txt(f["סטטוס"])),txt(f["סטטוס"]))+sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
+  +statusBlock(f)
+  +sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
   +num("קילומטראז'","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
+  +photoBox("km","📷 צילום הקילומטראז'",f["צילום הקילומטרז'"])
   +selLink("מיקום לפני טיפול","מיקום לפני טיפול",LOC,ids(f["מיקום לפני טיפול"]))
   +selLink("מיקום בסוף הטיפול","מיקום בסוף הטיפול",LOC,ids(f["מיקום בסוף הטיפול"]))
   +ro("תאריך התור",dt(f["תאריך ושעה"]))+ro("תאריך פתיחה",dt(f["תאריך פתיחה"]))
   +'</div><div class="sec">תיאור</div>'
   +area("סיבת הגעה","סיבת הגעה",f["סיבת הגעה"])
+  +'<div class="g3">'+photoBox("problem","📷 צילום הבעיה",f["צילום הבעיה"])+'</div>'
   +area("הערות מכונאי","הערות מכונאי",f["הערות מכונאי"])
   +(f["⚠️ התראה"]?'<div class="f"><label>⚠️ התראה</label><div class="v" style="color:var(--red)">'+esc(f["⚠️ התראה"])+'</div></div>':'')
-  +'<div class="sec">צילומים</div><div class="g3">'
-  +photoBox("km","צילום הקילומטרז'",f["צילום הקילומטרז'"])
-  +photoBox("problem","צילום הבעיה",f["צילום הבעיה"])
-  +photoBox("parts","סריקה של חלקים שהותקנו",f["סריקה של חלקים שהותקנו"])
-  +'</div>';}
+  +'';}
 
 function myLines(){return LINES.filter(function(x){return ids((x.fields||{})["כרטיס עבודה"]).indexOf(CUR.id)>=0;});}
 function pParts(){var ls=myLines(),sum=0;
@@ -983,7 +1025,7 @@ function pPay(){
   document.getElementById("p4").innerHTML=
    '<div class="sec" style="margin-top:0">\u05d7\u05e9\u05d1\u05d5\u05df \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="font-size:13px;color:var(--steel);margin-bottom:10px">'
-     +esc(f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")+' \u00b7 \u05e8\u05db\u05d1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05e8\u05db\u05d1_disp"]||"")
+     +esc(f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")+' \u00b7 \u05e8\u05db\u05d1 '+esc(plate(f))
      +' \u00b7 \u05db\u05e8\u05d8\u05d9\u05e1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")+'</div>'
    +warn
    +'<table style="margin-bottom:14px"><tr><th>\u05e2\u05d1\u05d5\u05d3\u05d5\u05ea</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
@@ -1007,7 +1049,73 @@ function pPay(){
      +sel("\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df","\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df",["\u05d8\u05d9\u05d5\u05d8\u05d4","\u05de\u05d0\u05d5\u05e9\u05e8","\u05e0\u05e9\u05dc\u05d7 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd","\u05e9\u05d5\u05dc\u05dd","\u05d1\u05d5\u05d8\u05dc"],txt(f["\u05e1\u05d8\u05d8\u05d5\u05e1 \u05d7\u05e9\u05d1\u05d5\u05df"]))
      +'<div class="f"><label>\u05de\u05d5\u05db\u05e0\u05d5\u05ea \u05dc\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea</label><div class="v">'
        +'<span class="pill '+(okInv?"at-greenBright":"at-redBright")+'">'+esc(ready||"\u2014")+'</span></div></div>'
-   +'</div>';
+   +'</div>'
+   +invoiceActions(gross);
+}
+
+/* ===== תצוגה מקדימה של החשבונית + שליחה מאוחדת ללקוח ===== */
+function invoiceActions(gross){
+  var f=CUR.fields||{}, sent=!!f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"];
+  var loc=txt(f["\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc"]);
+  var blocked=[];
+  if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
+  if(unpricedParts().length)blocked.push("\u05d9\u05e9 \u05d7\u05dc\u05e3 \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8");
+  if(!loc)blocked.push("\u05dc\u05d0 \u05e2\u05d5\u05d3\u05db\u05df \u05de\u05d9\u05e7\u05d5\u05dd \u05d4\u05e8\u05db\u05d1");
+  return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+   +'<button class="x" onclick="previewInvoice()">\ud83d\udc41 \u05ea\u05e6\u05d5\u05d2\u05d4 \u05de\u05e7\u05d3\u05d9\u05de\u05d4</button>'
+   +(sent
+      ? '<span class="pill at-greenBright">\u2713 \u05e0\u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 '+esc(dt(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"]))+'</span>'
+      : '<button class="save" style="width:auto;padding:9px 16px;margin:0"'+(blocked.length?" disabled":"")
+        +' onclick="sendToCustomer()">\ud83d\udcac \u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u2014 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df + \u05ea\u05e9\u05dc\u05d5\u05dd</button>')
+   +'</div>'
+   +(blocked.length?'<div class="mini" style="color:var(--red);margin-top:6px">\u26d4 '+esc(blocked.join(" \u00b7 "))+'</div>'
+     :'<div class="mini" style="margin-top:6px">\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea: \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df, \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e9\u05dc\u05d5, \u05d5\u05d4\u05e1\u05db\u05d5\u05dd \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</div>');
+}
+
+function previewInvoice(){
+  if(!CUR)return;
+  var f=CUR.fields||{}, ls=myLines(), sum=0;
+  var rows=ls.map(function(r){var g=r.fields||{};
+    var nm=(g["\u05d7\u05dc\u05e3"]&&g["\u05d7\u05dc\u05e3"][0]&&g["\u05d7\u05dc\u05e3"][0].name)||"(\u05d7\u05dc\u05e3)";
+    var qy=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"],pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0;
+    sum+=qy*pr;
+    return '<tr><td>'+esc(nm)+'</td><td>'+qy+'</td><td>'+money(pr)+'</td><td>'+money(qy*pr)+'</td></tr>';}).join("");
+  var labour=Number(f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"]||0);
+  var net=sum+labour, vat=net*0.18, gross=net+vat;
+  var w=window.open("","_blank");
+  if(!w){toast("\u05d4\u05d3\u05e4\u05d3\u05e4\u05df \u05d7\u05e1\u05dd \u05d0\u05ea \u05d4\u05d7\u05dc\u05d5\u05df",1);return;}
+  w.document.write('<html dir="rtl"><head><meta charset="utf-8"><title>\u05d7\u05e9\u05d1\u05d5\u05df '
+   +esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")+'</title>'
+   +'<style>body{font-family:Arial,sans-serif;padding:32px;max-width:640px;margin:auto;color:#161A22}'
+   +'h1{color:#ED1E24;margin:0 0 2px;font-size:22px}.sub{color:#666;font-size:13px;margin-bottom:20px}'
+   +'table{width:100%;border-collapse:collapse;margin:14px 0}th,td{border-bottom:1px solid #e3e6ec;padding:8px;text-align:right;font-size:14px}'
+   +'th{background:#f6f8fa;font-size:12px;color:#666}tfoot td{border:none;padding:4px 8px}'
+   +'.tot{font-size:19px;font-weight:700;color:#ED1E24;border-top:2px solid #161A22!important}</style></head><body>'
+   +'<h1>ABN \u2014 \u05de\u05d5\u05e1\u05da \u05d0\u05de\u05d9\u05e8 \u05d1\u05df \u05e0\u05d9\u05e1\u05df</h1>'
+   +'<div class="sub">\u05db\u05e8\u05d8\u05d9\u05e1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")
+   +' \u00b7 '+esc(f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")+' \u00b7 \u05e8\u05db\u05d1 '+esc(plate(f))+'</div>'
+   +'<table><thead><tr><th>\u05e4\u05e8\u05d9\u05d8</th><th>\u05db\u05de\u05d5\u05ea</th><th>\u05de\u05d7\u05d9\u05e8</th><th>\u05e1\u05d4"\u05db</th></tr></thead>'
+   +'<tbody>'+(rows||'<tr><td colspan="4" style="color:#999">\u05d0\u05d9\u05df \u05d7\u05dc\u05e4\u05d9\u05dd</td></tr>')
+   +(labour?'<tr><td>\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</td><td>1</td><td>'+money(labour)+'</td><td>'+money(labour)+'</td></tr>':'')
+   +'</tbody><tfoot>'
+   +'<tr><td colspan="3">\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de</td><td>'+money(net)+'</td></tr>'
+   +'<tr><td colspan="3">\u05de\u05e2"\u05de 18%</td><td>'+money(vat)+'</td></tr>'
+   +'<tr><td colspan="3" class="tot">\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</td><td class="tot">'+money(gross)+'</td></tr>'
+   +'</tfoot></table></body></html>');
+  w.document.close();
+}
+
+async function sendToCustomer(){
+  if(!CUR)return;
+  var f=CUR.fields||{};
+  var loc=txt(f["\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc"]);
+  var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
+  if(!confirm("\u05dc\u05e9\u05dc\u05d5\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea?\n\n\u2022 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df\n\u2022 \u05de\u05d9\u05e7\u05d5\u05dd: "+loc
+    +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
+  patchWO({"\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":new Date().toISOString().slice(0,10)},pPay,
+    "\u05e0\u05e9\u05dc\u05d7\u05d4 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d0\u05d5\u05d7\u05d3\u05ea \u05dc\u05dc\u05e7\u05d5\u05d7");
+  RULES.fire("ready",CUR.id);
 }
 /* ============================================================
    ============ RULES ENGINE (שכבת הקוד) — v5 =================
@@ -1143,6 +1251,11 @@ async function changeStatus(to){
 
   /* 2. תנאים מקדימים לכניסה ל"מוכן לתשלום" — נבדקים לפני, לא כתיקון בדיעבד */
   if(to==="מוכן לתשלום"){
+    /* 2.0 שער יחיד: המעבר מתבצע אך ורק דרך "✓ סיימתי את העבודה" של המכונאי. */
+    if(!window.__viaDone){
+      alert("⛔ אי אפשר להעביר ידנית ל\"מוכן לתשלום\".\n\nהמעבר מתבצע רק אחרי שהמכונאי לוחץ על \"✓ סיימתי את העבודה\" בכרטיס.");
+      pDet();return;
+    }
     /* 2א. חסימה קשיחה: חלף ללא מחיר → חשבונית שגויה. אין דריסה. */
     var noPrice=unpricedParts();
     if(noPrice.length){
@@ -1258,17 +1371,19 @@ function fmtPlate(v){var d=normPhone(v);
  if(d.length===8)return d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5);
  if(d.length===7)return d.slice(0,2)+"-"+d.slice(2,5)+"-"+d.slice(5);return d;}
 
-function newCusForm(){
+function newCusForm(phone){
+  document.getElementById("mS").textContent="לקוח חדש";
   document.getElementById("p0").innerHTML='<div class="sec" style="margin-top:0">לקוח חדש</div>'
    +'<div class="grid">'
    +'<div class="f"><label>שם מלא *</label><input id="ncnName" oninput="cusDupCheck()"></div>'
-   +'<div class="f"><label>טלפון נייד *</label><input id="ncnPhone" placeholder="05XXXXXXXX" oninput="cusDupCheck()"></div>'
+   +'<div class="f"><label>טלפון נייד *</label><input id="ncnPhone" value="'+esc(phone||"")+'" placeholder="05XXXXXXXX" oninput="cusDupCheck()"></div>'
    +'<div class="f"><label>דוא"ל</label><input id="ncnMail" type="email"></div>'
    +'<div class="f"><label>כתובת</label><input id="ncnAddr"></div>'
    +'</div><div id="dupBox"></div>'
    +'<button class="save" id="ncnSave" onclick="createCustomer()">✓ צור לקוח</button>'
-   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה</button>';
+   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה לחיפוש טלפון</button>';
   window.__dupList=[];
+  setTimeout(function(){var e=document.getElementById("ncnName");if(e)e.focus();},80);
 }
 async function cusDupCheck(){
   var nm=(document.getElementById("ncnName").value||"").trim();
@@ -1292,9 +1407,7 @@ async function cusDupCheck(){
         +'<button class="x" style="width:auto;padding:5px 10px;color:#1d7a33;border-color:#a8ddb4" onclick="useExistingCus(\''+r.id+'\',\''+esc((g["שם לקוח"]||"")+" · "+(g["מספר טלפון"]||"")).replace(/\'/g,"")+'\')">זה הוא</button></div>';}).join("");
   }catch(e){box.innerHTML='<div class="hint">בדיקת הכפילויות נכשלה — אפשר להמשיך</div>';}
 }
-function useExistingCus(id,lbl){window.__ncCus=id;newCard();
- setTimeout(function(){var el=document.getElementById("ncCusPick");if(el)el.textContent="✓ "+lbl;},120);
- toast("✓ נבחר לקוח קיים");}
+function useExistingCus(id,lbl){window.__ncCus=id;window.__ncCusLbl=lbl||"";toast("✓ נבחר לקוח קיים");ncStep2();}
 function createCustomer(){
   var nm=(document.getElementById("ncnName").value||"").trim();
   var ph=(document.getElementById("ncnPhone").value||"").trim();
@@ -1308,8 +1421,8 @@ function createCustomer(){
   var btn=document.getElementById("ncnSave");btn.disabled=true;btn.textContent="יוצר…";
   fetch(PX+B+"/"+T.cus,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
    .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(rec){window.__ncCus=rec.id;toast("✓ נוצר לקוח "+nm);newCard();
-     setTimeout(function(){var el=document.getElementById("ncCusPick");if(el)el.textContent="✓ "+nm+" · "+normPhone(ph);},120);})
+   .then(function(rec){window.__ncCus=rec.id;window.__ncCusLbl=nm+" · "+normPhone(ph);
+     toast("✓ נוצר לקוח "+nm);ncStep2();})
    .catch(function(){btn.disabled=false;btn.textContent="✓ צור לקוח";toast("היצירה נכשלה",1);});
 }
 
@@ -1321,7 +1434,9 @@ function newVehForm(){
    +'<div class="f"><label>קוד רכב (קוד התנעה)</label><input id="nvCode"></div>'
    +'</div><div id="vdupBox"></div>'
    +'<button class="save" id="nvSave" onclick="createVehicle()">✓ צור רכב</button>'
-   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה</button>';
+   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="ncStep2()">← חזרה לרשימת הרכבים</button>';
+  document.getElementById("mS").textContent="רכב חדש";
+  setTimeout(function(){var e=document.getElementById("nvPlate");if(e)e.focus();},80);
 }
 async function vehDupCheck(){
   var pl=normPhone(document.getElementById("nvPlate").value);
@@ -1337,9 +1452,7 @@ async function vehDupCheck(){
     } else box.innerHTML='<div class="hint" style="background:#e8f6ea;border-color:#1d7a33;color:#1d7a33">✓ מספר רכב פנוי · '+esc(fmtPlate(pl))+'</div>';
   }catch(e){box.innerHTML="";}
 }
-function useExistingVeh(id,lbl){window.__ncVeh=id;newCard();
- setTimeout(function(){var el=document.getElementById("ncVehPick");if(el)el.textContent="✓ "+lbl;},120);
- toast("✓ נבחר רכב קיים");}
+function useExistingVeh(id,lbl){window.__ncVeh=id;window.__ncVehLbl=lbl||"";toast("✓ נבחר רכב קיים");ncStep3();}
 function createVehicle(){
   var pl=normPhone(document.getElementById("nvPlate").value);
   if(!validPlate(pl)){toast("מספר רכב חייב 7 או 8 ספרות",1);return;}
@@ -1351,34 +1464,158 @@ function createVehicle(){
   var btn=document.getElementById("nvSave");btn.disabled=true;btn.textContent="יוצר…";
   fetch(PX+B+"/"+T.veh,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
    .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(rec){window.__ncVeh=rec.id;toast("✓ נוצר רכב — פרטיו יושלמו מגוב.יל");newCard();
-     setTimeout(function(){var el=document.getElementById("ncVehPick");if(el)el.textContent="✓ "+fmtPlate(pl);},120);})
+   .then(function(rec){window.__ncVeh=rec.id;window.__ncVehLbl=fmtPlate(pl);
+     toast("✓ נוצר רכב — פרטיו יושלמו מגוב.יל");ncStep3();})
    .catch(function(){btn.disabled=false;btn.textContent="✓ צור רכב";toast("היצירה נכשלה",1);});
 }
-function newCard(){
-  CUR=null;
+/* ===== כרטיס עבודה חדש — אשף 3 שלבים: טלפון ← רכב ← פרטי ההזמנה =====
+   אין כאן בחירת מכונאי: המכונאי משויך בעמדה, והשיוך הוא שמעביר ל"בטיפול". */
+function ncReset(){window.__ncCus=null;window.__ncVeh=null;window.__ncCusLbl="";window.__ncVehLbl="";window.__ncPhotos={};window.__ncFound={};}
+function ncShell(sub){
   document.getElementById("mT").textContent="כרטיס עבודה חדש";
-  document.getElementById("mS").textContent="חפש לקוח ורכב קיימים";
+  document.getElementById("mS").textContent=sub||"";
   document.getElementById("mTabs").innerHTML="";
-  document.getElementById("p0").className="pane on";[1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane";});
-  document.getElementById("p0").innerHTML='<div class="hint">בחר לקוח ורכב קיימים. אם הם לא קיימים — צור אותם קודם ב-Airtable.</div>'
-   +'<div class="srch" style="margin-top:0"><input id="ncCus" placeholder="🔍 חפש לקוח (שם או טלפון)…" autocomplete="off" oninput="ncSearch(\'cus\')"><div class="dd" id="ddCus"></div></div>'
-   +'<div class="f" style="margin-top:6px"><div class="v" id="ncCusPick">— לא נבחר לקוח —</div></div>'+'<button class="x" style="width:auto;padding:7px 13px;margin-bottom:8px" onclick="newCusForm()">+ לקוח חדש</button>'
-   +'<div class="srch"><input id="ncVeh" placeholder="🔍 חפש רכב (מספר רכב)…" autocomplete="off" oninput="ncSearch(\'veh\')"><div class="dd" id="ddVeh"></div></div>'
-   +'<div class="f" style="margin-top:6px"><div class="v" id="ncVehPick">— לא נבחר רכב —</div></div>'+'<button class="x" style="width:auto;padding:7px 13px;margin-bottom:8px" onclick="newVehForm()">+ רכב חדש</button>'
-   +'<div class="grid" style="margin-top:12px">'
-   +'<div class="f"><label>בחר תאריך לתור *</label><input type="date" id="ncDate" onchange="fillSlotSelect()"></div>'
-   +'<div class="f"><label>האם הטיפול כולל טסט?</label>'
-     +'<label class="chk" style="margin:0"><input type="checkbox" id="ncTest" onchange="fillSlotSelect()"><span>כן — תור טסט (07:00)</span></label></div>'
-   +'<div class="f"><label>קביעת שעת התור *</label><select id="ncSlot"><option value="">— בחר קודם תאריך —</option></select></div>'
-   +'<div class="f"><label>סוג טיפול</label><select id="ncType"><option value=""></option>'+TREAT.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></div>'
-   +'<div class="f"><label>מכונאי אחראי</label><select id="ncEmp"><option value=""></option>'+EMP.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+'</option>';}).join("")+'</select></div>'
-   +'<div class="f"><label>קילומטראז\'</label><input type="number" id="ncKm"></div>'
-   +'</div><div class="f"><label>סיבת הגעה</label><textarea id="ncReason"></textarea></div>'
-   +'<button class="save" id="ncSave" onclick="createCard()">✓ צור כרטיס עבודה</button>';
-  if(window.__keepPicks!==true){window.__ncCus=window.__ncCus||null;window.__ncVeh=window.__ncVeh||null;}
+  document.getElementById("p0").className="pane on";
+  [1,2,3,4].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane";});
   document.getElementById("ov").classList.add("on");
+}
+function ncSteps(n){
+  var L=["טלפון ולקוח","רכב","פרטי התור"];
+  return '<div style="display:flex;gap:6px;margin-bottom:12px">'+L.map(function(t,i){
+    return '<div style="flex:1;text-align:center;font-size:12px;padding:6px 4px;border-radius:8px;'
+      +(i<n?'background:#e8f6ea;color:#1d7a33':(i===n?'background:#fdecec;color:#8a1220;font-weight:700':'background:#f2f4f8;color:#9aa2b1'))
+      +'">'+(i<n?"\u2713 ":(i+1)+". ")+esc(t)+'</div>';}).join("")+'</div>';
+}
+function newCard(){
+  CUR=null; ncReset();
+  ncShell("שלב 1 — מספר הטלפון של הלקוח");
+  document.getElementById("p0").innerHTML=ncSteps(0)
+   +'<div class="hint">כל כרטיס מתחיל ממספר הטלפון. המערכת תאתר את הלקוח ואת הרכבים הרשומים עליו.</div>'
+   +'<div class="f"><label>מספר טלפון נייד *</label>'
+   +'<input id="ncPhone" type="tel" inputmode="numeric" placeholder="05XXXXXXXX" onkeydown="if(event.key===\'Enter\')ncFindByPhone()"></div>'
+   +'<button class="save" onclick="ncFindByPhone()">\ud83d\udd0d חפש לקוח</button>'
+   +'<div id="ncPhoneRes"></div>';
+  setTimeout(function(){var e=document.getElementById("ncPhone");if(e)e.focus();},80);
+}
+async function ncFindByPhone(){
+  var box=document.getElementById("ncPhoneRes"); if(!box)return;
+  var ph=normPhone((document.getElementById("ncPhone").value||"").trim());
+  if(ph.length<9){box.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">מספר טלפון לא תקין — 10 ספרות שמתחילות ב-05</div>';return;}
+  box.innerHTML='<div class="muted" style="padding:10px 0">מחפש…</div>';
+  try{
+    var recs=await find(T.cus,'SEARCH("'+ph.slice(-9)+'",SUBSTITUTE({מספר טלפון},"-",""))',15);
+    window.__ncFound={}; recs.forEach(function(r){window.__ncFound[r.id]=r;});
+    if(!recs.length){
+      box.innerHTML='<div class="hint">לא נמצא לקוח עם הטלפון '+esc(fmtPhone(ph))+'.</div>'
+       +'<button class="save" onclick="newCusForm(\''+esc(ph)+'\')">+ צור לקוח חדש עם הטלפון הזה</button>';
+      return;
+    }
+    box.innerHTML='<div class="sec">'+recs.length+' לקוחות עם הטלפון הזה</div>'
+     +'<div class="mini" style="margin-bottom:6px">טלפון משותף אינו כפילות — משפחות ועסקים חולקים קו. בחר את האדם הנכון.</div>'
+     +recs.map(function(r){var g=r.fields||{};
+        return '<div class="ln"><div class="nm"><b>'+esc(g["שם לקוח"]||"")+'</b>'
+         +'<small style="color:#5b6172">'+esc(g["מספר טלפון"]||"")+' \u00b7 '+esc(txt(g["מספר רכבים"])||"0")+' רכבים</small></div>'
+         +'<button class="x" style="width:auto;padding:5px 12px" onclick="ncPickCus(\''+r.id+'\')">בחר</button></div>';}).join("")
+     +'<button class="x" style="width:auto;padding:7px 13px;margin-top:8px" onclick="newCusForm(\''+esc(ph)+'\')">+ לקוח חדש עם הטלפון הזה</button>';
+  }catch(e){box.innerHTML='<div class="hint">החיפוש נכשל — נסה שוב</div>';}
+}
+function fmtPhone(v){var d=normPhone(v);return d.length===10?d.slice(0,3)+"-"+d.slice(3):d;}
+function ncPickCus(id){
+  window.__ncCus=id; window.__ncVeh=null; window.__ncVehLbl="";
+  var r=(window.__ncFound||{})[id], g=r?(r.fields||{}):{};
+  window.__ncCusLbl=((g["שם לקוח"]||"")+" \u00b7 "+(g["מספר טלפון"]||"")).trim();
+  ncStep2();
+}
+async function ncStep2(){
+  if(!window.__ncCus){newCard();return;}
+  ncShell("שלב 2 — בחירת רכב");
+  document.getElementById("p0").innerHTML=ncSteps(1)
+   +'<div class="f"><label>לקוח</label><div class="v"><b>'+esc(window.__ncCusLbl||"—")+'</b></div></div>'
+   +'<div id="ncVehList" class="muted" style="padding:10px 0">טוען את רכבי הלקוח…</div>'
+   +'<button class="x" style="width:auto;padding:7px 13px;margin-top:8px" onclick="newVehForm()">+ רכב חדש ללקוח הזה</button>'
+   +'<button class="save" style="background:#5b6172;margin-top:10px" onclick="newCard()">\u2190 חזרה לטלפון</button>';
+  try{
+    var c=await api("/"+T.cus+"/"+window.__ncCus), cf=c.fields||{};
+    if(!window.__ncCusLbl)window.__ncCusLbl=((cf["שם לקוח"]||"")+" \u00b7 "+(cf["מספר טלפון"]||"")).trim();
+    var vids=ids(cf["רכבים"]);
+    var el=document.getElementById("ncVehList"); if(!el)return;
+    if(!vids.length){el.innerHTML='<div class="hint">ללקוח אין רכבים רשומים — הוסף רכב חדש.</div>';return;}
+    var vs=await Promise.all(vids.slice(0,25).map(function(vid){
+      return api("/"+T.veh+"/"+vid).catch(function(){return null;});}));
+    el=document.getElementById("ncVehList"); if(!el)return;
+    el.className="";
+    el.innerHTML='<div class="sec">רכבי הלקוח ('+vids.length+')</div>'
+     +vs.filter(Boolean).map(function(v){var g=v.fields||{};
+       var mk=((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim();
+       var lbl=((g["מספר רכב"]||"")+" \u00b7 "+mk).trim();
+       return '<div class="ln"><div class="nm"><b>'+esc(g["מספר רכב"]||"")+'</b><small style="color:#5b6172">'
+        +esc((mk+" "+(g["שנת ייצור"]||"")).trim()||"—")+'</small></div>'
+        +'<button class="x" style="width:auto;padding:5px 12px" onclick="ncPickVeh(\''+v.id+'\',\''+esc(lbl).replace(/\'/g,"")+'\')">בחר</button></div>';}).join("");
+  }catch(e){var e2=document.getElementById("ncVehList");if(e2)e2.innerHTML='<div class="hint">טעינת הרכבים נכשלה</div>';}
+}
+function ncPickVeh(id,lbl){window.__ncVeh=id;window.__ncVehLbl=lbl||"";ncStep3();}
+
+/* טסט אמיתי (לא רק "הכנה לטסט") ⇒ צריך סלוט טסט */
+function needsTestSlot(t){return /טסט/.test(String(t||"").replace(/הכנה לטסט/g,""));}
+
+function ncStep3(){
+  if(!window.__ncVeh){ncStep2();return;}
+  ncShell("שלב 3 — פרטי התור");
+  document.getElementById("p0").innerHTML=ncSteps(2)
+   +'<div class="grid">'
+   +'<div class="f"><label>לקוח</label><div class="v"><b>'+esc(window.__ncCusLbl||"—")+'</b></div></div>'
+   +'<div class="f"><label>רכב</label><div class="v"><b>'+esc(window.__ncVehLbl||"—")+'</b></div></div>'
+   +'</div>'
+   +'<div class="sec">סוג הטיפול</div>'
+   +'<div class="grid">'
+   +'<div class="f"><label>סוג טיפול *</label><select id="ncType" onchange="ncTypeChanged()"><option value="">— בחר —</option>'
+     +TREAT.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></div>'
+   +'<div class="f" id="ncPerBox" style="display:none"><label>איזה טיפול תקופתי?</label>'
+     +'<select id="ncPer"><option value="">— בחר —</option><option>שיגרתי</option><option>לפי ק"מ</option></select></div>'
+   +'<div class="f" id="ncTestBox" style="display:none"><label>תאריך תוקף הטסט</label><input type="date" id="ncTestDate"></div>'
+   +'</div>'
+   +'<div class="sec">מועד התור</div>'
+   +'<div class="grid">'
+   +'<div class="f"><label>בחר תאריך *</label><input type="date" id="ncDate" onchange="fillSlotSelect()"></div>'
+   +'<div class="f"><label>תור טסט?</label><label class="chk" style="margin:0"><input type="checkbox" id="ncTest" onchange="fillSlotSelect()"><span>כן — תור טסט (07:00)</span></label></div>'
+   +'<div class="f"><label>שעת התור *</label><select id="ncSlot"><option value="">— בחר קודם תאריך —</option></select></div>'
+   +'</div>'
+   +'<div class="sec">קילומטראז\'</div>'
+   +'<div class="grid">'
+   +'<div class="f"><label>אופן העדכון</label><select id="ncKmMode" onchange="ncKmChanged()">'
+     +'<option value="">— בחר —</option><option>ידני</option><option>צילום דרך הטלפון</option></select></div>'
+   +'<div class="f" id="ncKmManual" style="display:none"><label>קילומטראז\' נוכחי</label><input type="number" id="ncKm" inputmode="numeric"></div>'
+   +'<div class="f" id="ncKmPhoto" style="display:none"><label>\ud83d\udcf7 צילום מד הקילומטראז\'</label>'
+     +'<input type="file" accept="image/*" capture="environment" onchange="ncStash(this,\'km\')" style="font-size:13px">'
+     +'<div class="mini" id="ncKmName"></div></div>'
+   +'</div>'
+   +'<div class="sec">סיבת ההגעה</div>'
+   +'<div class="f"><label>מה הביא את הלקוח למוסך?</label><textarea id="ncReason" placeholder="תיאור התקלה / הבקשה"></textarea></div>'
+   +'<div class="f"><label>\ud83d\udcf7 צילום הבעיה (לא חובה)</label>'
+     +'<input type="file" accept="image/*,video/*" capture="environment" onchange="ncStash(this,\'problem\')" style="font-size:13px">'
+     +'<div class="mini" id="ncProblemName"></div></div>'
+   +'<button class="save" id="ncSave" onclick="createCard()">\u2713 צור כרטיס עבודה</button>'
+   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="ncStep2()">\u2190 חזרה לרכב</button>';
   fillSlotSelect();
+}
+function ncTypeChanged(){
+  var t=(document.getElementById("ncType")||{}).value||"";
+  var pb=document.getElementById("ncPerBox"); if(pb)pb.style.display=/תקופתי/.test(t)?"":"none";
+  var tb=document.getElementById("ncTestBox"); if(tb)tb.style.display=/טסט/.test(t)?"":"none";
+  var cb=document.getElementById("ncTest");
+  if(cb&&needsTestSlot(t)!==cb.checked){cb.checked=needsTestSlot(t);fillSlotSelect();}
+}
+function ncKmChanged(){
+  var m=(document.getElementById("ncKmMode")||{}).value||"";
+  var a=document.getElementById("ncKmManual"), b=document.getElementById("ncKmPhoto");
+  if(a)a.style.display=(m==="ידני")?"":"none";
+  if(b)b.style.display=(m==="צילום דרך הטלפון")?"":"none";
+}
+function ncStash(inp,kind){
+  var f=inp.files&&inp.files[0]; if(!f)return;
+  window.__ncPhotos=window.__ncPhotos||{}; window.__ncPhotos[kind]=f;
+  var el=document.getElementById(kind==="km"?"ncKmName":"ncProblemName");
+  if(el)el.textContent="\u2713 "+f.name+" — יועלה עם יצירת הכרטיס";
 }
 /* ===== בחירת תור: תאריך → שעה, בדיוק כמו בטופס Fillout =====
    רגיל: סטטוס פנוי/דחוף פנוי · עמדות 1-6 (בטופס הציבורי רק 1-4)
@@ -1413,69 +1650,59 @@ async function fillSlotSelect(){
         return '<option value="'+r.id+'">'+esc(slotTimeLabel(r))+'</option>';}).join("")
     : '<option value="">— אין '+(isTest?"תורי טסט":"תורים")+' פנויים בתאריך זה —</option>';
 }
-async function ncSearch(kind){
-  var inp=document.getElementById(kind==="cus"?"ncCus":"ncVeh"), dd=document.getElementById(kind==="cus"?"ddCus":"ddVeh");
-  var s=(inp.value||"").trim(); if(s.length<2){dd.classList.remove("on");return;}
-  dd.innerHTML='<div class="muted">מחפש…</div>';dd.classList.add("on");
-  try{
-    var recs=kind==="cus"
-      ? await find(T.cus,'OR(SEARCH('+q(s)+',{שם לקוח}),SEARCH('+q(s)+',{מספר טלפון}))',15)
-      : await find(T.veh,'SEARCH('+q(s)+',{מספר רכב})',15);
-    dd.innerHTML=recs.length?recs.map(function(r){var f=r.fields||{};
-      var lbl=kind==="cus"?((f["שם לקוח"]||"")+" · "+(f["מספר טלפון"]||""))
-        :((f["מספר רכב"]||"")+" · "+(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""));
-      return '<div onclick="ncPick(\''+kind+'\',\''+r.id+'\',\''+esc(lbl).replace(/'/g,"")+'\')">'+esc(lbl)+'</div>';}).join("")
-     :'<div class="muted">לא נמצא</div>';
-  }catch(e){dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
-}
-function ncPick(kind,id,lbl){
-  document.getElementById(kind==="cus"?"ddCus":"ddVeh").classList.remove("on");
-  document.getElementById(kind==="cus"?"ncCus":"ncVeh").value="";
-  if(kind==="cus"){window.__ncCus=id;document.getElementById("ncCusPick").textContent="✓ "+lbl;}
-  else{window.__ncVeh=id;document.getElementById("ncVehPick").textContent="✓ "+lbl;}
-}
 async function createCard(){
-  if(!window.__ncCus||!window.__ncVeh){toast("צריך לבחור גם לקוח וגם רכב",1);return;}
-  var slotId=document.getElementById("ncSlot").value||"";
-  var emp=document.getElementById("ncEmp").value||"";
+  if(!window.__ncCus||!window.__ncVeh){toast("צריך לבחור לקוח ורכב",1);return;}
+  var slotId=(document.getElementById("ncSlot")||{}).value||"";
+  var type=(document.getElementById("ncType")||{}).value||"";
+  if(!type){toast("צריך לבחור סוג טיפול",1);return;}
+  if(!slotId){toast("צריך לבחור תאריך ושעה לתור",1);return;}
   var btn=document.getElementById("ncSave");btn.disabled=true;btn.textContent="יוצר…";
 
   var fields={};
   fields["שם לקוח"]=[window.__ncCus];
   fields["מספר רכב"]=[window.__ncVeh];
   fields["מקור"]="מוסך";                     /* נוצר בדלפק — לא שולח הודעת אישור ללקוח */
+  fields["סוג טיפול"]=type;
   /* ⚠️ אין לכתוב "תאריך ושעה" — זהו שדה lookup מהסלוט (קריאה בלבד). התור נקבע ע"י הקישור "תור". */
-  var t=document.getElementById("ncType").value; if(t)fields["סוג טיפול"]=t;
-  var km=parseFloat(document.getElementById("ncKm").value); if(!isNaN(km))fields["עדכון קילומטרז' ידני"]=km;
-  var rs=document.getElementById("ncReason").value; if(rs)fields["סיבת הגעה"]=rs;
+  var per=(document.getElementById("ncPer")||{}).value||"";
+  if(per&&/תקופתי/.test(type))fields["טיפול תקופתי "]=per;
+  var td=(document.getElementById("ncTestDate")||{}).value||"";
+  if(td&&/טסט/.test(type))fields["תאריך הטסט"]=td;
+  var kmMode=(document.getElementById("ncKmMode")||{}).value||"";
+  if(kmMode)fields["עדכון קילומטראז'"]=kmMode;
+  var km=parseFloat((document.getElementById("ncKm")||{}).value);
+  if(!isNaN(km))fields["עדכון קילומטרז' ידני"]=km;
+  var rs=(document.getElementById("ncReason")||{}).value||"";
+  if(rs)fields["סיבת הגעה"]=rs;
 
   /* --- חוק רכבי יוקרה: עצירה לאישור אמיר --- */
-  var vehLbl=(document.getElementById("ncVehPick").textContent||"");
-  var lux=RULES.LUX.test(vehLbl);
+  var lux=RULES.LUX.test(window.__ncVehLbl||"");
 
   try{
-    if(slotId){await claimSlot(slotId,"");fields["תור"]=[slotId];}
-
-    /* --- קדימויות סטטוס: יוקרה > מכונאי > תור > חדש --- */
-    if(lux){fields["סטטוס"]="ממתין לאישור אמיר";}
-    else if(emp){fields["מכונאי אחראי"]=[emp];fields["סטטוס"]="בטיפול";fields["תאריך פתיחה"]=new Date().toISOString();}
-    else if(slotId){fields["סטטוס"]="מחכה לטיפול";}
-    else {fields["סטטוס"]="חדש";}
-    if(lux&&emp)fields["מכונאי אחראי"]=[emp];
+    await claimSlot(slotId,"");fields["תור"]=[slotId];
+    /* אין בחירת מכונאי בהזמנה — לכן: יוקרה ⇒ אישור אמיר, אחרת ⇒ מחכה לטיפול */
+    fields["סטטוס"]=lux?"ממתין לאישור אמיר":"מחכה לטיפול";
 
     var r=await fetch(PX+B+"/"+T.wo,{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({fields:fields,typecast:true})});
     if(!r.ok)throw new Error((await r.text()).slice(0,160));
     var rec=await r.json();
 
+    /* התמונות שצולמו באשף מועלות עכשיו, כשיש כבר מזהה רשומה */
+    var ph=window.__ncPhotos||{}, kinds=Object.keys(ph);
+    for(var i=0;i<kinds.length;i++){
+      try{await uploadPhotoFile(rec.id,kinds[i],ph[kinds[i]]);}catch(x){}
+    }
+    window.__ncPhotos={};
+
     WOS.push(rec);drawTabs();draw();
-    toast("✓ נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||"")+(slotId?"":" · ⚠️ ללא תור"));
-    if(lux)setTimeout(function(){alert("🚗 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
+    toast("\u2713 נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||""));
+    if(lux)setTimeout(function(){alert("\ud83d\ude97 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
     RULES.fire("newCard",rec.id);
     closeCard();setTimeout(function(){openCard(rec.id);},400);
   }catch(e){
-    if(slotId){try{await releaseSlot(slotId);}catch(x){}}   /* rollback: לא להשאיר סלוט תפוס ללא כרטיס */
-    btn.disabled=false;btn.textContent="✓ צור כרטיס עבודה";
+    try{await releaseSlot(slotId);}catch(x){}   /* rollback: לא להשאיר סלוט תפוס ללא כרטיס */
+    btn.disabled=false;btn.textContent="\u2713 צור כרטיס עבודה";
     toast(e.message||"היצירה נכשלה",1);
   }
 }
