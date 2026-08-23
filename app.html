@@ -324,7 +324,7 @@ function proxyDenied(code){
     setTimeout(function(){try{showGate();}catch(e){}},1200);
   }
 }
-var APP_VERSION="v12";
+var APP_VERSION="v14";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -669,6 +669,19 @@ async function markDone(){
 /* ============ PHOTOS ============ */
 var PHOTO_FIELDS={"km":"'צילום הקילומטרז","problem":"צילום הבעיה","parts":"סריקה של חלקים שהותקנו","defects":"העלאת טופס ליקויים"};
 var PHOTO_IDS={"km":"fldVyfwBLzsgwulMr","problem":"fldHE3eBcZFWjKsIL","parts":"fldu6rG1Arn40gdf3","defects":"fldDYKHKsKELiTnlH"};
+/* ⚠️ Airtable דורש "filename" בהעלאת קובץ. בלעדיו: 400 BAD_REQUEST.
+   מייצרים שם קובץ בטוח, עם סיומת שתואמת לסוג התוכן. */
+function upName(file,prefix){
+  var ct=(file&&file.type)||"image/jpeg";
+  var ext=({"image/jpeg":"jpg","image/jpg":"jpg","image/png":"png","image/webp":"webp",
+            "image/heic":"heic","image/heif":"heif","image/gif":"gif",
+            "video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"})[ct.toLowerCase()]
+          ||(String(ct).split("/")[1]||"jpg").replace(/[^a-z0-9]/gi,"").slice(0,5)||"jpg";
+  var orig=(file&&file.name)||"";
+  var base=orig.replace(/\.[^.]+$/,"").replace(/[^\w\u0590-\u05FF\-]+/g,"_").slice(0,40);
+  if(!base)base=(prefix||"abn");
+  return base+"-"+new Date().getTime()+"."+ext;
+}
 function downscaleImage(file,maxW,quality){
   return new Promise(function(res,rej){
     var img=new Image(), url=URL.createObjectURL(file);
@@ -702,7 +715,7 @@ async function uploadPhotoFile(rid,kind,file){
     var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
     var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
       {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,kind),file:b64})});
     if(!r.ok)throw new Error((await r.text()).slice(0,120));
     toast("✓ התמונה הועלתה"+(kind==="parts"?" · מזהה חלפים…":(kind==="km"?" · קורא קילומטראז'…":"")));
     refetchCard(rid,0);
@@ -784,7 +797,7 @@ async function uploadLoc(inp,which){
     var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
     var r=await fetch(CT+B+"/"+rid+"/"+cfg.id+"/uploadAttachment",
       {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,"loc-"+which),file:b64})});
     if(!r.ok)throw new Error((await r.text()).slice(0,110));
     if(coords){var o={};o[GPS_FIELDS[which]]=coords;
       await fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},
@@ -974,12 +987,13 @@ function toggleMove(){
   if(!open)fillMoveTimes();
 }
 function slotPicker(f){
-  var cur=txt(f["תאריך ושעה"]), isTest=/טסט/.test(txt(f["סוג טיפול"]));
+  var cur=txt(f["תאריך ושעה"]), isTest=needsTestSlot(txt(f["סוג טיפול"]));
+  window.__mvTest=isTest;
   return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b>'
    +' <button id="mvBtn" class="x" style="padding:4px 10px;font-size:12.5px;margin-inline-start:8px" onclick="toggleMove()">↻ שנה תור</button></div>'
    +'<div id="mvBox" style="display:none;margin-top:8px;padding:12px;background:#f6f8fa;border:1px solid #dfe3ea;border-radius:10px">'
      +'<div class="mini" style="margin-bottom:8px">בחר תאריך, ואז תוצג רשימת השעות הפנויות באותו יום</div>'
-     +'<label class="chk" style="margin:0 0 8px"><input type="checkbox" id="mvTest"'+(isTest?" checked":"")+' onchange="fillMoveTimes()"><span>תור טסט</span></label>'
+     +(isTest?'<div class="mini" style="margin-bottom:8px">🔧 תור טסט — יוצגו רק שעות ועמדות טסט</div>':'')
      +'<input type="date" id="mvDate" onchange="fillMoveTimes()" style="width:100%;margin-bottom:8px">'
      +'<select id="mvSlot" onchange="moveSlot(this.value);this.value=\'\'">'
      +'<option value="">— בחר קודם תאריך —</option></select>'
@@ -988,7 +1002,7 @@ function slotPicker(f){
 }
 async function fillMoveTimes(){
   var d=document.getElementById("mvDate"), el=document.getElementById("mvSlot"); if(!d||!el)return;
-  var isTest=!!(document.getElementById("mvTest")||{}).checked;
+  var isTest=!!window.__mvTest;
   if(!d.value){el.innerHTML='<option value="">— בחר קודם תאריך —</option>';return;}
   el.innerHTML='<option value="">— טוען… —</option>';
   await loadSlotsForDate(d.value);
@@ -997,7 +1011,7 @@ async function fillMoveTimes(){
   el.innerHTML=list.length
     ? '<option value="">— בחר שעה —</option>'+list.map(function(r){
         return '<option value="'+r.id+'">'+esc(slotTimeLabel(r))+'</option>';}).join("")
-    : '<option value="">— אין תורים פנויים בתאריך זה —</option>';
+    : '<option value="">— אין '+(isTest?"תורי טסט":"תורים")+' פנויים בתאריך זה —</option>';
 }
 /* ===== שינוי תור — מבוצע בקוד: תופס חדש, משחרר ישן, שומר היסטוריה ===== */
 async function moveSlot(id){
@@ -1780,10 +1794,10 @@ async function ncStep2(){
        var lbl=((dash(g["מספר רכב"])||"")+" \u00b7 "+mk).trim();
        return '<div class="ln"><div class="nm"><b>'+esc(dash(g["מספר רכב"]))+'</b><small style="color:#5b6172">'
         +esc((mk+" "+(g["שנת ייצור"]||"")).trim()||"—")+'</small></div>'
-        +'<button class="x" style="width:auto;padding:5px 12px" onclick="ncPickVeh(\''+v.id+'\',\''+esc(lbl).replace(/\'/g,"")+'\')">בחר</button></div>';}).join("");
+        +'<button class="x" style="width:auto;padding:5px 12px" onclick="ncPickVeh(\''+v.id+'\',\''+esc(lbl).replace(/\'/g,"")+'\',\''+esc(txt(g["תאריך הטסט"]).slice(0,10))+'\')">בחר</button></div>';}).join("");
   }catch(e){var e2=document.getElementById("ncVehList");if(e2)e2.innerHTML='<div class="hint">טעינת הרכבים נכשלה</div>';}
 }
-function ncPickVeh(id,lbl){window.__ncVeh=id;window.__ncVehLbl=lbl||"";ncStep3();}
+function ncPickVeh(id,lbl,testDate){window.__ncVeh=id;window.__ncVehLbl=lbl||"";window.__ncVehTest=testDate||"";ncStep3();}
 
 /* טסט אמיתי (לא רק "הכנה לטסט") ⇒ צריך סלוט טסט */
 function needsTestSlot(t){return /טסט/.test(String(t||"").replace(/הכנה לטסט/g,""));}
@@ -1802,13 +1816,15 @@ function ncStep3(){
      +TREAT.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></div>'
    +'<div class="f" id="ncPerBox" style="display:none"><label>איזה טיפול תקופתי?</label>'
      +'<select id="ncPer"><option value="">— בחר —</option><option>שיגרתי</option><option>לפי ק"מ</option></select></div>'
-   +'<div class="f" id="ncTestBox" style="display:none"><label>תאריך תוקף הטסט</label><input type="date" id="ncTestDate"></div>'
+   +'<div class="f" id="ncTestBox" style="display:none"><label id="ncTestLbl">תאריך תוקף הטסט</label>'
+     +'<input type="date" id="ncTestDate" value="'+esc(String(window.__ncVehTest||"").slice(0,10))+'">'
+     +'<div class="mini" id="ncTestHint"></div></div>'
    +'</div>'
    +'<div class="sec">מועד התור</div>'
    +'<div class="grid">'
    +'<div class="f"><label>בחר תאריך *</label><input type="date" id="ncDate" onchange="fillSlotSelect()"></div>'
-   +'<div class="f"><label>תור טסט?</label><label class="chk" style="margin:0"><input type="checkbox" id="ncTest" onchange="fillSlotSelect()"><span>כן — תור טסט (07:00)</span></label></div>'
-   +'<div class="f"><label>שעת התור *</label><select id="ncSlot"><option value="">— בחר קודם תאריך —</option></select></div>'
+   +'<div class="f"><label>שעת התור *</label><select id="ncSlot"><option value="">— בחר קודם תאריך —</option></select>'
+     +'<div class="mini" id="ncSlotKind"></div></div>'
    +'</div>'
    +'<div class="sec">קילומטראז\'</div>'
    +'<div class="grid">'
@@ -1831,9 +1847,23 @@ function ncStep3(){
 function ncTypeChanged(){
   var t=(document.getElementById("ncType")||{}).value||"";
   var pb=document.getElementById("ncPerBox"); if(pb)pb.style.display=/תקופתי/.test(t)?"":"none";
-  var tb=document.getElementById("ncTestBox"); if(tb)tb.style.display=/טסט/.test(t)?"":"none";
-  var cb=document.getElementById("ncTest");
-  if(cb&&needsTestSlot(t)!==cb.checked){cb.checked=needsTestSlot(t);fillSlotSelect();}
+
+  /* תאריך תוקף הטסט — מוצג בכל טיפול שנוגע לטסט, וחובה כשהרכב באמת הולך לטסט */
+  var isTest=needsTestSlot(t), touchesTest=/טסט/.test(t);
+  var tb=document.getElementById("ncTestBox"); if(tb)tb.style.display=touchesTest?"":"none";
+  var lb=document.getElementById("ncTestLbl");
+  if(lb)lb.textContent="תאריך תוקף הטסט"+(isTest?" *":"");
+  var hn=document.getElementById("ncTestHint");
+  if(hn)hn.textContent=isTest
+    ? (window.__ncVehTest?"מתוך פרטי הרכב — ודא שזה נכון":"אין תוקף טסט רשום לרכב — יש למלא")
+    : "";
+
+  /* סוג הסלוט נקבע לבד לפי סוג הטיפול — אין מה לסמן */
+  var sk=document.getElementById("ncSlotKind");
+  if(sk)sk.textContent=isTest
+    ? "🔧 תור טסט — נקבע אוטומטית לפי עמדות ושעות הטסט"
+    : "";
+  fillSlotSelect();
 }
 function ncKmChanged(){
   var m=(document.getElementById("ncKmMode")||{}).value||"";
@@ -1869,7 +1899,7 @@ function slotTimeLabel(r){
 async function fillSlotSelect(){
   var d=document.getElementById("ncDate"), el=document.getElementById("ncSlot");
   if(!el)return;
-  var isTest=!!(document.getElementById("ncTest")||{}).checked;
+  var isTest=needsTestSlot((document.getElementById("ncType")||{}).value||"");
   if(!d.value){el.innerHTML='<option value="">— בחר קודם תאריך —</option>';return;}
   el.innerHTML='<option value="">— טוען… —</option>';
   await loadSlotsForDate(d.value);
@@ -1897,6 +1927,11 @@ async function createCard(){
   var per=(document.getElementById("ncPer")||{}).value||"";
   if(per&&/תקופתי/.test(type))fields["טיפול תקופתי "]=per;
   var td=(document.getElementById("ncTestDate")||{}).value||"";
+  if(needsTestSlot(type)&&!td){
+    toast("בתור טסט חובה לוודא את תאריך תוקף הטסט",1);
+    var b2=document.getElementById("ncSave"); if(b2){b2.disabled=false;b2.textContent="✓ צור כרטיס עבודה";}
+    return;
+  }
   if(td&&/טסט/.test(type))fields["תאריך הטסט"]=td;
   var kmMode=(document.getElementById("ncKmMode")||{}).value||"";
   if(kmMode)fields["עדכון קילומטראז'"]=kmMode;
@@ -2252,12 +2287,12 @@ async function upPhoto(inp,tbl,rid,fid,kind){
     var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
     var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
       {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",file:b64})});
+       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,kind),file:b64})});
     if(!r.ok)throw new Error((await r.text()).slice(0,110));
     toast("✓ התמונה הועלתה");
     if(kind==="emp"){reloadEmp();setTimeout(function(){openEmp(rid);},900);}
     else{var d=await (await fetch(PX+B+"/"+tbl+"/"+rid)).json();openCus(d);}
-  }catch(e){toast("ההעלאה נכשלה",1);}
+  }catch(e){toast("ההעלאה נכשלה: "+String(e.message||"").slice(0,80),1);}
   inp.value="";
 }
 function reloadEmp(){
