@@ -376,15 +376,11 @@ function greet(){
   }
   el.innerHTML='<b>'+esc(hi+" "+(ME.name||""))+'</b> · '+esc(bits.join(" · "))
     +' <span class="role-pill">'+esc((PERMS[ME.role]||{}).label||"")+'</span>'
-    +(isMech()?' <button class="lnk" onclick="switchMechanic()">לא אני?</button>':'')
-    +' <button class="lnk" onclick="sayGreeting()" title="השמע">🔊</button>';
+    +(isMech()?' <button class="lnk" onclick="switchMechanic()">לא אני?</button>':'');
   el.style.display="block";
   window.__greetText=hi+" "+(ME.name||"")+". "+bits.join(". ");
 }
-function sayGreeting(){
-  try{var u=new SpeechSynthesisUtterance(window.__greetText||"");u.lang="he-IL";
-      speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){toast("הדפדפן לא תומך בהשמעה",1);}
-}
+
 
 /* --- מסך הכניסה --- */
 function showGate(){
@@ -480,7 +476,14 @@ function q(s){return '"'+String(s).replace(/"/g,'')+'"';}
 /* מסתיר מזהי רשומה (recXXXXXXXXXXXXXX) שדלפו לתצוגה */
 function noRec(v){var t=txt(v);return /^rec[A-Za-z0-9]{14}$/.test(t.trim())?"":t;}
 /* מספר הרכב האמיתי — השדה "מספר רכב" הוא קישור ולכן מחזיר מזהה רשומה */
-function plate(f){return noRec(f["מספר רכב (טקסט להודעות)"])||noRec(f["מספר רכב_disp"])||noRec(f["מספר רכב"]);}
+function plate(f){return dash(noRec(f["מספר רכב (טקסט להודעות)"])||noRec(f["מספר רכב_disp"])||noRec(f["מספר רכב"]));}
+/* מספר רכב מוצג תמיד עם מקפים: 12-345-67 / 123-45-678 */
+function dash(v){
+  var d=String(v==null?"":v).replace(/\D/g,"");
+  if(d.length===8)return d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5);
+  if(d.length===7)return d.slice(0,2)+"-"+d.slice(2,5)+"-"+d.slice(5);
+  return String(v==null?"":v);
+}
 
 
 /* ============ PRINT (identical wording to the field app) ============ */
@@ -743,13 +746,20 @@ function woRows(){var toks=(document.getElementById("q").value||"").trim().toLow
     return String(A).localeCompare(String(Bv));});}
 
 
+/* כותרת קטע עם כפתור הוספה */
+function secHead(title,kind,n){
+  return '<div class="sec" style="display:flex;align-items:center;gap:10px">'
+   +'<span>'+esc(title)+' ('+n+')</span>'
+   +(crudCan()?'<button class="x" style="width:auto;padding:4px 11px;font-size:12.5px" onclick="openRec(\''+kind+'\',\'\')">+ הוסף</button>':'')
+   +'</div>';
+}
 function draw(){
   var el=document.getElementById("list");
   if(VIEW==="work"){var rs=woRows();
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
     el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
-      return '<tr class="r rowlink" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
+      return '<tr class="r rowlink" onclick="openCard(\''+r.id+'\')" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
        +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
        +'<td data-l="כרטיס"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
@@ -760,29 +770,33 @@ function draw(){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
     el.innerHTML='<table><tr><th>שם</th><th>טלפון</th><th>דוא"ל</th><th>כרטיסים</th><th>רכבים</th><th>סטטוס</th></tr>'
      +FOUND.map(function(r){var f=r.fields||{};
-      return '<tr class="r" onclick="openCus(FOUND["+FOUND.indexOf(r)+"])"><td data-l="שם"><b>'+esc(f["שם לקוח"]||"")+'</b></td><td data-l="טלפון">'+esc(f["מספר טלפון"]||"")+'</td>'
+      return '<tr class="r rowlink" onclick="openCus(FOUND['+FOUND.indexOf(r)+'])" title="לחץ לפתיחת כרטיס הלקוח"><td data-l="שם"><b>'+esc(f["שם לקוח"]||"")+'</b></td><td data-l="טלפון">'+esc(f["מספר טלפון"]||"")+'</td>'
        +'<td class="muted">'+esc(f['דוא"ל']||"")+'</td><td>'+esc(txt(f["מספר כרטיסי עבודה"]))+'</td>'
        +'<td>'+esc(txt(f["מספר רכבים"]))+'</td><td>'+esc(txt(f["סטטוס לקוח"]))+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="veh"){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד מספר רכב בחיפוש למעלה. הטבלה מכילה למעלה מ-13,000 רכבים, לכן החיפוש רץ בשרת.</div>';return;}
     el.innerHTML='<table><tr><th>מספר רכב</th><th>יצרן</th><th>דגם</th><th>שנה</th><th>צבע</th><th>לקוח</th><th>טסט</th><th>כרטיסים</th></tr>'
      +FOUND.map(function(r){var f=r.fields||{};
-      return '<tr><td><b>'+esc(f["מספר רכב"]||"")+'</b></td><td>'+esc(f["יצרן (מלל חופשי)"]||txt(f["יצרן"]))+'</td>'
+      return '<tr class="r rowlink" onclick="openVeh(FOUND['+FOUND.indexOf(r)+'])" title="לחץ לפתיחת כרטיס הרכב"><td><b>'+esc(dash(f["מספר רכב"]))+'</b></td><td>'+esc(f["יצרן (מלל חופשי)"]||txt(f["יצרן"]))+'</td>'
        +'<td>'+esc(f["דגם (מלל חופשי)"]||f["דגם"]||"")+'</td><td>'+esc(txt(f["שנת ייצור"]))+'</td>'
        +'<td class="muted">'+esc(txt(f["צבע"]))+'</td><td>'+esc(txt(f["שם לקוח (טקסט)"]))+'</td>'
        +'<td>'+esc(dt(f["תאריך הטסט"]))+'</td><td>'+esc(txt(f["סך הכל כרטיסי עבודה לרכב"]))+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="loc"){
-    el.innerHTML='<table><tr><th>מיקום</th><th>כרטיסים במיקום</th></tr>'
+    el.innerHTML=secHead("מיקומים","loc",LOC.length)
+     +'<table><tr><th>מיקום</th><th>כרטיסים במיקום</th><th style="width:26px"></th></tr>'
      +LOC.map(function(l){var n=WOS.filter(function(r){var f=r.fields||{};
         return ids(f["מיקום לפני טיפול"]).indexOf(l.id)>=0||ids(f["מיקום בסוף הטיפול"]).indexOf(l.id)>=0;}).length;
-      return '<tr><td><b>'+esc(l.name)+'</b></td><td>'+n+'</td></tr>';}).join("")+'</table>';return;}
+      return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+l.id+'\')"><td><b>'+esc(l.name)+'</b></td><td>'+n+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="set"){
-    el.innerHTML='<div class="sec" style="margin-top:0">עובדים ('+EMP.length+')</div>'
-     +'<table><tr><th>שם</th><th>תפקיד</th><th>סטטוס</th><th>כרטיסים</th></tr>'
-     +EMP.map(function(e){return '<tr class="r" onclick="openEmp(\''+e.id+'\')"><td data-l="שם"><b>'+esc(e.name)+'</b></td><td data-l="תפקיד">'+esc(e.role||"")+'</td><td data-l="סטטוס">'+esc(e.status||"")+'</td><td data-l="כרטיסים">'+(e.cards||0)+'</td></tr>';}).join("")+'</table>'
-     +'<div class="sec">קטלוג שירותים נוספים ('+SVC.length+')</div>'
-     +'<table><tr><th>שירות</th><th>מחיר</th></tr>'
-     +SVC.map(function(s){return '<tr><td>'+esc(s.name)+'</td><td>₪'+Number(s.price||0).toFixed(2)+'</td></tr>';}).join("")+'</table>';return;}
+    el.innerHTML=secHead("עובדים","emp",EMP.length)
+     +'<table><tr><th>שם</th><th>תפקיד</th><th>דוא"ל</th><th>סטטוס</th><th>כרטיסים</th><th style="width:26px"></th></tr>'
+     +EMP.map(function(e){return '<tr class="r rowlink" onclick="openRec(\'emp\',\''+e.id+'\')"><td data-l="שם"><b>'+esc(e.name)+'</b></td><td data-l="תפקיד">'+esc(e.role||"")+'</td><td data-l="מייל" class="muted">'+esc(e.email||"")+'</td><td data-l="סטטוס">'+esc(e.status||"")+'</td><td data-l="כרטיסים">'+(e.cards||0)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>'
+     +secHead("קטלוג שירותים נוספים","svc",SVC.length)
+     +'<table><tr><th>שירות</th><th>מחיר</th><th style="width:26px"></th></tr>'
+     +SVC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'svc\',\''+x.id+'\')"><td>'+esc(x.name)+'</td><td>'+money(x.price||0)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>'
+     +secHead("מיקומים במוסך","loc",LOC.length)
+     +'<table><tr><th>מיקום</th><th style="width:26px"></th></tr>'
+     +LOC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+x.id+'\')"><td>'+esc(x.name)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
 }
 async function remoteSearch(){
   var s=(document.getElementById("q").value||"").trim();
@@ -1447,7 +1461,7 @@ async function vehDupCheck(){
     var recs=await find(T.veh,'SEARCH("'+pl+'",SUBSTITUTE({מספר רכב},"-",""))',5);
     if(recs.length){var g=recs[0].fields||{};
       box.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">⚠️ הרכב כבר קיים במערכת</div>'
-       +'<div class="ln"><div class="nm"><b>'+esc(g["מספר רכב"]||"")+'</b><small style="color:#5b6172">'+esc((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||""))+'</small></div>'
+       +'<div class="ln"><div class="nm"><b>'+esc(dash(g["מספר רכב"]))+'</b><small style="color:#5b6172">'+esc((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||""))+'</small></div>'
        +'<button class="x" style="width:auto;padding:5px 10px;color:#1d7a33;border-color:#a8ddb4" onclick="useExistingVeh(\''+recs[0].id+'\',\''+esc(g["מספר רכב"]||"").replace(/\'/g,"")+'\')">בחר אותו</button></div>';
     } else box.innerHTML='<div class="hint" style="background:#e8f6ea;border-color:#1d7a33;color:#1d7a33">✓ מספר רכב פנוי · '+esc(fmtPlate(pl))+'</div>';
   }catch(e){box.innerHTML="";}
@@ -1547,8 +1561,8 @@ async function ncStep2(){
     el.innerHTML='<div class="sec">רכבי הלקוח ('+vids.length+')</div>'
      +vs.filter(Boolean).map(function(v){var g=v.fields||{};
        var mk=((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim();
-       var lbl=((g["מספר רכב"]||"")+" \u00b7 "+mk).trim();
-       return '<div class="ln"><div class="nm"><b>'+esc(g["מספר רכב"]||"")+'</b><small style="color:#5b6172">'
+       var lbl=((dash(g["מספר רכב"])||"")+" \u00b7 "+mk).trim();
+       return '<div class="ln"><div class="nm"><b>'+esc(dash(g["מספר רכב"]))+'</b><small style="color:#5b6172">'
         +esc((mk+" "+(g["שנת ייצור"]||"")).trim()||"—")+'</small></div>'
         +'<button class="x" style="width:auto;padding:5px 12px" onclick="ncPickVeh(\''+v.id+'\',\''+esc(lbl).replace(/\'/g,"")+'\')">בחר</button></div>';}).join("");
   }catch(e){var e2=document.getElementById("ncVehList");if(e2)e2.innerHTML='<div class="hint">טעינת הרכבים נכשלה</div>';}
@@ -1708,6 +1722,158 @@ async function createCard(){
 }
 
 
+
+/* ===== רכב 360° — פרטים לעריכה + כל היסטוריית הטיפולים ===== */
+async function openVehById(id){
+  try{var d=await api("/"+T.veh+"/"+id);openVeh(d);}catch(e){toast("הרכב לא נמצא",1);}
+}
+function openVeh(rec){
+  EDIT_KIND="veh"; EDIT_REC=rec;
+  var f=rec.fields||{};
+  document.getElementById("mT").textContent="רכב \u00b7 "+dash(f["מספר רכב"]);
+  document.getElementById("mS").textContent=[((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||"")).trim(),
+    txt(f["שם לקוח (טקסט)"]),txt(f["שנת ייצור"])].filter(function(x){return x&&x.trim();}).join(" \u00b7 ");
+  document.getElementById("mTabs").innerHTML=["פרטי הרכב","היסטוריית טיפולים"]
+    .map(function(l,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+esc(l)+'</button>';}).join("");
+  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
+  document.getElementById("p1").innerHTML='<div class="boot">טוען היסטוריה…</div>';
+  document.getElementById("p0").innerHTML='<div class="grid">'
+   +'<div class="f"><label>מספר רכב *</label><input id="vPl" value="'+esc(dash(f["מספר רכב"]))+'"></div>'
+   +'<div class="f"><label>יצרן</label><input id="vMk" value="'+esc(f["יצרן (מלל חופשי)"]||"")+'"></div>'
+   +'<div class="f"><label>דגם</label><input id="vMd" value="'+esc(f["דגם (מלל חופשי)"]||"")+'"></div>'
+   +'<div class="f"><label>שנת ייצור</label><input id="vYr" type="number" value="'+esc(txt(f["שנת ייצור"]))+'"></div>'
+   +'<div class="f"><label>צבע</label><input id="vCl" value="'+esc(txt(f["צבע"]))+'"></div>'
+   +'<div class="f"><label>סוג מנוע</label><input id="vEn" value="'+esc(txt(f["סוג מנוע"]))+'"></div>'
+   +'<div class="f"><label>תוקף הטסט</label><input id="vTs" type="date" value="'+esc(txt(f["תאריך הטסט"]).slice(0,10))+'"></div>'
+   +'<div class="f"><label>קילומטראז\' אחרון</label><div class="v">'+esc(txt(f["קילומטראז\' אחרון"])||"\u2014")+'</div></div>'
+   +'<div class="f"><label>בעלים</label><div class="v">'+esc(txt(f["שם לקוח (טקסט)"])||"\u2014")+'</div></div>'
+   +'<div class="f"><label>סטטוס רכב</label><select id="vSt"><option value=""></option>'
+     +["פעיל","לא פעיל","נמכר"].map(function(o){return '<option'+(txt(f["סטטוס רכב"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+   +'<div class="f"><label>מונית / רכב ציבורי</label><label class="chk" style="margin:0"><input type="checkbox" id="vTx"'+(f["מונית / רכב ציבורי"]?" checked":"")+'><span>כן</span></label></div>'
+   +'</div>'
+   +'<button class="save" onclick="saveVeh(\''+rec.id+'\')">\u2713 שמור רכב</button>';
+  loadVehHistory(rec);
+  document.getElementById("ov").classList.add("on");
+}
+function saveVeh(id){
+  var o={"מספר רכב":dash(document.getElementById("vPl").value),
+         "יצרן (מלל חופשי)":document.getElementById("vMk").value.trim(),
+         "דגם (מלל חופשי)":document.getElementById("vMd").value.trim(),
+         "צבע":document.getElementById("vCl").value.trim(),
+         "סוג מנוע":document.getElementById("vEn").value.trim(),
+         "מונית / רכב ציבורי":!!document.getElementById("vTx").checked};
+  var y=parseInt(document.getElementById("vYr").value,10); if(!isNaN(y))o["שנת ייצור"]=y;
+  var t=document.getElementById("vTs").value; if(t)o["תאריך הטסט"]=t;
+  var st=document.getElementById("vSt").value; if(st)o["סטטוס רכב"]=st;
+  if(!/^\d{7,8}$/.test(String(o["מספר רכב"]).replace(/\D/g,""))){toast("מספר רכב חייב 7 או 8 ספרות",1);return;}
+  fetch(PX+B+"/"+T.veh+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:o,typecast:true})})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(d){FOUND=FOUND.map(function(x){return x.id===d.id?d:x;});toast("\u2713 הרכב עודכן");closeCard();draw();})
+   .catch(function(){toast("השמירה נכשלה",1);});
+}
+async function loadVehHistory(rec){
+  var f=rec.fields||{}, pl=String(f["מספר רכב"]||""), vid=rec.id;
+  try{
+    var recs=pl?await find(T.wo,'SEARCH('+q(pl)+',ARRAYJOIN({מספר רכב}))',200):[];
+    recs=recs.filter(function(r){return ids((r.fields||{})["מספר רכב"]).indexOf(vid)>=0;});
+    recs.sort(function(a,b){
+      var A=txt((a.fields||{})["תאריך ושעה"])||txt((a.fields||{})["תאריך פתיחה"])||a.createdTime;
+      var Bv=txt((b.fields||{})["תאריך ושעה"])||txt((b.fields||{})["תאריך פתיחה"])||b.createdTime;
+      return String(Bv).localeCompare(String(A));});
+    var total=recs.reduce(function(x,r){return x+(Number((r.fields||{})['סה"כ לתשלום'])||0);},0);
+    var el=document.getElementById("p1"); if(!el)return;
+    el.innerHTML='<div class="grid" style="margin-bottom:10px">'
+      +'<div class="f"><label>סה"כ ביקורים</label><div class="v"><b>'+recs.length+'</b></div></div>'
+      +'<div class="f"><label>סה"כ הוצאה על הרכב</label><div class="v"><b>'+money(total)+'</b></div></div>'
+      +'<div class="f"><label>ביקור אחרון</label><div class="v"><b>'+esc(recs.length?(dt((recs[0].fields||{})["תאריך ושעה"])||dt((recs[0].fields||{})["תאריך פתיחה"])||"\u2014"):"\u2014")+'</b></div></div>'
+      +'</div>'
+      +(recs.length?'<table><thead><tr><th>תאריך</th><th>כרטיס</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
+      +recs.map(function(r){var g=r.fields||{};
+        return '<tr class="rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
+          +'<td>'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"\u2014")+'</td>'
+          +'<td><b>'+esc(g["מספר כרטיס עבודה"]||"")+'</b></td>'
+          +'<td>'+esc(txt(g["סוג טיפול"])||"\u2014")+'</td>'
+          +'<td class="muted">'+esc(txt(g["מכונאי אחראי"])||"\u2014")+'</td>'
+          +'<td>'+tag("סטטוס",g["סטטוס"])+'</td>'
+          +'<td>'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
+      +'</tbody></table>':'<div class="muted" style="padding:12px">אין היסטוריית טיפולים לרכב הזה</div>');
+  }catch(e){var e2=document.getElementById("p1");if(e2)e2.innerHTML='<div class="muted" style="padding:12px">טעינת ההיסטוריה נכשלה</div>';}
+}
+
+/* ===== מנוע CRUD כללי לטבלאות ההגדרות ===== */
+var CRUD={
+  emp:{tbl:T.emp,label:"עובד",key:"שם מלא",
+    fields:[{k:"שם מלא",l:"שם מלא *",t:"text"},{k:"טלפון",l:"טלפון",t:"text"},{k:'דוא"ל',l:'דוא"ל (חשבון Google)',t:"email"},
+            {k:"תפקיד",l:"תפקיד",t:"sel",o:["מכונאי","משרד","מנהל המוסך (בעל המוסך)","יועץ שירות","אחראי טסטים","חשמלאי רכב","שוליה"]},
+            {k:"סטטוס",l:"סטטוס",t:"sel",o:["פעיל","לא פעיל"]},
+            {k:"תאריך תחילת עבודה",l:"תחילת עבודה",t:"date"},{k:"הערות",l:"הערות",t:"area"}]},
+  svc:{tbl:T.svc,label:"שירות",key:"שם שירות",
+    fields:[{k:"שם שירות",l:"שם השירות *",t:"text"},{k:"מחיר שירות",l:"מחיר (\u20aa)",t:"num"}]},
+  loc:{tbl:T.loc,label:"מיקום",key:"שם מיקום",
+    fields:[{k:"שם מיקום",l:"שם המיקום *",t:"text"}]}
+};
+function crudCan(){return can("users")||ME.role==="manager";}
+async function openRec(kind,id){
+  var c=CRUD[kind]; if(!c)return;
+  if(!crudCan()){toast("אין לך הרשאה לערוך את הרשימה הזו",1);return;}
+  var rec={id:null,fields:{}};
+  if(id){try{rec=await api("/"+c.tbl+"/"+id);}catch(e){toast("הרשומה לא נמצאה",1);return;}}
+  EDIT_KIND=kind; EDIT_REC=rec;
+  var f=rec.fields||{};
+  document.getElementById("mT").textContent=(id?c.label+" \u00b7 "+(txt(f[c.key])||""):c.label+" חדש");
+  document.getElementById("mS").textContent=id?"עריכה":"רשומה חדשה";
+  document.getElementById("mTabs").innerHTML="";
+  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
+  document.getElementById("p0").innerHTML='<div class="grid">'
+   +c.fields.map(function(fd,i){
+      var v=f[fd.k], id2="cr"+i;
+      if(fd.t==="sel")return '<div class="f"><label>'+esc(fd.l)+'</label><select id="'+id2+'"><option value=""></option>'
+        +fd.o.map(function(o){return '<option'+(txt(v)===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>';
+      if(fd.t==="area")return '<div class="f" style="grid-column:1/-1"><label>'+esc(fd.l)+'</label><textarea id="'+id2+'">'+esc(txt(v))+'</textarea></div>';
+      if(fd.t==="num") return '<div class="f"><label>'+esc(fd.l)+'</label><input id="'+id2+'" type="number" step="0.01" value="'+esc(v==null?"":v)+'"></div>';
+      if(fd.t==="date")return '<div class="f"><label>'+esc(fd.l)+'</label><input id="'+id2+'" type="date" value="'+esc(txt(v).slice(0,10))+'"></div>';
+      return '<div class="f"><label>'+esc(fd.l)+'</label><input id="'+id2+'" type="'+(fd.t==="email"?"email":"text")+'" value="'+esc(txt(v))+'"></div>';
+    }).join("")
+   +'</div>'
+   +'<button class="save" onclick="saveRec(\''+kind+'\',\''+(id||"")+'\')">\u2713 שמור</button>'
+   +(id?'<button class="save" style="background:#8a1220;margin-top:8px" onclick="delRec(\''+kind+'\',\''+id+'\')">\ud83d\uddd1 מחק '+esc(c.label)+'</button>':'');
+  document.getElementById("ov").classList.add("on");
+}
+function saveRec(kind,id){
+  var c=CRUD[kind]; if(!c)return;
+  var o={};
+  c.fields.forEach(function(fd,i){
+    var el=document.getElementById("cr"+i); if(!el)return;
+    var v=el.value;
+    if(fd.t==="num"){var n=parseFloat(v); o[fd.k]=isNaN(n)?null:n; return;}
+    o[fd.k]=(v==null?"":String(v).trim())||null;
+  });
+  if(!o[c.key]){toast("צריך למלא "+c.key,1);return;}
+  var url=PX+B+"/"+c.tbl+(id?"/"+id:"");
+  fetch(url,{method:id?"PATCH":"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({fields:o,typecast:true})})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(){toast("\u2713 נשמר");closeCard();reloadRefs();})
+   .catch(function(){toast("השמירה נכשלה",1);});
+}
+function delRec(kind,id){
+  var c=CRUD[kind]; if(!c)return;
+  var nm=txt(((EDIT_REC||{}).fields||{})[c.key])||"";
+  if(!confirm("למחוק את "+c.label+' "'+nm+'" לצמיתות?\n\nהפעולה אינה הפיכה. רשומות שמקושרות אליה יאבדו את הקישור.'))return;
+  if(!confirm("אישור אחרון \u2014 למחוק את \""+nm+"\"?"))return;
+  fetch(PX+B+"/"+c.tbl+"/"+id,{method:"DELETE"})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(){toast("\u2713 נמחק");closeCard();reloadRefs();})
+   .catch(function(){toast("המחיקה נכשלה",1);});
+}
+async function reloadRefs(){
+  try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
+  try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
+  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f['דוא"ל']||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
+  draw();
+}
+
 /* ===== עריכת עובדים ולקוחות ===== */
 var EMP_PHOTO="fldKyyQxgLFuUNTgw", CUS_PHOTO="fldHrLC1LLtjETGZO";
 var EDIT_KIND=null, EDIT_REC=null;
@@ -1797,7 +1963,7 @@ async function loadCusHistory(rec){
     var el1=document.getElementById("p1");
     el1.innerHTML=vehs.length? '<table><thead><tr><th>מספר רכב</th><th>יצרן / דגם</th><th>שנה</th><th>טסט</th></tr></thead><tbody>'
       +vehs.map(function(v){var g=v.fields||{};
-        return '<tr><td><b>'+esc(g["מספר רכב"]||"")+'</b></td><td>'
+        return '<tr class="r rowlink" onclick="openVehById(\''+v.id+'\')" title="לחץ לפתיחת כרטיס הרכב"><td><b>'+esc(dash(g["מספר רכב"]))+'</b></td><td>'
           +esc(((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim()||"—")+'</td><td>'
           +esc(txt(g["שנת ייצור"])||"—")+'</td><td>'+esc(dt(g["תאריך הטסט"])||"—")+'</td></tr>';}).join("")
       +'</tbody></table>' : '<div class="muted" style="padding:12px">אין רכבים משויכים</div>';
@@ -1823,7 +1989,7 @@ async function loadCusHistory(rec){
       +recs.map(function(r){var g=r.fields||{};
         return '<tr style="cursor:pointer" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
           +'<td>'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"—")+'</td>'
-          +'<td>'+esc(txt(g["מספר רכב"])||"—")+'</td>'
+          +'<td>'+esc(dash(txt(g["מספר רכב"]))||"—")+'</td>'
           +'<td>'+esc(txt(g["סוג טיפול"])||"—")+'</td>'
           +'<td>'+tag("סטטוס",g["סטטוס"])+'</td>'
           +'<td>'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
