@@ -42,14 +42,39 @@ tr.r{cursor:pointer}tr.r:hover td{background:#FDF2F2}
 .invov{position:fixed;inset:0;background:rgba(15,19,32,.55);display:none;z-index:130;align-items:center;justify-content:center;padding:18px}
 .invov.on{display:flex}
 .invbox{background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:88vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.32);position:relative}
-.invdoc{padding:26px 28px;color:#161A22;font-family:Arial,Helvetica,sans-serif;direction:rtl}
-.invdoc h1{color:#ED1E24;margin:0 0 2px;font-size:21px}
-.invdoc .sub{color:#666;font-size:12.5px;margin-bottom:18px}
-.invdoc table{width:100%;border-collapse:collapse;margin:12px 0}
-.invdoc th,.invdoc td{border-bottom:1px solid #e3e6ec;padding:7px 6px;text-align:right;font-size:13.5px}
-.invdoc th{background:#f6f8fa;font-size:11.5px;color:#666}
-.invdoc tfoot td{border:none;padding:4px 6px}
-.invdoc .tot{font-size:18px;font-weight:700;color:#ED1E24;border-top:2px solid #161A22!important}
+.invdoc{padding:24px 26px;color:#000;font-family:Arial,Helvetica,sans-serif;direction:rtl;font-size:12.5px}
+.ihead{text-align:center;border-bottom:1px solid #000;padding-bottom:7px;margin-bottom:7px}
+.iname{font-size:20px;font-weight:700;letter-spacing:.5px}
+.imeta{font-size:11px;margin-top:2px}
+.ibar{display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px}
+.ititle{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:10px}
+.ititle .t1{font-size:15px;font-weight:700}
+.ititle .t2{font-size:15px;font-weight:700;text-decoration:underline}
+.iboxes{display:flex;gap:8px;margin-bottom:12px}
+.ibox{flex:1;border:1px solid #000;padding:7px 9px}
+.ibox .kv{display:flex;gap:6px;font-size:11.5px;line-height:1.75}
+.ibox .k{color:#000;min-width:64px}
+.ibox .v{font-weight:700;border-bottom:1px solid #999;flex:1}
+.isec{text-align:center;font-size:15px;font-weight:700;margin:14px 0 4px;text-decoration:underline}
+table.itab{width:100%;border-collapse:collapse;margin-bottom:4px}
+table.itab th{font-size:11px;font-weight:400;border-bottom:1px solid #000;padding:3px 5px;text-align:right}
+table.itab td{font-size:12px;padding:3px 5px;text-align:right;border-bottom:1px solid #e8e8e8}
+table.itab td.num,table.itab th.num{text-align:left}
+table.itab td.sku{direction:ltr;text-align:left;font-family:monospace;font-size:11px}
+table.itab td.empty{color:#888;text-align:center}
+.isum{margin:10px 0 4px;max-width:300px}
+.isum .sr{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
+.isum .sr span:last-child{font-weight:700;min-width:80px;text-align:left}
+.isum .sr.gap{margin-top:8px;border-top:1px solid #000;padding-top:5px}
+.isum .sr.tot{border-top:1px solid #000;border-bottom:3px double #000;font-weight:700;margin-top:4px;padding:4px 0}
+.isign{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:34px;font-size:12px}
+@media(max-width:560px){
+  .iboxes{flex-direction:column}
+  .invdoc{padding:16px 14px;font-size:12px}
+  .iname{font-size:17px}
+  .ititle{flex-direction:column;gap:3px}
+  .isum{max-width:none}
+}
 .invbar{position:sticky;bottom:0;background:#f7f9fc;border-top:1px solid #e3e6ec;padding:10px 13px;display:flex;gap:8px;justify-content:flex-start}
 @media print{
   body>*{display:none!important}
@@ -132,7 +157,16 @@ tr.r{transition:background .12s}
 .sm{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px}
 
 .mini{font-size:11.5px;color:#6B7686;margin-top:3px}
-.g2loc{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:8px}
+.g2loc{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:8px}
+.pick{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}
+.pbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ min-height:46px;padding:10px 14px;border:1px solid #dfe3ea;border-radius:11px;background:#fff;
+ font-size:13.5px;font-weight:700;cursor:pointer;flex:1 1 150px;text-align:center;color:var(--ink)}
+.pbtn.cam{background:var(--red);color:#fff;border-color:var(--red)}
+.pbtn:active{transform:scale(.985)}
+.pbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.thumbs img{height:82px;max-width:100%;border-radius:9px;border:1px solid #dfe3ea;object-fit:cover}
 tr.rowlink{cursor:pointer}
 tr.rowlink:hover td{background:#fff7f7}
 td.opencell{color:var(--red);font-size:19px;font-weight:700;text-align:center}
@@ -171,10 +205,15 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  .nav button{padding:6px 10px;font-size:13px}
  .tabs{top:auto;position:static;padding:8px 10px;overflow-x:auto;flex-wrap:nowrap}
  .tabs button{flex:0 0 auto}
- /* table -> cards */
- table,thead,tbody,tr,th,td{display:block}
- thead{display:none}
- table{background:transparent;box-shadow:none}
+ /* table -> cards (לא חל על מסמך החשבונית) */
+ .wrap table,.wrap thead,.wrap tbody,.wrap tr,.wrap th,.wrap td,
+ .md table,.md thead,.md tbody,.md tr,.md th,.md td{display:block}
+ .wrap thead,.md thead{display:none}
+ .wrap table,.md table{background:transparent;box-shadow:none}
+ .invdoc table,.invdoc thead,.invdoc tbody,.invdoc th,.invdoc td{display:revert}
+ .invdoc tr{display:table-row}
+ .invdoc thead{display:table-header-group}
+ .invdoc table{background:#fff}
  tr.r{background:#fff;border:1px solid #e2e6ee;border-radius:12px;margin-bottom:10px;padding:10px 12px;box-shadow:0 1px 5px rgba(20,25,45,.07)}
  tr.r td{border:0;padding:3px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}
  tr.r td::before{content:attr(data-l);color:var(--steel-lt);font-size:12px;font-weight:bold;flex:0 0 auto}
@@ -252,6 +291,40 @@ button,select,input,textarea,a{min-height:38px}
 
 <script>
 var PX="https://abn-airtable-proxy.autocareabn.workers.dev/api/v0/", B="appX4z91yKZGwz6ap";
+var PROXY_HOST="abn-airtable-proxy.autocareabn.workers.dev";
+
+/* ===== WP-8 — כל פנייה לפרוקסי נחתמת בזהות המשתמש =====
+   עוטפים את fetch פעם אחת, כך שכל קריאה קיימת ועתידית מקבלת את הכותרת
+   בלי לגעת בכל אחת מהן בנפרד. */
+(function(){
+  if(window.__fetchWrapped||typeof window.fetch!=="function")return;
+  window.__fetchWrapped=true;
+  var _f=window.fetch.bind(window);
+  window.fetch=function(input,init){
+    var u=(typeof input==="string")?input:((input&&input.url)||"");
+    if(u.indexOf(PROXY_HOST)<0)return _f(input,init);
+    init=init||{};
+    var h=new Headers(init.headers||{});
+    if(window.__idToken)h.set("Authorization","Bearer "+window.__idToken);
+    init.headers=h;
+    return _f(u,init).then(function(r){
+      if(r.status===401||r.status===403)proxyDenied(r.status);
+      return r;
+    });
+  };
+})();
+var __deniedAt=0;
+function proxyDenied(code){
+  var now=new Date().getTime();
+  if(now-__deniedAt<6000)return;          /* לא להציף בהודעות */
+  __deniedAt=now;
+  try{toast(code===401?"ההזדהות פגה — נא להתחבר מחדש":"אין לך הרשאה לפעולה הזו",1);}catch(e){}
+  if(code===401){
+    window.__idToken=null;
+    setTimeout(function(){try{showGate();}catch(e){}},1200);
+  }
+}
+var APP_VERSION="v12";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -288,7 +361,7 @@ var PERMS={
   mechanic:{label:"מכונאי",     views:["work"],                          money:false, users:false,
             filters:["today","tomorrow","future"]}
 };
-var NAME_BY_EMAIL={"leoneld151174@gmail.com":"ליאו"};
+var NAME_BY_EMAIL={"leoneld151174@gmail.com":"לאו"};
 var ME={email:null,role:null,name:"",empId:null};
 
 function can(k){var p=PERMS[ME.role]; return !!(p&&p[k]);}
@@ -327,7 +400,7 @@ function authFail(email){
   document.getElementById("gate").innerHTML=
     '<div class="gate-box"><div class="gate-logo">ABN</div>'
     +'<h2>אין לך הרשאה למערכת</h2>'
-    +'<p>החשבון <b>'+esc(email)+'</b> אינו ברשימת המורשים.<br>פנה לליאו כדי להוסיף אותו.</p>'
+    +'<p>החשבון <b>'+esc(email)+'</b> אינו ברשימת המורשים.<br>פנה ללאו כדי להוסיף אותו.</p>'
     +'<button class="save" onclick="signOut()">כניסה עם חשבון אחר</button></div>';
 }
 
@@ -431,7 +504,8 @@ function showGate(){
     setTimeout(showGate,300); return;
   }
   try{
-    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle});
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:true,itp_support:true});
+    google.accounts.id.prompt();   /* חידוש שקט של הטוקן ברענון דף */
     google.accounts.id.renderButton(document.getElementById("gbtn"),
       {theme:"filled_blue",size:"large",text:"signin_with",locale:"he"});
   }catch(e){g.querySelector("p").textContent="טעינת Google נכשלה — רענן את הדף";}
@@ -646,14 +720,29 @@ function pollParts(rid,n){
      } else setTimeout(function(){pollParts(rid,n+1);},5000);
    }).catch(function(){});
 }
-function photoBox(kind,label,val){
+/* ===== רכיב הצילום האחיד של האפליקציה =====
+   כפתור אדום = מצלמת המכשיר נפתחת ישירות (טאבלט/סלולרי).
+   כפתור לבן  = בחירת קובץ קיים. בדסקטופ שניהם פותחים את חלון הקבצים. */
+function pickHTML(handler,accept,face){
+  accept=accept||"image/*,video/*"; face=face||"environment";
+  return '<div class="pick">'
+   +'<label class="pbtn cam">\ud83d\udcf7 \u05e6\u05dc\u05dd \u05e2\u05db\u05e9\u05d9\u05d5'
+     +'<input type="file" accept="'+accept+'" capture="'+face+'" onchange="'+handler+'"></label>'
+   +'<label class="pbtn">\ud83d\uddbc \u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8'
+     +'<input type="file" accept="'+accept+'" onchange="'+handler+'"></label>'
+   +'</div>';
+}
+function thumbs(val){
   var has=(val&&val.length)?val:null;
+  if(!has)return '';
+  return '<div class="thumbs">'+has.map(function(a){
+    var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
+    return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener"><img alt="" src="'+esc(u)+'"></a>';}).join("")+'</div>';
+}
+function photoBox(kind,label,val){
   return '<div class="f"><label>'+esc(label)+'</label>'
-   +(has?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'
-      +has.map(function(a){var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
-        return '<a href="'+esc(a.url)+'" target="_blank"><img src="'+esc(u)+'" style="height:78px;border-radius:8px;border:1px solid #dfe3ea"></a>';}).join("")
-      +'</div>':'')
-   +'<input type="file" accept="image/*,video/*" capture="environment" onchange="uploadPhoto(this,\''+kind+'\')" style="font-size:13px">'
+   +thumbs(val)
+   +pickHTML("uploadPhoto(this,'"+kind+"')")
    +'</div>';
 }
 
@@ -709,13 +798,9 @@ function locBlock(which,title,f){
   var cfg=PHOTO_LOC[which], atts=f[cfg.f]||[], coords=f[GPS_FIELDS[which]];
   return '<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:11px 12px">'
    +'<div style="font-weight:bold;font-size:13.5px;margin-bottom:7px">'+esc(title)+'</div>'
-   +(atts.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">'
-      +atts.map(function(a){var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
-        return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener"><img alt="תיעוד רכב" src="'+esc(u)+'" style="height:82px;border-radius:8px;border:1px solid #dfe3ea"></a>';}).join("")
-      +'</div>':'')
+   +thumbs(atts)
    +mapBox(coords,title)
-   +'<input type="file" accept="image/*" capture="environment" aria-label="'+esc(title)+'" '
-   +'onchange="uploadLoc(this,\''+which+'\')" style="font-size:13px;margin-top:8px">'
+   +pickHTML("uploadLoc(this,'"+which+"')","image/*")
    +'</div>';
 }
 /* ============ I18N ============ */
@@ -803,26 +888,26 @@ function draw(){
     if(!FOUND.length){el.innerHTML='<div class="hint">הקלד מספר רכב בחיפוש למעלה. הטבלה מכילה למעלה מ-13,000 רכבים, לכן החיפוש רץ בשרת.</div>';return;}
     el.innerHTML='<table><tr><th>מספר רכב</th><th>יצרן</th><th>דגם</th><th>שנה</th><th>צבע</th><th>לקוח</th><th>טסט</th><th>כרטיסים</th></tr>'
      +FOUND.map(function(r){var f=r.fields||{};
-      return '<tr class="r rowlink" onclick="openVeh(FOUND['+FOUND.indexOf(r)+'])" title="לחץ לפתיחת כרטיס הרכב"><td><b>'+esc(dash(f["מספר רכב"]))+'</b></td><td>'+esc(f["יצרן (מלל חופשי)"]||txt(f["יצרן"]))+'</td>'
-       +'<td>'+esc(f["דגם (מלל חופשי)"]||f["דגם"]||"")+'</td><td>'+esc(txt(f["שנת ייצור"]))+'</td>'
-       +'<td class="muted">'+esc(txt(f["צבע"]))+'</td><td>'+esc(txt(f["שם לקוח (טקסט)"]))+'</td>'
-       +'<td>'+esc(dt(f["תאריך הטסט"]))+'</td><td>'+esc(txt(f["סך הכל כרטיסי עבודה לרכב"]))+'</td></tr>';}).join("")+'</table>';return;}
+      return '<tr class="r rowlink" onclick="openVeh(FOUND['+FOUND.indexOf(r)+'])" title="לחץ לפתיחת כרטיס הרכב"><td data-l="רכב"><b>'+esc(dash(f["מספר רכב"]))+'</b></td><td data-l="יצרן">'+esc(f["יצרן (מלל חופשי)"]||txt(f["יצרן"]))+'</td>'
+       +'<td data-l="דגם">'+esc(f["דגם (מלל חופשי)"]||f["דגם"]||"")+'</td><td data-l="שנה">'+esc(txt(f["שנת ייצור"]))+'</td>'
+       +'<td data-l="צבע" class="muted">'+esc(txt(f["צבע"]))+'</td><td data-l="לקוח">'+esc(txt(f["שם לקוח (טקסט)"]))+'</td>'
+       +'<td data-l="טסט">'+esc(dt(f["תאריך הטסט"]))+'</td><td data-l="כרטיסים">'+esc(txt(f["סך הכל כרטיסי עבודה לרכב"]))+'</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="loc"){
     el.innerHTML=secHead("מיקומים","loc",LOC.length)
      +'<table><tr><th>מיקום</th><th>כרטיסים במיקום</th><th style="width:26px"></th></tr>'
      +LOC.map(function(l){var n=WOS.filter(function(r){var f=r.fields||{};
         return ids(f["מיקום לפני טיפול"]).indexOf(l.id)>=0||ids(f["מיקום בסוף הטיפול"]).indexOf(l.id)>=0;}).length;
-      return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+l.id+'\')"><td><b>'+esc(l.name)+'</b></td><td>'+n+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
+      return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+l.id+'\')"><td data-l="מיקום"><b>'+esc(l.name)+'</b></td><td data-l="כרטיסים">'+n+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="set"){
     el.innerHTML=secHead("עובדים","emp",EMP.length)
      +'<table><tr><th>שם</th><th>תפקיד</th><th>דוא"ל</th><th>סטטוס</th><th>כרטיסים</th><th style="width:26px"></th></tr>'
      +EMP.map(function(e){return '<tr class="r rowlink" onclick="openRec(\'emp\',\''+e.id+'\')"><td data-l="שם"><b>'+esc(e.name)+'</b></td><td data-l="תפקיד">'+esc(e.role||"")+'</td><td data-l="מייל" class="muted">'+esc(e.email||"")+'</td><td data-l="סטטוס">'+esc(e.status||"")+'</td><td data-l="כרטיסים">'+(e.cards||0)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>'
      +secHead("קטלוג שירותים נוספים","svc",SVC.length)
      +'<table><tr><th>שירות</th><th>מחיר</th><th style="width:26px"></th></tr>'
-     +SVC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'svc\',\''+x.id+'\')"><td>'+esc(x.name)+'</td><td>'+money(x.price||0)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>'
+     +SVC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'svc\',\''+x.id+'\')"><td data-l="שירות">'+esc(x.name)+'</td><td data-l="מחיר">'+money(x.price||0)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>'
      +secHead("מיקומים במוסך","loc",LOC.length)
      +'<table><tr><th>מיקום</th><th style="width:26px"></th></tr>'
-     +LOC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+x.id+'\')"><td>'+esc(x.name)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
+     +LOC.map(function(x){return '<tr class="r rowlink" onclick="openRec(\'loc\',\''+x.id+'\')"><td data-l="מיקום">'+esc(x.name)+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
 }
 async function remoteSearch(){
   var s=(document.getElementById("q").value||"").trim();
@@ -1119,6 +1204,15 @@ function invoiceActions(gross){
      :'<div class="mini" style="margin-top:6px">\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea: \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df, \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e9\u05dc\u05d5, \u05d5\u05d4\u05e1\u05db\u05d5\u05dd \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</div>');
 }
 
+/* פרטי העסק — כפי שהם מופיעים על החשבונית המקורית של המוסך */
+var SHOP={
+  name:"\u05de\u05d5\u05e1\u05da \u05d0\u05de\u05d9\u05e8 \u05d1\u05df \u05e0\u05d9\u05e1\u05df \u05d1\u05e2\u05f4\u05de",
+  vatId:"516326063",
+  mobile:"053-536-2156", tel:"08-857-3243", fax:"08-935-9272",
+  address:"\u05d4\u05de\u05d2\u05d5\u05e8 7/3 \u05d2\u05df \u05d9\u05d1\u05e0\u05d4",
+  /* כותרת המסמך. האפליקציה אינה מנפיקה חשבוניות מס — ראה הערה בהסבר. */
+  docTitle:"\u05d7\u05e9\u05d1\u05d5\u05df \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"
+};
 function previewInvoice(){
   if(!CUR)return;
   document.getElementById("invBody").innerHTML=invoiceHTML();
@@ -1127,39 +1221,119 @@ function previewInvoice(){
 function closeInv(){document.getElementById("invOv").classList.remove("on");}
 function printInvoice(){window.print();}
 
-/* התבנית המוסכמת של החשבונית — עבודה, חלפים, שירותים, מע"מ */
+function n2(v){return Number(v||0).toFixed(2);}
+function dOnly(v){var s2=dt(v)||"";return s2.split(" ")[0];}
+
+/* ===== מבנה החשבונית של מוסך ABN ===== */
 function invoiceHTML(){
   var f=CUR.fields||{}, ls=(typeof myLines==="function"?myLines():[]);
+
+  /* --- עבודות --- */
+  var labour=Number(f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"]||0);
+  var jobRows=labour
+    ? '<tr><td>1</td><td>'+esc(txt(f["\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc"])||"\u05d8\u05d9\u05e4\u05d5\u05dc")+'</td><td class="num">'+n2(labour)+'</td></tr>'
+    : '<tr><td colspan="3" class="empty">\u05dc\u05d0 \u05d4\u05d5\u05d6\u05e0\u05d4 \u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</td></tr>';
+
+  /* --- חלקים --- */
   var partsSum=0;
   var partRows=ls.map(function(r){var g=r.fields||{};
     var nm=(g["\u05d7\u05dc\u05e3"]&&g["\u05d7\u05dc\u05e3"][0]&&g["\u05d7\u05dc\u05e3"][0].name)||g["\u05ea\u05d9\u05d0\u05d5\u05e8 \u05e9\u05d5\u05e8\u05d4"]||"(\u05d7\u05dc\u05e3)";
+    var sku=g["\u05de\u05e7\u05f4\u05d8"]||g["\u05d1\u05e8\u05e7\u05d5\u05d3"]||"";
     var qy=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"];
     var pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0;
     partsSum+=qy*pr;
-    return '<tr><td>'+esc(nm)+'</td><td>'+qy+'</td><td>'+money(pr)+'</td><td>'+money(qy*pr)+'</td></tr>';}).join("");
+    return '<tr><td class="sku">'+esc(txt(sku))+'</td><td>'+esc(nm)+'</td>'
+      +'<td class="num">'+qy+'</td><td class="num">'+n2(pr)+'</td><td class="num">'+n2(qy*pr)+'</td></tr>';}).join("");
 
+  /* --- שירותים נוספים נכנסים לטבלת החלקים --- */
   var svcSum=0;
   var svcRows=ids(f["\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd:"]).map(function(id){
     var sv=SVC.filter(function(x){return x.id===id;})[0], pr=sv?Number(sv.price||0):0; svcSum+=pr;
-    return '<tr><td>'+esc(sv?sv.name:"(\u05e9\u05d9\u05e8\u05d5\u05ea)")+'</td><td>1</td><td>'+money(pr)+'</td><td>'+money(pr)+'</td></tr>';}).join("");
+    return '<tr><td class="sku"></td><td>'+esc(sv?sv.name:"(\u05e9\u05d9\u05e8\u05d5\u05ea)")+'</td>'
+      +'<td class="num">1</td><td class="num">'+n2(pr)+'</td><td class="num">'+n2(pr)+'</td></tr>';}).join("");
 
-  var labour=Number(f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"]||0);
-  var net=partsSum+svcSum+labour, vat=net*0.18, gross=net+vat;
-  var rows=(labour?'<tr><td>'+esc(txt(f["\u05e1\u05d5\u05d2 \u05d8\u05d9\u05e4\u05d5\u05dc"])||"\u05e2\u05d1\u05d5\u05d3\u05d4")+'</td><td>1</td><td>'+money(labour)+'</td><td>'+money(labour)+'</td></tr>':'')
-    +partRows+svcRows;
+  var itemsSum=partsSum+svcSum;
+  var net=labour+itemsSum, vat=net*0.18, gross=net+vat;
 
-  return '<h1>ABN \u2014 \u05de\u05d5\u05e1\u05da \u05d0\u05de\u05d9\u05e8 \u05d1\u05df \u05e0\u05d9\u05e1\u05df</h1>'
-   +'<div class="sub">\u05db\u05e8\u05d8\u05d9\u05e1 '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")
-     +' \u00b7 '+esc(f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")+' \u00b7 \u05e8\u05db\u05d1 '+esc(plate(f))
-     +' \u00b7 '+esc(dt(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05d5\u05e9\u05e2\u05d4"])||"")+'</div>'
-   +'<table><thead><tr><th>\u05e4\u05e8\u05d9\u05d8</th><th style="width:60px">\u05db\u05de\u05d5\u05ea</th>'
-     +'<th style="width:90px">\u05de\u05d7\u05d9\u05e8</th><th style="width:95px">\u05e1\u05d4"\u05db</th></tr></thead>'
-   +'<tbody>'+(rows||'<tr><td colspan="4" style="color:#999">\u05d0\u05d9\u05df \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd</td></tr>')+'</tbody>'
-   +'<tfoot>'
-   +'<tr><td colspan="3">\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de</td><td>'+money(net)+'</td></tr>'
-   +'<tr><td colspan="3">\u05de\u05e2"\u05de 18%</td><td>'+money(vat)+'</td></tr>'
-   +'<tr><td colspan="3" class="tot">\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</td><td class="tot">'+money(gross)+'</td></tr>'
-   +'</tfoot></table>';
+  var pay=txt(f["\u05d0\u05de\u05e6\u05e2\u05d9 \u05ea\u05e9\u05dc\u05d5\u05dd"]);
+  var paid=txt(f["\u05e1\u05d8\u05d8\u05d5\u05e1"])==="\u05e9\u05d5\u05dc\u05dd";
+  var km=f["\u05e2\u05d3\u05db\u05d5\u05df \u05e7\u05d9\u05dc\u05d5\u05de\u05d8\u05e8\u05d6' \u05d9\u05d3\u05e0\u05d9"]||f["\u05e2\u05d3\u05db\u05d5\u05df \u05e7\u05d9\u05dc\u05d5\u05de\u05d8\u05e8\u05d0\u05d6'"]||"";
+  var model=((f["\u05d9\u05e6\u05e8\u05df (\u05de\u05dc\u05dc \u05d7\u05d5\u05e4\u05e9\u05d9)"]||"")+" "+(f["\u05d3\u05d2\u05dd (\u05de\u05dc\u05dc \u05d7\u05d5\u05e4\u05e9\u05d9)"]||"")).trim();
+
+  var row=function(l,v){return '<div class="kv"><span class="k">'+l+':</span><span class="v">'+esc(v||"")+'</span></div>';};
+
+  return ''
+  /* ---------- כותרת העסק ---------- */
+  +'<div class="ihead">'
+    +'<div class="iname">'+esc(SHOP.name)+'</div>'
+    +'<div class="imeta">\u05d7.\u05e4. '+esc(SHOP.vatId)+' \u00b7 \u05e0\u05d9\u05d9\u05d3 '+esc(SHOP.mobile)
+      +' \u00b7 \u05d8\u05dc '+esc(SHOP.tel)+' \u00b7 \u05e4\u05e7\u05e1 '+esc(SHOP.fax)+'</div>'
+    +'<div class="imeta">'+esc(SHOP.address)+'</div>'
+  +'</div>'
+  +'<div class="ibar">'
+    +'<span>\u05de\u05e4\u05d9\u05e7: '+esc(txt(f["\u05de\u05e4\u05d9\u05e7 \u05d4\u05de\u05e1\u05de\u05da"])||ME.name||"")+'</span>'
+    +'<span>\u05e2\u05de\u05d5\u05d3: 1</span>'
+    +'<span>\u05ea\u05d0\u05e8\u05d9\u05da: '+esc(dOnly(new Date().toISOString()))+'</span>'
+  +'</div>'
+  /* ---------- שורת הכותרת ---------- */
+  +'<div class="ititle">'
+    +'<div class="t1">'+esc(SHOP.docTitle)+' \u05de\u05e1\u05e4\u05e8 : '+esc(f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")+'</div>'
+    +'<div class="t2">\u05e8\u05db\u05d1 : '+esc(plate(f))+'</div>'
+  +'</div>'
+  /* ---------- שני התיבות ---------- */
+  +'<div class="iboxes">'
+    +'<div class="ibox">'
+      +row("\u05dc\u05db\u05d1\u05d5\u05d3",f["\u05e9\u05dd \u05dc\u05d4\u05e6\u05d2\u05d4"]||"")
+      +row("\u05d8\u05dc\u05e4\u05d5\u05df",txt(f["\u05de\u05e1\u05e4\u05e8 \u05d8\u05dc\u05e4\u05d5\u05df"]))
+      +row("\u05d7.\u05e4 / \u05ea.\u05d6","")
+      +row("\u05e4\u05d5\u05dc\u05d9\u05e1\u05d4","")
+    +'</div>'
+    +'<div class="ibox">'
+      +row("\u05db\u05e8\u05d8\u05d9\u05e1",f["\u05de\u05e1\u05e4\u05e8 \u05db\u05e8\u05d8\u05d9\u05e1 \u05e2\u05d1\u05d5\u05d3\u05d4"]||"")
+      +row("\u05ea.\u05e4\u05ea\u05d9\u05d7\u05d4",dOnly(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05ea\u05d9\u05d7\u05d4"]))
+      +row("\u05d3\u05d2\u05dd",model)
+      +row("\u05e7\u05f4\u05de",km===""?"":Number(km).toLocaleString("en-US"))
+      +row("\u05e1\u05dc\u05d5\u05dc\u05e8\u05d9",txt(f["\u05de\u05e1\u05e4\u05e8 \u05d8\u05dc\u05e4\u05d5\u05df"]))
+      +row("\u05ea.\u05de\u05e1\u05d9\u05e8\u05d4",dOnly(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4"]))
+    +'</div>'
+  +'</div>'
+  /* ---------- עבודות ---------- */
+  +'<div class="isec">\u05e2\u05d1\u05d5\u05d3\u05d5\u05ea</div>'
+  +'<table class="itab"><thead><tr>'
+    +'<th style="width:52px">\u05e9\u05e2\u05ea\u05d5\u05df</th><th>\u05ea\u05d0\u05d5\u05e8 \u05d4\u05e2\u05d1\u05d5\u05d3\u05d4</th>'
+    +'<th class="num" style="width:88px">\u05e1\u05d4\u05f4\u05db \u05e2\u05e8\u05da</th></tr></thead>'
+  +'<tbody>'+jobRows+'</tbody></table>'
+  /* ---------- חלקים ---------- */
+  +'<div class="isec">\u05d7\u05dc\u05e7\u05d9\u05dd</div>'
+  +'<table class="itab"><thead><tr>'
+    +'<th style="width:110px">\u05de\u05e1\u05e4\u05e8 \u05e4\u05e8\u05d9\u05d8</th><th>\u05ea\u05d0\u05d5\u05e8 \u05e4\u05e8\u05d9\u05d8</th>'
+    +'<th class="num" style="width:52px">\u05db\u05de\u05d5\u05ea</th>'
+    +'<th class="num" style="width:82px">\u05de\u05d7. \u05dc\u05e6\u05e8\u05db\u05df</th>'
+    +'<th class="num" style="width:82px">\u05e1\u05d4\u05f4\u05db</th></tr></thead>'
+  +'<tbody>'+((partRows+svcRows)||'<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05d7\u05dc\u05e7\u05d9\u05dd</td></tr>')+'</tbody></table>'
+  /* ---------- סיכום ---------- */
+  +'<div class="isum">'
+    +'<div class="sr"><span>\u05e1\u05d4\u05f4\u05db \u05e2\u05d1\u05d5\u05d3\u05d5\u05ea :</span><span>'+n2(labour)+'</span></div>'
+    +'<div class="sr"><span>\u05e1\u05d4\u05f4\u05db \u05d7\u05dc\u05e7\u05d9\u05dd :</span><span>'+n2(itemsSum)+'</span></div>'
+    +'<div class="sr gap"><span>\u05e1\u05d4\u05f4\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2\u05f4\u05de :</span><span>'+n2(net)+'</span></div>'
+    +'<div class="sr"><span>\u05de\u05e2\u05f4\u05de 18 % \u05d1\u05e1\u05da :</span><span>'+n2(vat)+'</span></div>'
+    +'<div class="sr tot"><span>\u05e1\u05d4\u05f4\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd :</span><span>'+n2(gross)+'</span></div>'
+  +'</div>'
+  /* ---------- תקבולים ---------- */
+  +'<div class="isec">\u05e4\u05d9\u05e8\u05d5\u05d8 \u05ea\u05e7\u05d1\u05d5\u05dc\u05d9\u05dd</div>'
+  +'<table class="itab"><thead><tr><th style="width:48px">\u05e9\u05d5\u05e8\u05d4</th>'
+    +'<th style="width:110px">\u05ea\u05d0\u05e8\u05d9\u05da \u05e4\u05e8\u05e2\u05d5\u05df</th>'
+    +'<th>\u05e1\u05d5\u05d2 \u05ea\u05e9\u05dc\u05d5\u05dd</th>'
+    +'<th class="num" style="width:90px">\u05e1\u05db\u05d5\u05dd</th></tr></thead><tbody>'
+  +(paid&&gross>0
+     ? '<tr><td>1</td><td>'+esc(dOnly(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e1\u05d2\u05d9\u05e8\u05d4"])||dOnly(new Date().toISOString()))+'</td>'
+       +'<td>'+esc(pay||"\u2014")+'</td><td class="num">'+n2(gross)+'</td></tr>'
+     : '<tr><td colspan="4" class="empty">\u05d8\u05e8\u05dd \u05e9\u05d5\u05dc\u05dd</td></tr>')
+  +'</tbody></table>'
+  +'<div class="isum"><div class="sr tot"><span>\u05e1\u05d4\u05f4\u05db \u05e9\u05d5\u05dc\u05dd :</span><span>'+n2(paid?gross:0)+'</span></div></div>'
+  /* ---------- חתימות ---------- */
+  +'<div class="isign"><div>\u05d7\u05ea\u05d9\u05de\u05ea \u05d4\u05e2\u05d5\u05e1\u05e7: ______________</div>'
+    +'<div>\u05d7\u05ea\u05d9\u05de\u05ea \u05d4\u05dc\u05e7\u05d5\u05d7: ______________</div></div>';
 }
 
 async function sendToCustomer(){
@@ -1642,13 +1816,13 @@ function ncStep3(){
      +'<option value="">— בחר —</option><option>ידני</option><option>צילום דרך הטלפון</option></select></div>'
    +'<div class="f" id="ncKmManual" style="display:none"><label>קילומטראז\' נוכחי</label><input type="number" id="ncKm" inputmode="numeric"></div>'
    +'<div class="f" id="ncKmPhoto" style="display:none"><label>\ud83d\udcf7 צילום מד הקילומטראז\'</label>'
-     +'<input type="file" accept="image/*" capture="environment" onchange="ncStash(this,\'km\')" style="font-size:13px">'
+     +pickHTML("ncStash(this,'km')","image/*")
      +'<div class="mini" id="ncKmName"></div></div>'
    +'</div>'
    +'<div class="sec">סיבת ההגעה</div>'
    +'<div class="f"><label>מה הביא את הלקוח למוסך?</label><textarea id="ncReason" placeholder="תיאור התקלה / הבקשה"></textarea></div>'
    +'<div class="f"><label>\ud83d\udcf7 צילום הבעיה (לא חובה)</label>'
-     +'<input type="file" accept="image/*,video/*" capture="environment" onchange="ncStash(this,\'problem\')" style="font-size:13px">'
+     +pickHTML("ncStash(this,'problem')")
      +'<div class="mini" id="ncProblemName"></div></div>'
    +'<button class="save" id="ncSave" onclick="createCard()">\u2713 צור כרטיס עבודה</button>'
    +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="ncStep2()">\u2190 חזרה לרכב</button>';
@@ -1841,13 +2015,13 @@ async function loadVehHistory(rec){
       +'</div>'
       +(recs.length?'<table><thead><tr><th>תאריך</th><th>כרטיס</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
       +recs.map(function(r){var g=r.fields||{};
-        return '<tr class="rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
-          +'<td>'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"\u2014")+'</td>'
-          +'<td><b>'+esc(g["מספר כרטיס עבודה"]||"")+'</b></td>'
-          +'<td>'+esc(txt(g["סוג טיפול"])||"\u2014")+'</td>'
-          +'<td class="muted">'+esc(txt(g["מכונאי אחראי"])||"\u2014")+'</td>'
-          +'<td>'+tag("סטטוס",g["סטטוס"])+'</td>'
-          +'<td>'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
+        return '<tr class="r rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
+          +'<td data-l="תאריך">'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"\u2014")+'</td>'
+          +'<td data-l="כרטיס"><b>'+esc(g["מספר כרטיס עבודה"]||"")+'</b></td>'
+          +'<td data-l="טיפול">'+esc(txt(g["סוג טיפול"])||"\u2014")+'</td>'
+          +'<td data-l="מכונאי" class="muted">'+esc(txt(g["מכונאי אחראי"])||"\u2014")+'</td>'
+          +'<td data-l="סטטוס">'+tag("סטטוס",g["סטטוס"])+'</td>'
+          +'<td data-l="לתשלום">'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
       +'</tbody></table>':'<div class="muted" style="padding:12px">אין היסטוריית טיפולים לרכב הזה</div>');
   }catch(e){var e2=document.getElementById("p1");if(e2)e2.innerHTML='<div class="muted" style="padding:12px">טעינת ההיסטוריה נכשלה</div>';}
 }
@@ -1951,7 +2125,7 @@ function openEmp(id){
    +'<div class="f"><label>הערות</label><textarea id="eNote">'+esc(f["הערות"]||"")+'</textarea></div>'
    +'<div class="sec">תמונת עובד</div>'
    +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת עובד" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
-   +'<input type="file" accept="image/*" capture="user" aria-label="תמונת עובד" onchange="upPhoto(this,\''+T.emp+'\',\''+id+'\',\''+EMP_PHOTO+'\',\'emp\')">'
+   +pickHTML("upPhoto(this,'"+T.emp+"','"+id+"','"+EMP_PHOTO+"','emp')","image/*","user")
    +'<button class="save" onclick="saveEmp(\''+id+'\')">✓ שמור עובד</button>';
   document.getElementById("ov").classList.add("on");
 }
@@ -1997,7 +2171,7 @@ function openCus(rec){
    +'<div class="f"><label>הערות</label><textarea id="cNote">'+esc(f["הערות"]||"")+'</textarea></div>'
    +'<div class="sec">תמונה</div>'
    +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת לקוח" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
-   +'<input type="file" accept="image/*" aria-label="תמונת לקוח" onchange="upPhoto(this,\''+T.cus+'\',\''+rec.id+'\',\''+CUS_PHOTO+'\',\'cus\')">'
+   +pickHTML("upPhoto(this,'"+T.cus+"','"+rec.id+"','"+CUS_PHOTO+"','cus')","image/*")
    +'<button class="save" onclick="saveCus(\''+rec.id+'\')">✓ שמור לקוח</button>';
   document.getElementById("ov").classList.add("on");
 }
@@ -2014,9 +2188,9 @@ async function loadCusHistory(rec){
     var el1=document.getElementById("p1");
     el1.innerHTML=vehs.length? '<table><thead><tr><th>מספר רכב</th><th>יצרן / דגם</th><th>שנה</th><th>טסט</th></tr></thead><tbody>'
       +vehs.map(function(v){var g=v.fields||{};
-        return '<tr class="r rowlink" onclick="openVehById(\''+v.id+'\')" title="לחץ לפתיחת כרטיס הרכב"><td><b>'+esc(dash(g["מספר רכב"]))+'</b></td><td>'
-          +esc(((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim()||"—")+'</td><td>'
-          +esc(txt(g["שנת ייצור"])||"—")+'</td><td>'+esc(dt(g["תאריך הטסט"])||"—")+'</td></tr>';}).join("")
+        return '<tr class="r rowlink" onclick="openVehById(\''+v.id+'\')" title="לחץ לפתיחת כרטיס הרכב"><td data-l="רכב"><b>'+esc(dash(g["מספר רכב"]))+'</b></td><td data-l="יצרן / דגם">'
+          +esc(((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim()||"—")+'</td><td data-l="שנה">'
+          +esc(txt(g["שנת ייצור"])||"—")+'</td><td data-l="טסט">'+esc(dt(g["תאריך הטסט"])||"—")+'</td></tr>';}).join("")
       +'</tbody></table>' : '<div class="muted" style="padding:12px">אין רכבים משויכים</div>';
   }catch(e){document.getElementById("p1").innerHTML='<div class="muted" style="padding:12px">טעינת הרכבים נכשלה</div>';}
 
@@ -2039,12 +2213,12 @@ async function loadCusHistory(rec){
       +'</div>'
       +(recs.length?'<table><thead><tr><th>תאריך</th><th>רכב</th><th>סוג טיפול</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
       +recs.map(function(r){var g=r.fields||{};
-        return '<tr style="cursor:pointer" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
-          +'<td>'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"—")+'</td>'
-          +'<td>'+esc(dash(txt(g["מספר רכב"]))||"—")+'</td>'
-          +'<td>'+esc(txt(g["סוג טיפול"])||"—")+'</td>'
-          +'<td>'+tag("סטטוס",g["סטטוס"])+'</td>'
-          +'<td>'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
+        return '<tr class="r rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
+          +'<td data-l="תאריך">'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"—")+'</td>'
+          +'<td data-l="רכב">'+esc(dash(txt(g["מספר רכב"]))||"—")+'</td>'
+          +'<td data-l="טיפול">'+esc(txt(g["סוג טיפול"])||"—")+'</td>'
+          +'<td data-l="סטטוס">'+tag("סטטוס",g["סטטוס"])+'</td>'
+          +'<td data-l="לתשלום">'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
       +'</tbody></table>':'<div class="muted" style="padding:12px">אין היסטוריית טיפולים</div>');
   }catch(e){document.getElementById("p2").innerHTML='<div class="muted" style="padding:12px">טעינת ההיסטוריה נכשלה</div>';}
 }
@@ -2105,7 +2279,7 @@ async function boot(){
   try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
   try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
   if(VIEW!=="work")draw();
-  document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים";
+  document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים · "+APP_VERSION;
   if(!ME.role)showGate(); else {applyRole();greet();drawNav();drawTabs();draw();}
 }
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
