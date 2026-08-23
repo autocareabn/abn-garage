@@ -165,8 +165,20 @@ tr.r{transition:background .12s}
 .pbtn.cam{background:var(--red);color:#fff;border-color:var(--red)}
 .pbtn:active{transform:scale(.985)}
 .pbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
-.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.thumbs img{height:82px;max-width:100%;border-radius:9px;border:1px solid #dfe3ea;object-fit:cover}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.thumbs .th{position:relative;display:inline-block}
+.thumbs img{height:88px;max-width:150px;border-radius:9px;border:1px solid #dfe3ea;object-fit:cover;cursor:zoom-in;display:block}
+.thumbs .thx{position:absolute;top:-7px;inset-inline-end:-7px;width:26px;height:26px;min-height:26px;
+ border-radius:50%;border:2px solid #fff;background:var(--red);color:#fff;font-size:13px;font-weight:700;
+ line-height:1;padding:0;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+.thumbs .thx:hover{background:#a5121a}
+.cnt{background:#eef1f6;color:var(--steel);border-radius:20px;padding:1px 8px;font-size:11px;margin-inline-start:5px}
+.attov{position:fixed;inset:0;background:rgba(15,19,32,.72);display:none;z-index:140;align-items:center;justify-content:center;padding:20px}
+.attov.on{display:flex}
+.attbox{position:relative;background:#fff;border-radius:14px;padding:14px;max-width:min(620px,94vw);max-height:88vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.35)}
+.attx{position:absolute;top:8px;inset-inline-end:8px;width:34px;height:34px;min-height:34px;border-radius:50%;
+ border:1px solid #dfe3ea;background:#fff;font-size:15px;font-weight:700;cursor:pointer;z-index:2}
+.attname{font-size:12px;color:var(--steel);margin-top:8px;text-align:center;word-break:break-all}
 tr.rowlink{cursor:pointer}
 tr.rowlink:hover td{background:#fff7f7}
 td.opencell{color:var(--red);font-size:19px;font-weight:700;text-align:center}
@@ -199,16 +211,28 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  th,td{padding:8px 6px;font-size:13px}
 }
 @media(max-width:860px){
- .bar{padding:8px 10px;gap:8px}
- .bar input{order:3;flex-basis:100%;min-width:0}
- .brand .mark{height:32px}
- .nav button{padding:6px 10px;font-size:13px}
- .tabs{top:auto;position:static;padding:8px 10px;overflow-x:auto;flex-wrap:nowrap}
+ /* הסרגל לא נדבק בנייד — אחרת הוא מכסה חצי מסך */
+ .bar{position:static;padding:7px 10px;gap:7px;flex-wrap:wrap;align-items:center}
+ .brand{order:1;flex:0 0 auto}
+ .brand .mark{height:30px}
+ .bar .b2{order:2;flex:0 0 auto;padding:6px 11px}
+ .bar .st{order:3;flex:1 1 auto;text-align:end;font-size:11px}
+ /* כל כפתורי הניווט בשורה אחת שנגללת לצדדים */
+ .nav{order:4;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;gap:5px;
+      scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+ .nav::-webkit-scrollbar{display:none}
+ .nav button{flex:0 0 auto;padding:7px 12px;font-size:13.5px;white-space:nowrap}
+ .bar input{order:5;flex:1 1 100%;min-width:0}
+ .tabs{top:auto;position:static;padding:8px 10px;overflow-x:auto;flex-wrap:nowrap;
+       scrollbar-width:none}
+ .tabs::-webkit-scrollbar{display:none}
  .tabs button{flex:0 0 auto}
  /* table -> cards (לא חל על מסמך החשבונית) */
  .wrap table,.wrap thead,.wrap tbody,.wrap tr,.wrap th,.wrap td,
  .md table,.md thead,.md tbody,.md tr,.md th,.md td{display:block}
  .wrap thead,.md thead{display:none}
+ /* ⚠️ הטבלאות נבנות כ-<table><tr><th> בלי <thead>, לכן חייבים להסתיר את ה-th עצמם */
+ .wrap th,.md th{display:none}
  .wrap table,.md table{background:transparent;box-shadow:none}
  .invdoc table,.invdoc thead,.invdoc tbody,.invdoc th,.invdoc td{display:revert}
  .invdoc tr{display:table-row}
@@ -218,6 +242,9 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  tr.r td{border:0;padding:3px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}
  tr.r td::before{content:attr(data-l);color:var(--steel-lt);font-size:12px;font-weight:bold;flex:0 0 auto}
  tr.r td:first-child{justify-content:flex-start}
+ /* בנייד השורה כולה לחיצה — אין צורך בחץ, והסימון עובר לסרגל הפעולות */
+ tr.r td.opencell{display:none}
+ tr.r td:first-child:has(input[type=checkbox]){display:none}
  .md{max-width:100%;border-radius:12px}
  .mt{top:auto;position:static;overflow-x:auto;flex-wrap:nowrap}
  .mt button{flex:0 0 auto}
@@ -232,6 +259,10 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  .ln input{flex:1;min-width:64px}
  .hd{display:none}
  .bar h1,.brand .nm{display:none}
+ .brand .mark{height:26px}
+ .wrap{padding:8px 8px 60px}
+ tr.r{padding:9px 11px}
+ .greet{font-size:12.5px;padding:7px 10px}
  .mh .t b{font-size:14.5px}
  .save,.selbar button{min-height:46px}
 }
@@ -273,6 +304,10 @@ button,select,input,textarea,a{min-height:38px}
 <main class="wrap" id="main"><div id="list" role="region" aria-live="polite" aria-label="רשימת כרטיסים"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען…</div></div></div></div>
 
 </main>
+<div class="attov" id="attOv" role="dialog" aria-modal="true" aria-label="תצוגת קובץ" onclick="if(event.target.id==='attOv')closeAtt()">
+  <div class="attbox"><button class="attx" onclick="closeAtt()" aria-label="סגור">✕</button>
+  <div id="attBody"></div></div>
+</div>
 <div class="invov" id="invOv" role="dialog" aria-modal="true" aria-label="תצוגה מקדימה של החשבונית" onclick="if(event.target.id==='invOv')closeInv()">
   <div class="invbox"><div id="invBody" class="invdoc"></div>
   <div class="invbar"><button class="x" onclick="closeInv()">✕ סגור</button>
@@ -324,7 +359,7 @@ function proxyDenied(code){
     setTimeout(function(){try{showGate();}catch(e){}},1200);
   }
 }
-var APP_VERSION="v14";
+var APP_VERSION="v16";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -736,26 +771,73 @@ function pollParts(rid,n){
 /* ===== רכיב הצילום האחיד של האפליקציה =====
    כפתור אדום = מצלמת המכשיר נפתחת ישירות (טאבלט/סלולרי).
    כפתור לבן  = בחירת קובץ קיים. בדסקטופ שניהם פותחים את חלון הקבצים. */
-function pickHTML(handler,accept,face){
+function pickHTML(handler,accept,face,has){
   accept=accept||"image/*,video/*"; face=face||"environment";
+  var a=has?"\u05e6\u05dc\u05dd \u05e2\u05d5\u05d3":"\u05e6\u05dc\u05dd \u05e2\u05db\u05e9\u05d9\u05d5";
+  var b=has?"\u05d4\u05d5\u05e1\u05e3 \u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8":"\u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8";
   return '<div class="pick">'
-   +'<label class="pbtn cam">\ud83d\udcf7 \u05e6\u05dc\u05dd \u05e2\u05db\u05e9\u05d9\u05d5'
+   +'<label class="pbtn cam">\ud83d\udcf7 '+a
      +'<input type="file" accept="'+accept+'" capture="'+face+'" onchange="'+handler+'"></label>'
-   +'<label class="pbtn">\ud83d\uddbc \u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8'
+   +'<label class="pbtn">\ud83d\uddbc '+b
      +'<input type="file" accept="'+accept+'" onchange="'+handler+'"></label>'
-   +'</div>';
+   +'</div>'
+   +(has?'<div class="mini">כדי להחליף קובץ — מחק אותו ב-\u2715 והעלה חדש</div>':'');
 }
-function thumbs(val){
+/* ===== ניהול הקבצים המצורפים ===== */
+/* מפתח → הטבלה והשדה. מפתח ולא שם שדה, כי שמות השדות מכילים גרש. */
+function attCfg(key){
+  if(PHOTO_FIELDS[key])   return {tbl:T.wo, fld:PHOTO_FIELDS[key], kind:"wo"};
+  if(key==="loc-in")      return {tbl:T.wo, fld:PHOTO_LOC["in"].f, kind:"wo"};
+  if(key==="loc-out")     return {tbl:T.wo, fld:PHOTO_LOC["out"].f,kind:"wo"};
+  if(key==="emp")         return {tbl:T.emp,fld:"\u05ea\u05de\u05d5\u05e0\u05d4", kind:"emp"};
+  if(key==="cus")         return {tbl:T.cus,fld:"\u05ea\u05de\u05d5\u05e0\u05d4", kind:"cus"};
+  return null;
+}
+async function rmAtt(key,rid,attId){
+  var c=attCfg(key); if(!c||!rid||!attId)return;
+  if(!confirm("\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e7\u05d5\u05d1\u05e5?\n\n\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05d0\u05d9\u05e0\u05d4 \u05d4\u05e4\u05d9\u05db\u05d4."))return;
+  try{
+    var rec=await api("/"+c.tbl+"/"+rid);
+    var cur=(rec.fields||{})[c.fld]||[];
+    var keep=cur.filter(function(a){return a.id!==attId;}).map(function(a){return {id:a.id};});
+    var o={}; o[c.fld]=keep;
+    var r=await fetch(PX+B+"/"+c.tbl+"/"+rid,{method:"PATCH",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:o})});
+    if(!r.ok)throw new Error((await r.text()).slice(0,120));
+    toast("\u2713 \u05d4\u05e7\u05d5\u05d1\u05e5 \u05e0\u05de\u05d7\u05e7");
+    if(c.kind==="wo")refetchCard(rid,0);
+    else if(c.kind==="emp"){reloadEmp();setTimeout(function(){openEmp(rid);},800);}
+    else {var d=await (await fetch(PX+B+"/"+c.tbl+"/"+rid)).json();openCus(d);}
+  }catch(e){toast("\u05d4\u05de\u05d7\u05d9\u05e7\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4: "+String(e.message||"").slice(0,70),1);}
+}
+/* תצוגת קובץ בחלונית קטנה — לא בטאב חדש */
+function openAtt(url,name){
+  var v=document.getElementById("attBody");
+  var isVid=/\.(mp4|mov|webm|m4v)(\?|$)/i.test(url);
+  v.innerHTML=(isVid
+      ? '<video src="'+esc(url)+'" controls playsinline style="max-width:100%;max-height:70vh;border-radius:10px"></video>'
+      : '<img alt="'+esc(name||"")+'" src="'+esc(url)+'" style="max-width:100%;max-height:70vh;border-radius:10px">')
+    +'<div class="attname">'+esc(name||"")+'</div>';
+  document.getElementById("attOv").classList.add("on");
+}
+function closeAtt(){document.getElementById("attOv").classList.remove("on");}
+
+function thumbs(val,key,rid){
   var has=(val&&val.length)?val:null;
   if(!has)return '';
   return '<div class="thumbs">'+has.map(function(a){
     var u=(a.thumbnails&&a.thumbnails.large?a.thumbnails.large.url:a.url);
-    return '<a href="'+esc(a.url)+'" target="_blank" rel="noopener"><img alt="" src="'+esc(u)+'"></a>';}).join("")+'</div>';
+    var nm=String(a.filename||"").replace(/'/g,"");
+    return '<div class="th">'
+      +'<img alt="'+esc(nm)+'" src="'+esc(u)+'" onclick="openAtt(\''+esc(a.url)+'\',\''+esc(nm)+'\')" title="לחץ להגדלה">'
+      +(key&&rid?'<button class="thx" title="מחק קובץ" aria-label="מחק קובץ" onclick="rmAtt(\''+key+'\',\''+rid+'\',\''+a.id+'\')">\u2715</button>':'')
+      +'</div>';}).join("")+'</div>';
 }
 function photoBox(kind,label,val){
-  return '<div class="f"><label>'+esc(label)+'</label>'
-   +thumbs(val)
-   +pickHTML("uploadPhoto(this,'"+kind+"')")
+  var n=(val&&val.length)||0;
+  return '<div class="f"><label>'+esc(label)+(n?' <span class="cnt">'+n+'</span>':'')+'</label>'
+   +thumbs(val,kind,CUR&&CUR.id)
+   +pickHTML("uploadPhoto(this,'"+kind+"')",null,null,n)
    +'</div>';
 }
 
@@ -811,9 +893,9 @@ function locBlock(which,title,f){
   var cfg=PHOTO_LOC[which], atts=f[cfg.f]||[], coords=f[GPS_FIELDS[which]];
   return '<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:11px 12px">'
    +'<div style="font-weight:bold;font-size:13.5px;margin-bottom:7px">'+esc(title)+'</div>'
-   +thumbs(atts)
+   +thumbs(atts,"loc-"+which,CUR&&CUR.id)
    +mapBox(coords,title)
-   +pickHTML("uploadLoc(this,'"+which+"')","image/*")
+   +pickHTML("uploadLoc(this,'"+which+"')","image/*",null,atts.length)
    +'</div>';
 }
 /* ============ I18N ============ */
@@ -2159,8 +2241,8 @@ function openEmp(id){
    +'</div>'
    +'<div class="f"><label>הערות</label><textarea id="eNote">'+esc(f["הערות"]||"")+'</textarea></div>'
    +'<div class="sec">תמונת עובד</div>'
-   +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת עובד" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
-   +pickHTML("upPhoto(this,'"+T.emp+"','"+id+"','"+EMP_PHOTO+"','emp')","image/*","user")
+   +thumbs(ph,"emp",id)
+   +pickHTML("upPhoto(this,'"+T.emp+"','"+id+"','"+EMP_PHOTO+"','emp')","image/*","user",ph.length)
    +'<button class="save" onclick="saveEmp(\''+id+'\')">✓ שמור עובד</button>';
   document.getElementById("ov").classList.add("on");
 }
@@ -2205,8 +2287,8 @@ function openCus(rec){
    +'</div>'
    +'<div class="f"><label>הערות</label><textarea id="cNote">'+esc(f["הערות"]||"")+'</textarea></div>'
    +'<div class="sec">תמונה</div>'
-   +(ph.length?'<div style="margin-bottom:8px"><img alt="תמונת לקוח" src="'+esc(ph[0].thumbnails&&ph[0].thumbnails.large?ph[0].thumbnails.large.url:ph[0].url)+'" style="height:110px;border-radius:10px;border:1px solid #dfe3ea"></div>':'')
-   +pickHTML("upPhoto(this,'"+T.cus+"','"+rec.id+"','"+CUS_PHOTO+"','cus')","image/*")
+   +thumbs(ph,"cus",rec.id)
+   +pickHTML("upPhoto(this,'"+T.cus+"','"+rec.id+"','"+CUS_PHOTO+"','cus')","image/*",null,ph.length)
    +'<button class="save" onclick="saveCus(\''+rec.id+'\')">✓ שמור לקוח</button>';
   document.getElementById("ov").classList.add("on");
 }
