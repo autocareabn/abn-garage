@@ -359,7 +359,7 @@ function proxyDenied(code){
     setTimeout(function(){try{showGate();}catch(e){}},1200);
   }
 }
-var APP_VERSION="v16";
+var APP_VERSION="v17";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -771,13 +771,17 @@ function pollParts(rid,n){
 /* ===== רכיב הצילום האחיד של האפליקציה =====
    כפתור אדום = מצלמת המכשיר נפתחת ישירות (טאבלט/סלולרי).
    כפתור לבן  = בחירת קובץ קיים. בדסקטופ שניהם פותחים את חלון הקבצים. */
+/* ⚠️ capture נענה בדפדפני מובייל רק כאשר accept הוא סוג מדיה יחיד.
+   accept="image/*,video/*" גורם ל-Chrome/Safari להתעלם מ-capture ולפתוח בוחר קבצים.
+   לכן: כפתור המצלמה שולח תמיד image/* בלבד, והגלריה מקבלת את הרשימה המלאה. */
 function pickHTML(handler,accept,face,has){
   accept=accept||"image/*,video/*"; face=face||"environment";
+  var camAccept=(accept.indexOf("video")>=0&&accept.indexOf("image")>=0)?"image/*":accept;
   var a=has?"\u05e6\u05dc\u05dd \u05e2\u05d5\u05d3":"\u05e6\u05dc\u05dd \u05e2\u05db\u05e9\u05d9\u05d5";
   var b=has?"\u05d4\u05d5\u05e1\u05e3 \u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8":"\u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8";
   return '<div class="pick">'
    +'<label class="pbtn cam">\ud83d\udcf7 '+a
-     +'<input type="file" accept="'+accept+'" capture="'+face+'" onchange="'+handler+'"></label>'
+     +'<input type="file" accept="'+camAccept+'" capture="'+face+'" onchange="'+handler+'"></label>'
    +'<label class="pbtn">\ud83d\uddbc '+b
      +'<input type="file" accept="'+accept+'" onchange="'+handler+'"></label>'
    +'</div>'
