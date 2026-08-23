@@ -113,6 +113,29 @@ tr.r{transition:background .12s}
 .ln input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(237,30,36,.16)}
 .sm{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px}
 
+/* ===== GATE / GREETING / ROLES ===== */
+.gate{position:fixed;inset:0;z-index:9999;background:#161A22;display:flex;
+  align-items:center;justify-content:center;padding:24px}
+.gate-box{background:#fff;border-radius:16px;padding:32px 28px;max-width:460px;width:100%;
+  text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.gate-logo{font-weight:800;font-size:26px;letter-spacing:.08em;color:var(--red);margin-bottom:10px}
+.gate-box h2{margin:0 0 8px;font-size:20px}
+.gate-box p{margin:0 0 18px;color:#5C6675;font-size:14.5px;line-height:1.55}
+.mech-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px}
+button.mech{padding:13px 10px;border:1px solid #dfe3ea;border-radius:10px;background:#f6f8fa;
+  font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:#161A22;line-height:1.3}
+button.mech:hover{background:#fff;border-color:var(--red)}
+button.mech small{display:block;font-weight:400;color:#6B7686;font-size:11.5px;margin-top:2px}
+button.mech:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+#gbtn{display:flex;justify-content:center}
+.greet{padding:9px 16px;background:#fff;border-bottom:1px solid #e6eaef;font-size:14px;color:#3D4753}
+.greet b{color:#161A22}
+.role-pill{display:inline-block;background:#EAF1F8;color:#2F5F8C;font-size:11px;font-weight:700;
+  padding:2px 9px;border-radius:20px;margin-inline-start:4px}
+button.lnk{background:none;border:none;color:#2F5F8C;font-size:12.5px;cursor:pointer;
+  text-decoration:underline;font-family:inherit;padding:0 4px}
+body.no-money .money-col,body.no-money .pane-pay{display:none !important}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:1024px){
  .wrap{padding:10px 10px 60px}
@@ -172,7 +195,9 @@ button,select,input,textarea,a{min-height:38px}
 </head>
 <body>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <a href="#list" class="skip">דלג לתוכן</a>
+<div class="gate" id="gate" style="display:none"></div>
 <header class="bar" role="banner">
   <div class="brand"><img class="mark" alt="ABN Garage" src="data:image/jpeg;base64,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"></div>
   <div class="nav" id="nav" role="navigation" aria-label="מסכים ראשיים"></div>
@@ -181,6 +206,7 @@ button,select,input,textarea,a{min-height:38px}
   <span class="st" id="stamp"></span>
 </div>
 </header>
+<div class="greet" id="greet" style="display:none"></div>
 <nav class="tabs" id="tabs" role="tablist" aria-label="מסנני כרטיסים"></nav>
 <main class="wrap" id="main"><div id="list" role="region" aria-live="polite" aria-label="רשימת כרטיסים"><div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">טוען…</div></div></div></div>
 
@@ -208,6 +234,188 @@ var PAY=["מזומן","כרטיס אשראי","העברה בנקאית","צ'ק"]
 var BRAKE=["תקין","25%","50%","לא תקין"], FLUID=["תקין","הוספה","החלפה"], COOL=["מצב תקין","הוספה","החלפה"];
 var CHECKS=["בדיקת לחץ אויר","בדיקת שמשות","בדיקת גומיות ריקות","בדיקת חופשים","בדיקת צמיגים","בדיקת אורות","בדיקת מיסבים (סיבוב גלגלים)","איפוס טיפול","סימון בורג אגן שמן","בעיית הלקוח טופלה"];
 var VIEWS=[["work","עבודה"],["cus","לקוחות"],["veh","רכבים"],["loc","מיקומים"],["set","הגדרות"]];
+
+/* ============================================================
+   ============== זהות והרשאות (v6) ===========================
+   כניסה עם Google בלבד — אין סיסמאות במערכת.
+   ⚠️ המכונאים חולקים חשבון אחד (autocareabnemp@gmail.com).
+   לכן אחרי הכניסה הם בוחרים מי הם. זה ייחוס, לא אימות:
+   כל מכונאי יכול לבחור כל שם. החלטה מודעת — לא באג.
+   ============================================================ */
+var GOOGLE_CLIENT_ID="985062185139-40gs57mq1evj6mlugqrt4u27n3e7l1kc.apps.googleusercontent.com";
+var SHARED_MECH_EMAIL="autocareabnemp@gmail.com";
+
+var ROLE_BY_EMAIL={
+  "leoneld151174@gmail.com":"admin",
+  "autocareabn@gmail.com":"manager",   /* אמיר */
+  "sarabn56@gmail.com":"manager",      /* שרה  */
+  "galbn1102@gmail.com":"manager",     /* גל   */
+  "autocareabnemp@gmail.com":"mechanic"
+  /* זאב (צ'יקו) → advisor — יתווסף כשיגיע האימייל */
+};
+var PERMS={
+  admin:   {label:"אדמין",      views:["work","cus","veh","loc","set"], money:true,  users:true },
+  manager: {label:"מנהל",       views:["work","cus","veh","loc","set"], money:true,  users:false},
+  advisor: {label:"יועץ שירות", views:["work","cus","veh"],             money:false, users:false},
+  mechanic:{label:"מכונאי",     views:["work"],                          money:false, users:false,
+            filters:["today","tomorrow","future"]}
+};
+var ME={email:null,role:null,name:"",empId:null};
+
+function can(k){var p=PERMS[ME.role]; return !!(p&&p[k]);}
+function myViews(){var p=PERMS[ME.role]; return p?p.views:["work"];}
+function isMech(){return ME.role==="mechanic";}
+
+/* --- זיהוי: מקבל אימייל, קובע תפקיד --- */
+function signInWithEmail(email){
+  email=String(email||"").trim().toLowerCase();
+  /* ⚠️ קריטי: מאפסים את הזהות לפני כל ניסיון כניסה.
+     בלי זה, כניסה שנכשלת או החלפת משתמש משאירה את המשתמש הקודם פעיל. */
+  ME={email:null,role:null,name:"",empId:null};
+  var role=ROLE_BY_EMAIL[email];
+  if(!role){
+    /* לא ברשימה המורשית — מנסים למצוא עובד עם האימייל הזה */
+    var e=EMP.filter(function(x){return String(x.email||"").toLowerCase()===email;})[0];
+    if(!e){authFail(email);return false;}
+    role = /מכונאי/.test(e.role) ? "mechanic"
+         : /יועץ/.test(e.role)   ? "advisor"
+         : /מנהל|בעל/.test(e.role)? "manager" : "mechanic";
+    ME.empId=e.id; ME.name=e.name;
+  }
+  ME.email=email; ME.role=role;
+  if(email===SHARED_MECH_EMAIL){ return pickMechanic(); }   /* חשבון משותף → מי אתה? */
+  if(!ME.name)ME.name=nameForEmail(email);
+  return finishSignIn();
+}
+function nameForEmail(email){
+  var e=EMP.filter(function(x){return String(x.email||"").toLowerCase()===email;})[0];
+  return e?e.name:(email.split("@")[0]);
+}
+function authFail(email){
+  document.getElementById("gate").innerHTML=
+    '<div class="gate-box"><div class="gate-logo">ABN</div>'
+    +'<h2>אין לך הרשאה למערכת</h2>'
+    +'<p>החשבון <b>'+esc(email)+'</b> אינו ברשימת המורשים.<br>פנה לליאו כדי להוסיף אותו.</p>'
+    +'<button class="save" onclick="signOut()">כניסה עם חשבון אחר</button></div>';
+}
+
+/* --- החשבון המשותף: בחירת מכונאי --- */
+function pickMechanic(){
+  var mechs=EMP.filter(function(e){return /מכונאי/.test(e.role)&&e.status!=="לא פעיל";});
+  if(!mechs.length){ME.name="מכונאי";return finishSignIn();}
+  var saved=null; try{saved=localStorage.getItem("abnMech");}catch(e){}
+  if(saved){var m=mechs.filter(function(x){return x.id===saved;})[0];
+            if(m){ME.empId=m.id;ME.name=m.name;return finishSignIn();}}
+  document.getElementById("gate").innerHTML=
+    '<div class="gate-box"><div class="gate-logo">ABN</div>'
+    +'<h2>מי אתה?</h2><p>החשבון משותף לכל המכונאים — בחר את השם שלך כדי שהכרטיסים ישויכו נכון.</p>'
+    +'<div class="mech-list">'
+    +mechs.map(function(m){return '<button class="mech" onclick="chooseMechanic(\''+m.id+'\')">'
+        +esc(m.name)+'</button>';}).join("")
+    +'</div></div>';
+  document.getElementById("gate").style.display="flex";
+  return false;
+}
+function chooseMechanic(id){
+  var m=EMP.filter(function(x){return x.id===id;})[0]; if(!m)return;
+  ME.empId=m.id; ME.name=m.name;
+  try{localStorage.setItem("abnMech",id);}catch(e){}
+  finishSignIn();
+}
+function switchMechanic(){try{localStorage.removeItem("abnMech");}catch(e){} pickMechanic();}
+
+function finishSignIn(){
+  document.getElementById("gate").style.display="none";
+  applyRole(); greet(); drawNav(); drawTabs(); draw();
+  return true;
+}
+function signOut(){
+  ME={email:null,role:null,name:"",empId:null};
+  try{localStorage.removeItem("abnMech");}catch(e){}
+  showGate();
+}
+
+/* --- אכיפת התפקיד בממשק --- */
+function applyRole(){
+  var allowed=myViews();
+  if(allowed.indexOf(VIEW)<0)VIEW=allowed[0]||"work";
+  document.body.classList.toggle("no-money",!can("money"));
+  document.body.classList.toggle("is-mech",isMech());
+}
+
+/* --- מושיקו: ברכה אישית לפי תפקיד --- */
+function greet(){
+  var el=document.getElementById("greet"); if(!el)return;
+  var h=new Date().getHours();
+  var hi = h<11?"בוקר טוב":(h<17?"צהריים טובים":"ערב טוב");
+  var t=ds(0), tm=ds(1);
+  var today=WOS.filter(function(r){return dk((r.fields||{})["תאריך ושעה"])===t;}).length;
+  var tomo =WOS.filter(function(r){return dk((r.fields||{})["תאריך ושעה"])===tm;}).length;
+  var bits=[];
+  if(isMech()){
+    var mine=WOS.filter(function(r){return ids((r.fields||{})["מכונאי אחראי"]).indexOf(ME.empId)>=0
+      && txt((r.fields||{})["סטטוס"])==="בטיפול";}).length;
+    bits.push(mine+" כרטיסים אצלך בטיפול");
+    bits.push(tomo+" טיפולים מחר");
+  }else{
+    bits.push(today+" טיפולים היום");
+    bits.push(tomo+" מחר");
+    var pay=WOS.filter(function(r){return txt((r.fields||{})["סטטוס"])==="מוכן לתשלום";}).length;
+    if(pay)bits.push(pay+" ממתינים לתשלום");
+    var noLoc=WOS.filter(function(r){var f=r.fields||{};
+      return txt(f["סטטוס"])==="מוכן לתשלום"&&!ids(f["מיקום בסוף הטיפול"]).length;}).length;
+    if(noLoc)bits.push("⚠️ "+noLoc+" ללא מיקום");
+  }
+  el.innerHTML='<b>'+esc(hi+" "+(ME.name||""))+'</b> · '+esc(bits.join(" · "))
+    +' <span class="role-pill">'+esc((PERMS[ME.role]||{}).label||"")+'</span>'
+    +(isMech()?' <button class="lnk" onclick="switchMechanic()">לא אני?</button>':'')
+    +' <button class="lnk" onclick="sayGreeting()" title="השמע">🔊</button>';
+  el.style.display="block";
+  window.__greetText=hi+" "+(ME.name||"")+". "+bits.join(". ");
+}
+function sayGreeting(){
+  try{var u=new SpeechSynthesisUtterance(window.__greetText||"");u.lang="he-IL";
+      speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){toast("הדפדפן לא תומך בהשמעה",1);}
+}
+
+/* --- מסך הכניסה --- */
+function showGate(){
+  var g=document.getElementById("gate");
+  g.style.display="flex";
+  if(!GOOGLE_CLIENT_ID){
+    /* עדיין אין Client ID (L-3) — מצב פתוח עם אזהרה, כדי שהמערכת לא תיתקע */
+    g.innerHTML='<div class="gate-box"><div class="gate-logo">ABN</div>'
+      +'<h2>ההזדהות עדיין לא מוגדרת</h2>'
+      +'<p>חסר <b>Client ID</b> של Google. עד שהוא ייכנס — בחר משתמש ידנית.<br>'
+      +'<span style="color:var(--red)">במצב הזה אין אבטחה אמיתית.</span></p>'
+      +'<div class="mech-list">'
+      +Object.keys(ROLE_BY_EMAIL).map(function(em){
+          return '<button class="mech" onclick="signInWithEmail(\''+em+'\')">'
+            +esc(nameForEmail(em)||em)+' <small>'+esc((PERMS[ROLE_BY_EMAIL[em]]||{}).label||"")+'</small></button>';
+        }).join("")
+      +'</div></div>';
+    return;
+  }
+  g.innerHTML='<div class="gate-box"><div class="gate-logo">ABN</div>'
+    +'<h2>ניהול מוסך אמיר בן ניסן</h2><p>כניסה עם חשבון Google</p>'
+    +'<div id="gbtn"></div></div>';
+  if(typeof google==="undefined"||!google.accounts){   /* הסקריפט של Google עדיין נטען */
+    setTimeout(showGate,300); return;
+  }
+  try{
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle});
+    google.accounts.id.renderButton(document.getElementById("gbtn"),
+      {theme:"filled_blue",size:"large",text:"signin_with",locale:"he"});
+  }catch(e){g.querySelector("p").textContent="טעינת Google נכשלה — רענן את הדף";}
+}
+function onGoogle(res){
+  try{
+    var p=JSON.parse(decodeURIComponent(atob(res.credential.split(".")[1])
+        .split("").map(function(c){return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
+    window.__idToken=res.credential;      /* נשלח ל-Worker בכל בקשה אחרי WP-8 */
+    signInWithEmail(p.email);
+  }catch(e){toast("ההזדהות נכשלה",1);}
+}
 
 
 var CLR={
@@ -482,7 +690,8 @@ function setLang(l){LANG=l;try{localStorage.setItem("abnLang",l);}catch(e){}
  drawNav();drawTabs();draw();if(CUR){var id=CUR.id;closeCard();openCard(id);}
  document.getElementById("q").placeholder=t("search");}
 /* ============ NAV ============ */
-function drawNav(){document.getElementById("nav").innerHTML=VIEWS.map(function(v){
+function drawNav(){var ok=myViews();
+ document.getElementById("nav").innerHTML=VIEWS.filter(function(v){return ok.indexOf(v[0])>=0;}).map(function(v){
  return '<button class="'+(VIEW===v[0]?"on":"")+'" aria-current="'+(VIEW===v[0]?"page":"false")+'" onclick="setV(\''+v[0]+'\')">'+esc(t(v[0]))+'</button>';}).join("")
  +'<span style="margin-inline-start:8px"></span>'
  +["he","en","th"].map(function(l){return '<button class="'+(LANG===l?"on":"")+'" style="padding:6px 9px" onclick="setLang(\''+l+'\')">'+l.toUpperCase()+'</button>';}).join("");}
@@ -504,6 +713,8 @@ function drawTabs(){var el=document.getElementById("tabs");
   return '<button role="tab" aria-selected="'+(FILTER===t[0]?"true":"false")+'" class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c" aria-label="'+n+' כרטיסים">'+n+'</span></button>';}).join("")
   +'<button style="background:#1B7F35;color:#fff;border-color:#1B7F35;font-weight:bold" onclick="newCard()">+ כרטיס חדש</button>';}
 function setF(k){FILTER=k;drawTabs();draw();}
+/* מכונאי רואה רק היום / מחר / עתידי */
+function allowedFilters(){var p=PERMS[ME.role]; return p&&p.filters?p.filters:null;}
 function woRows(){var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
  return WOS.filter(function(r){if(!match(r,FILTER))return false;if(!toks.length)return true;var f=r.fields||{};
   var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],f["מספר רכב_disp"],f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
@@ -1432,7 +1643,7 @@ async function upPhoto(inp,tbl,rid,fid,kind){
 }
 function reloadEmp(){
   all(T.emp).then(function(rs){
-    EMP=rs.map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||"",role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});
+    EMP=rs.map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});
     if(VIEW==="set")draw();
   });
 }
@@ -1447,9 +1658,10 @@ async function boot(){
   loadSlots().then(function(){if(CUR)pDet();});
   try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
   try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
-  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||"",role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
+  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
   if(VIEW!=="work")draw();
   document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים";
+  if(!ME.role)showGate(); else {applyRole();greet();drawNav();drawTabs();draw();}
 }
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
 boot();
