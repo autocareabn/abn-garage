@@ -343,6 +343,7 @@ var PROXY_HOST="abn-airtable-proxy.autocareabn.workers.dev";
     if(window.__idToken)h.set("Authorization","Bearer "+window.__idToken);
     init.headers=h;
     return _f(u,init).then(function(r){
+      try{var sr=r.headers.get("X-ABN-Role"); if(sr)srvRole(sr);}catch(e){}
       if(r.status===401||r.status===403)proxyDenied(r.status);
       return r;
     });
@@ -359,7 +360,20 @@ function proxyDenied(code){
     setTimeout(function(){try{showGate();}catch(e){}},1200);
   }
 }
-var APP_VERSION="v18";
+/* ===== WP-9 — התפקיד נקבע בשרת, לא באפליקציה =====
+   ה-Worker (v4) מחזיר X-ABN-Role בכל תשובה והוא הסמכות היחידה. אם הוא אמר
+   "mechanic" — אין כסף במסך, גם אם טבלת ההרשאות המקומית חושבת אחרת.
+   ⚠️ זו אינה ההגנה: ההגנה היא שהשדות כבר לא מגיעים מהשרת. זה רק המסך. */
+var SRV_ROLE=null;
+function srvRole(v){
+  v=String(v||"").toLowerCase();
+  if(v!=="manager"&&v!=="mechanic")return;
+  if(v===SRV_ROLE)return;
+  SRV_ROLE=v;
+  try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
+  try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
+}
+var APP_VERSION="v19";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -399,7 +413,10 @@ var PERMS={
 var NAME_BY_EMAIL={"leoneld151174@gmail.com":"לאו"};
 var ME={email:null,role:null,name:"",empId:null};
 
-function can(k){var p=PERMS[ME.role]; return !!(p&&p[k]);}
+function can(k){var p=PERMS[ME.role];
+ /* השרת גובר על ההגדרה המקומית — לרעה בלבד, לעולם לא לטובה */
+ if(k==="money"&&SRV_ROLE==="mechanic")return false;
+ return !!(p&&p[k]);}
 /* הסטטוס נקבע אוטומטית ע"י החוקים. רק שרה (ואדמין) יכולים לשנות ידנית. */
 function canSetStatus(){return ME.role==="admin"||ME.email==="sarabn56@gmail.com";}
 function myViews(){var p=PERMS[ME.role]; return p?p.views:["work"];}
@@ -567,6 +584,7 @@ function tag(fld,val){var v=txt(val);if(!v)return '<span class="muted">—</span
  var c=(CLR[fld]||{})[v]||"gray";return '<span class="pill at-'+c+'">'+esc(L(v))+'</span>';}
 
 var D={
+"סוג העבודה":{en:"Work type",th:"ประเภทงาน"},
 "חדש":{en:"New",th:"ใหม่"},"מחכה לטיפול":{en:"Waiting",th:"รอซ่อม"},"בטיפול":{en:"In service",th:"กำลังซ่อม"},
 "מוכן לתשלום":{en:"Ready to pay",th:"พร้อมชำระ"},"שולם":{en:"Paid",th:"ชำระแล้ว"},"בוטל":{en:"Cancelled",th:"ยกเลิก"},
 "ממתין לאישור אמיר":{en:"Awaiting Amir",th:"รออนุมัติ"},
@@ -702,8 +720,39 @@ async function markDone(){
 }
 
 /* ============ PHOTOS ============ */
-var PHOTO_FIELDS={"km":"'צילום הקילומטרז","problem":"צילום הבעיה","parts":"סריקה של חלקים שהותקנו","defects":"העלאת טופס ליקויים"};
-var PHOTO_IDS={"km":"fldVyfwBLzsgwulMr","problem":"fldHE3eBcZFWjKsIL","parts":"fldu6rG1Arn40gdf3","defects":"fldDYKHKsKELiTnlH"};
+/* ============================================================================
+   ============== רכיב הצילום האחיד (v19) ====================================
+   ----------------------------------------------------------------------------
+   עד כה היו שלוש לוגיקות העלאה נפרדות — uploadPhoto / uploadLoc / upPhoto —
+   כל אחת עם דחיסה, שמות קבצים, רענון וטיפול שגיאות משלה. באג באחת לא תוקן
+   בשתיים האחרות. כאן יש נתיב אחד: pfInput → pfPut, ומחיקה אחת: rmAtt.
+
+   כל שדה תמונה מתואר ברשומה אחת ב-PF:
+     tbl  — מפתח לתוך T
+     id   — מזהה השדה (אומת מול הסכמה 24/08/2026)
+     name — שם השדה, לקריאת המערך הקיים
+     gps  — שדה ה-GPS הנלווה, אם יש
+     scan — האם התמונה מייצרת שורות חלפים (משפיע על מחיקה)
+   ⚠️ בשם שדה הקילומטראז' הגרש בא **בתחילת** המחרוזת. לא בסוף.
+   ========================================================================== */
+var PF={
+  "km"      :{tbl:"wo", id:"fldVyfwBLzsgwulMr", name:"'\u05e6\u05d9\u05dc\u05d5\u05dd \u05d4\u05e7\u05d9\u05dc\u05d5\u05de\u05d8\u05e8\u05d6"},
+  "problem" :{tbl:"wo", id:"fldHE3eBcZFWjKsIL", name:"\u05e6\u05d9\u05dc\u05d5\u05dd \u05d4\u05d1\u05e2\u05d9\u05d4"},
+  "parts"   :{tbl:"wo", id:"fldu6rG1Arn40gdf3", name:"\u05e1\u05e8\u05d9\u05e7\u05d4 \u05e9\u05dc \u05d7\u05dc\u05e7\u05d9\u05dd \u05e9\u05d4\u05d5\u05ea\u05e7\u05e0\u05d5", scan:true},
+  "defects" :{tbl:"wo", id:"fldDYKHKsKELiTnlH", name:"\u05d4\u05e2\u05dc\u05d0\u05ea \u05d8\u05d5\u05e4\u05e1 \u05dc\u05d9\u05e7\u05d5\u05d9\u05d9\u05dd"},
+  "loc-in"  :{tbl:"wo", id:"fldRuzEWO6WEig1kW", name:"\u05e6\u05d9\u05dc\u05d5\u05dd \u05de\u05d9\u05e7\u05d5\u05dd \u05db\u05e0\u05d9\u05e1\u05d4", gps:"GPS \u05db\u05e0\u05d9\u05e1\u05d4"},
+  "loc-out" :{tbl:"wo", id:"fldi7Vrm5y33A7wZH", name:"\u05e6\u05d9\u05dc\u05d5\u05dd \u05de\u05d9\u05e7\u05d5\u05dd \u05d9\u05e6\u05d9\u05d0\u05d4", gps:"GPS \u05d9\u05e6\u05d9\u05d0\u05d4"},
+  "emp"     :{tbl:"emp",id:"fldKyyQxgLFuUNTgw", name:"\u05ea\u05de\u05d5\u05e0\u05d4"},
+  "cus"     :{tbl:"cus",id:"fldHrLC1LLtjETGZO", name:"\u05ea\u05de\u05d5\u05e0\u05d4"}
+};
+/* תאימות לאחור — קוד קיים עדיין קורא לשתי המפות האלה */
+var PHOTO_FIELDS={"km":PF.km.name,"problem":PF.problem.name,"parts":PF.parts.name,"defects":PF.defects.name};
+var PHOTO_IDS={"km":PF.km.id,"problem":PF.problem.id,"parts":PF.parts.id,"defects":PF.defects.id};
+var PHOTO_LOC={"in":{f:PF["loc-in"].name,id:PF["loc-in"].id},"out":{f:PF["loc-out"].name,id:PF["loc-out"].id}};
+var GPS_FIELDS={"in":PF["loc-in"].gps,"out":PF["loc-out"].gps};
+function pfCfg(key){return PF[key]||null;}
+function pfTbl(c){return T[c.tbl];}
+
 /* ⚠️ Airtable דורש "filename" בהעלאת קובץ. בלעדיו: 400 BAD_REQUEST.
    מייצרים שם קובץ בטוח, עם סיומת שתואמת לסוג התוכן. */
 function upName(file,prefix){
@@ -731,38 +780,79 @@ function downscaleImage(file,maxW,quality){
     img.src=url;
   });
 }
-async function uploadPhoto(inp,kind){
-  var file=inp.files&&inp.files[0]; if(!file||!CUR)return;
-  await uploadPhotoFile(CUR.id,kind,file);
-  inp.value="";
+/* ---- הליבה: דוחס, מעלה, מחזיר את הרשומה המעודכנת. לא נוגע ב-UI. ---- */
+async function pfPut(key,rid,file){
+  var c=pfCfg(key); if(!c||!rid||!file)throw new Error("bad photo target");
+  var up=file;
+  if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1600,0.82);}catch(e){up=file;}}
+  var b64=await new Promise(function(res,rej){var rd=new FileReader();
+    rd.onload=function(){res(String(rd.result).split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
+  var CT=PX.replace("/api/v0/","/content/v0/");
+  var r=await fetch(CT+B+"/"+rid+"/"+c.id+"/uploadAttachment",
+    {method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,key),file:b64})});
+  if(!r.ok)throw new Error((await r.text()).slice(0,120));
+  var rec=null; try{rec=await r.json();}catch(e){}
+  return rec;
 }
-/* העלאה לרשומה מפורשת — משמש גם לכרטיס שזה עתה נוצר (עוד לפני שהוא CUR) */
-async function uploadPhotoFile(rid,kind,file){
-  if(!file||!rid)return;
-  toast("מעלה תמונה…");
+
+/* ---- רענון אחיד: כל סוג רשומה יודע איך לרענן את עצמו ---- */
+function pfRefresh(key,rid){
+  var c=pfCfg(key); if(!c)return;
+  if(c.tbl==="wo"){refetchCard(rid,0);return;}
+  if(c.tbl==="emp"){reloadEmp();setTimeout(function(){try{openEmp(rid);}catch(e){}},900);return;}
+  fetch(PX+B+"/"+pfTbl(c)+"/"+rid).then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(d){try{openCus(d);}catch(e){}}).catch(function(){});
+}
+
+/* ---- הנתיב היחיד מקלט קובץ ועד רענון המסך ---- */
+async function pfInput(inp,key,rid){
+  var file=inp&&inp.files&&inp.files[0]; if(!file)return;
+  if(!rid){toast("\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d4 \u05dc\u05e9\u05d9\u05d5\u05da \u05d4\u05ea\u05de\u05d5\u05e0\u05d4",1);inp.value="";return;}
+  var c=pfCfg(key);
+  toast("\u05de\u05e2\u05dc\u05d4 \u05ea\u05de\u05d5\u05e0\u05d4\u2026");
   try{
-    var up=file;
-    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1600,0.82);}catch(e){up=file;}}
-    var b64=await new Promise(function(res,rej){var rd=new FileReader();
-      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
-    var fid=PHOTO_IDS[kind];
-    if(!fid)throw new Error("no field id");
-    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
-    var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
-      {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,kind),file:b64})});
-    if(!r.ok)throw new Error((await r.text()).slice(0,120));
-    var rec=null; try{rec=await r.json();}catch(e){}
-    toast("✓ התמונה הועלתה"+(kind==="km"?" · קורא קילומטראז'…":""));
-    refetchCard(rid,0);
-    /* זיהוי החלפים רץ עכשיו ישירות מול Gemini דרך ה-Worker — בלי Airtable ובלי Make */
-    if(kind==="parts"){
-      var atts=((rec&&rec.fields)||{})[PHOTO_FIELDS.parts]||((rec&&rec.fields)||{})[PHOTO_IDS.parts]||[];
+    var rec=await pfPut(key,rid,file);
+    /* מיקום: נתפס רק אם ההרשאה כבר ניתנה. לעולם לא מבקשים אותה מהמשתמש. */
+    if(c&&c.gps){
+      var co=await gpsIfGranted();
+      if(co){var o={};o[c.gps]=co;
+        await fetch(PX+B+"/"+pfTbl(c)+"/"+rid,{method:"PATCH",
+          headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:o,typecast:true})});}
+      toast(co?"\u2713 \u05ea\u05d5\u05e2\u05d3 \u05e2\u05dd \u05de\u05d9\u05e7\u05d5\u05dd \u05de\u05d3\u05d5\u05d9\u05e7":"\u2713 \u05d4\u05ea\u05de\u05d5\u05e0\u05d4 \u05d4\u05d5\u05e2\u05dc\u05ea\u05d4 \u00b7 \u05de\u05d9\u05e7\u05d5\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df");
+    } else {
+      toast("\u2713 \u05d4\u05ea\u05de\u05d5\u05e0\u05d4 \u05d4\u05d5\u05e2\u05dc\u05ea\u05d4"+(key==="km"?" \u00b7 \u05e7\u05d5\u05e8\u05d0 \u05e7\u05d9\u05dc\u05d5\u05de\u05d8\u05e8\u05d0\u05d6'\u2026":""));
+    }
+    pfRefresh(key,rid);
+    /* סריקת חלפים — הזיהוי רץ מיד על הצרופה שזה עתה נוצרה */
+    if(c&&c.scan){
+      var atts=((rec&&rec.fields)||{})[c.name]||((rec&&rec.fields)||{})[c.id]||[];
       var last=atts[atts.length-1];
       if(last)identifyParts(rid,last);
-      else toast("התמונה הועלתה אך לא נמצאה לזיהוי",1);
+      else toast("\u05d4\u05ea\u05de\u05d5\u05e0\u05d4 \u05d4\u05d5\u05e2\u05dc\u05ea\u05d4 \u05d0\u05da \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4 \u05dc\u05d6\u05d9\u05d4\u05d5\u05d9",1);
     }
-  }catch(e){toast("ההעלאה נכשלה: "+String(e.message).slice(0,60),1);}
+  }catch(e){toast("\u05d4\u05d4\u05e2\u05dc\u05d0\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4: "+String(e.message||"").slice(0,70),1);}
+  inp.value="";
+}
+
+/* ---- שלוש הפונקציות הישנות נשארות כשמות בלבד, כדי לא לשבור קוראים ---- */
+function uploadPhoto(inp,kind){return pfInput(inp,kind,CUR&&CUR.id);}
+function uploadLoc(inp,which){return pfInput(inp,"loc-"+which,CUR&&CUR.id);}
+function upPhoto(inp,tbl,rid,fid,kind){return pfInput(inp,kind,rid);}
+
+/* משמש את createCard: התמונות נאספות לפני שהכרטיס קיים ומועלות אחרי היצירה */
+async function uploadPhotoFile(rid,kind,file){
+  if(!file||!rid)return;
+  try{
+    var rec=await pfPut(kind,rid,file);
+    var c=pfCfg(kind);
+    if(c&&c.scan){
+      var atts=((rec&&rec.fields)||{})[c.name]||[];
+      var last=atts[atts.length-1];
+      if(last)identifyParts(rid,last);
+    }
+    pfRefresh(kind,rid);
+  }catch(e){toast("\u05d4\u05e2\u05dc\u05d0\u05ea "+kind+" \u05e0\u05db\u05e9\u05dc\u05d4",1);}
 }
 
 /* ===== זיהוי חלפים מתמונה — קריאה אחת ל-Worker, תשובה תוך שניות ===== */
@@ -784,7 +874,7 @@ async function identifyParts(rid,att){
     if(low)msg+=" · "+low+" בביטחון נמוך — בדוק";
     if(noPrice)msg+=" · "+noPrice+" ללא מחיר";
     toast(msg,(low||noPrice)?1:0);
-    var L=await all(T.ln); LINES=L;
+    var L=await all(T.ln); LINES=L; LAST_LOCAL=new Date().getTime();
     if(CUR&&CUR.id===rid){pParts();try{pPay();}catch(e){}}
     refetchCard(rid,0);
   }catch(e){
@@ -792,14 +882,14 @@ async function identifyParts(rid,att){
   }
 }
 function pollParts(rid,n){
-  if(n>6)return;
+  if(n>5)return;
   fetch(PX+B+"/"+T.wo+"/"+rid).then(function(r){return r.ok?r.json():Promise.reject();})
    .then(function(d){
      var got=(d.fields||{})["🔧 חלפים שהותקנו (תצוגה)"];
      if(got&&CUR&&CUR.id===rid){CUR=d;
        var i=-1;WOS.forEach(function(x,k){if(x.id===rid)i=k;});if(i>=0)WOS[i]=d;
        all(T.ln).then(function(L){LINES=L;pParts();pPay();toast("✓ החלפים זוהו והתווספו");});
-     } else setTimeout(function(){pollParts(rid,n+1);},5000);
+     } else setTimeout(function(){pollParts(rid,n+1);},3000);
    }).catch(function(){});
 }
 /* ===== רכיב הצילום האחיד של האפליקציה =====
@@ -808,44 +898,67 @@ function pollParts(rid,n){
 /* ⚠️ capture נענה בדפדפני מובייל רק כאשר accept הוא סוג מדיה יחיד.
    accept="image/*,video/*" גורם ל-Chrome/Safari להתעלם מ-capture ולפתוח בוחר קבצים.
    לכן: כפתור המצלמה שולח תמיד image/* בלבד, והגלריה מקבלת את הרשימה המלאה. */
+/* ============================================================================
+   בורר הקובץ
+   ----------------------------------------------------------------------------
+   היו כאן שני כפתורים, ובכפתור ה"צלם" הייתה תכונה capture="environment"
+   שכופה את המצלמה האחורית ולא נותנת לבחור. עכשיו יש כפתור אחד בלי capture:
+   מערכת ההפעלה עצמה מציעה "מצלמה / גלריה / קבצים", והמשתמש בוחר.
+   המצלמה עדיין זמינה — פשוט לא כפויה, ובלי דיאלוג הרשאה מצידנו.
+   ⚠️ face נשאר בחתימה כדי לא לשבור קוראים קיימים; הוא כבר לא בשימוש.
+   ========================================================================== */
 function pickHTML(handler,accept,face,has){
-  accept=accept||"image/*,video/*"; face=face||"environment";
-  var camAccept=(accept.indexOf("video")>=0&&accept.indexOf("image")>=0)?"image/*":accept;
-  var a=has?"\u05e6\u05dc\u05dd \u05e2\u05d5\u05d3":"\u05e6\u05dc\u05dd \u05e2\u05db\u05e9\u05d9\u05d5";
-  var b=has?"\u05d4\u05d5\u05e1\u05e3 \u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8":"\u05de\u05d4\u05de\u05db\u05e9\u05d9\u05e8";
+  accept=accept||"image/*,video/*";
+  var label=has?"\u05d4\u05d5\u05e1\u05e3 \u05ea\u05de\u05d5\u05e0\u05d4 \u05e0\u05d5\u05e1\u05e4\u05ea":"\u05e6\u05dc\u05dd \u05d0\u05d5 \u05d1\u05d7\u05e8 \u05ea\u05de\u05d5\u05e0\u05d4";
   return '<div class="pick">'
-   +'<label class="pbtn cam">\ud83d\udcf7 '+a
-     +'<input type="file" accept="'+camAccept+'" capture="'+face+'" onchange="'+handler+'"></label>'
-   +'<label class="pbtn">\ud83d\uddbc '+b
+   +'<label class="pbtn cam">\ud83d\udcf7 '+label
      +'<input type="file" accept="'+accept+'" onchange="'+handler+'"></label>'
    +'</div>'
-   +(has?'<div class="mini">כדי להחליף קובץ — מחק אותו ב-\u2715 והעלה חדש</div>':'');
+   +(has?'<div class="mini">\u05dc\u05d4\u05d7\u05dc\u05e4\u05ea \u05e7\u05d5\u05d1\u05e5 \u2014 \u05de\u05d7\u05e7 \u05d0\u05d5\u05ea\u05d5 \u05d1-\u2715 \u05d5\u05d4\u05e2\u05dc\u05d4 \u05d7\u05d3\u05e9</div>':'');
 }
 /* ===== ניהול הקבצים המצורפים ===== */
 /* מפתח → הטבלה והשדה. מפתח ולא שם שדה, כי שמות השדות מכילים גרש. */
-function attCfg(key){
-  if(PHOTO_FIELDS[key])   return {tbl:T.wo, fld:PHOTO_FIELDS[key], kind:"wo"};
-  if(key==="loc-in")      return {tbl:T.wo, fld:PHOTO_LOC["in"].f, kind:"wo"};
-  if(key==="loc-out")     return {tbl:T.wo, fld:PHOTO_LOC["out"].f,kind:"wo"};
-  if(key==="emp")         return {tbl:T.emp,fld:"\u05ea\u05de\u05d5\u05e0\u05d4", kind:"emp"};
-  if(key==="cus")         return {tbl:T.cus,fld:"\u05ea\u05de\u05d5\u05e0\u05d4", kind:"cus"};
-  return null;
+/* שורות החלפים שנוצרו מצרופה מסוימת. השדה נוסף ב-13.7.2026 בדיוק בשביל זה. */
+async function pfLinesOf(attId){
+  if(!attId)return [];
+  try{return await find(T.ln,'{\u05de\u05d6\u05d4\u05d4 \u05ea\u05de\u05d5\u05e0\u05ea \u05de\u05e7\u05d5\u05e8 (Attachment ID)}="'+String(attId).replace(/"/g,"")+'"',50);}
+  catch(e){return [];}
 }
+
+/* ---- מחיקה אחת לכל התמונות, כולל מה שהתמונה יצרה ---- */
 async function rmAtt(key,rid,attId){
-  var c=attCfg(key); if(!c||!rid||!attId)return;
-  if(!confirm("\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e7\u05d5\u05d1\u05e5?\n\n\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05d0\u05d9\u05e0\u05d4 \u05d4\u05e4\u05d9\u05db\u05d4."))return;
+  var c=pfCfg(key); if(!c||!rid||!attId)return;
+  var lines=c.scan?await pfLinesOf(attId):[];
+
+  var msg="\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e7\u05d5\u05d1\u05e5?";
+  if(lines.length)msg="\u05d9\u05d9\u05de\u05d7\u05e7\u05d5 \u05d2\u05dd "+lines.length+" \u05e9\u05d5\u05e8\u05d5\u05ea \u05d7\u05dc\u05e4\u05d9\u05dd \u05e9\u05d6\u05d5\u05d4\u05d5 \u05de\u05ea\u05de\u05d5\u05e0\u05d4 \u05d6\u05d5. \u05dc\u05d4\u05de\u05e9\u05d9\u05da?";
+  if(!confirm(msg+"\n\n\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05d0\u05d9\u05e0\u05d4 \u05d4\u05e4\u05d9\u05db\u05d4."))return;
+
   try{
-    var rec=await api("/"+c.tbl+"/"+rid);
-    var cur=(rec.fields||{})[c.fld]||[];
+    /* 1. השורות שנוצרו מהתמונה — קודם, כדי שלא יישארו יתומות אם משהו ייכשל */
+    for(var i=0;i<lines.length;i++){
+      try{await fetch(PX+B+"/"+T.ln+"/"+lines[i].id,{method:"DELETE"});}catch(e){}
+    }
+    if(lines.length){
+      var gone={};lines.forEach(function(r){gone[r.id]=1;});
+      LINES=LINES.filter(function(r){return !gone[r.id];});
+      LAST_LOCAL=new Date().getTime();
+    }
+
+    /* 2. הצרופה עצמה */
+    var rec=await api("/"+pfTbl(c)+"/"+rid);
+    var cur=(rec.fields||{})[c.name]||(rec.fields||{})[c.id]||[];
     var keep=cur.filter(function(a){return a.id!==attId;}).map(function(a){return {id:a.id};});
-    var o={}; o[c.fld]=keep;
-    var r=await fetch(PX+B+"/"+c.tbl+"/"+rid,{method:"PATCH",
-      headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:o})});
+    var o={}; o[c.name]=keep;
+    /* 3. צילום מיקום שנמחק לגמרי — גם ה-GPS שלו כבר לא מתאר דבר */
+    if(c.gps&&!keep.length)o[c.gps]="";
+    var r=await fetch(PX+B+"/"+pfTbl(c)+"/"+rid,{method:"PATCH",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:o,typecast:true})});
     if(!r.ok)throw new Error((await r.text()).slice(0,120));
-    toast("\u2713 \u05d4\u05e7\u05d5\u05d1\u05e5 \u05e0\u05de\u05d7\u05e7");
-    if(c.kind==="wo")refetchCard(rid,0);
-    else if(c.kind==="emp"){reloadEmp();setTimeout(function(){openEmp(rid);},800);}
-    else {var d=await (await fetch(PX+B+"/"+c.tbl+"/"+rid)).json();openCus(d);}
+
+    toast("\u2713 \u05d4\u05e7\u05d5\u05d1\u05e5 \u05e0\u05de\u05d7\u05e7"+(lines.length?" \u00b7 "+lines.length+" \u05e9\u05d5\u05e8\u05d5\u05ea \u05d7\u05dc\u05e4\u05d9\u05dd \u05d4\u05d5\u05e1\u05e8\u05d5":""));
+    if(lines.length&&CUR&&CUR.id===rid){try{pParts();pPay();}catch(e){}}
+    pfRefresh(key,rid);
   }catch(e){toast("\u05d4\u05de\u05d7\u05d9\u05e7\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4: "+String(e.message||"").slice(0,70),1);}
 }
 /* תצוגת קובץ בחלונית קטנה — לא בטאב חדש */
@@ -872,6 +985,8 @@ function thumbs(val,key,rid){
       +'</div>';}).join("")+'</div>';
 }
 function photoBox(kind,label,val){
+ /* val מגיע מהקורא, אבל אם שכחו — נשלף לפי השם הרשום ב-PF */
+ if(val==null&&CUR&&pfCfg(kind))val=(CUR.fields||{})[pfCfg(kind).name];
   var n=(val&&val.length)||0;
   return '<div class="f"><label>'+esc(label)+(n?' <span class="cnt">'+n+'</span>':'')+'</label>'
    +thumbs(val,kind,CUR&&CUR.id)
@@ -881,15 +996,41 @@ function photoBox(kind,label,val){
 
 
 /* ===== GPS + מפה ===== */
-var GPS_FIELDS={"in":"GPS כניסה","out":"GPS יציאה"};
-var PHOTO_LOC={"in":{f:"צילום מיקום כניסה",id:"fldRuzEWO6WEig1kW"},"out":{f:"צילום מיקום יציאה",id:"fldi7Vrm5y33A7wZH"}};
-function getPos(){
-  return new Promise(function(res){
-    if(!navigator.geolocation){res(null);return;}
-    navigator.geolocation.getCurrentPosition(
-      function(p){res(p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6));},
-      function(){res(null);},{enableHighAccuracy:true,timeout:9000,maximumAge:30000});
-  });
+/* ============================================================================
+   GPS — בלי בקשות הרשאה
+   ----------------------------------------------------------------------------
+   navigator.geolocation.getCurrentPosition מקפיץ דיאלוג הרשאה בדפדפן ברגע
+   שקוראים לו במצב prompt. לכן בודקים קודם עם Permissions API, וקוראים אך ורק
+   כאשר ההרשאה כבר ניתנה. prompt או denied → מחזירים null ומציגים
+   "מיקום לא זמין". המשתמש לעולם לא נשאל על ידינו.
+   ========================================================================== */
+async function gpsIfGranted(){
+  try{
+    if(!navigator.geolocation)return null;
+    if(navigator.permissions&&navigator.permissions.query){
+      var st=await navigator.permissions.query({name:"geolocation"});
+      if(st.state!=="granted")return null;
+    } else {
+      return null;   /* בלי דרך לבדוק — לא מסתכנים בדיאלוג */
+    }
+    return await new Promise(function(res){
+      navigator.geolocation.getCurrentPosition(
+        function(p){res(p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6));},
+        function(){res(null);},{enableHighAccuracy:true,timeout:9000,maximumAge:30000});
+    });
+  }catch(e){return null;}
+}
+/* שם ישן — נשאר כדי לא לשבור קוראים, אבל כבר לא מבקש הרשאה */
+function getPos(){return gpsIfGranted();}
+
+/* לחיצה מפורשת על "תפוס מיקום". גם היא לא מקפיצה דיאלוג. */
+async function pfGrabGps(which){
+  if(!CUR)return;
+  var c=PF["loc-"+which];
+  var co=await gpsIfGranted();
+  if(!co){toast("\u05de\u05d9\u05e7\u05d5\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u2014 \u05d4\u05e8\u05e9\u05d0\u05ea \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05db\u05d1\u05d5\u05d9\u05d4 \u05d1\u05d3\u05e4\u05d3\u05e4\u05df",1);return;}
+  var o={}; o[c.gps]=co;
+  patchWO(o,pDet,"\u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e0\u05ea\u05e4\u05e1");
 }
 function mapBox(coords,label){
   if(!coords)return '<div class="muted" style="font-size:12.5px">אין מיקום מתועד</div>';
@@ -904,35 +1045,16 @@ function mapBox(coords,label){
    +'style="display:block;padding:7px 10px;font-size:12.5px;background:#f7f9fc;color:#1246a0;text-decoration:none">'
    +'📍 '+esc(lat)+', '+esc(lon)+' · פתח בגוגל מפות</a></div>';
 }
-async function uploadLoc(inp,which){
-  var file=inp.files&&inp.files[0]; if(!file||!CUR)return;
-  var rid=CUR.id, cfg=PHOTO_LOC[which];
-  toast("מעלה ומאתר מיקום…");
-  try{
-    var coords=await getPos();
-    var up=file;
-    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1600,0.82);}catch(e){up=file;}}
-    var b64=await new Promise(function(res,rej){var rd=new FileReader();
-      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
-    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
-    var r=await fetch(CT+B+"/"+rid+"/"+cfg.id+"/uploadAttachment",
-      {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,"loc-"+which),file:b64})});
-    if(!r.ok)throw new Error((await r.text()).slice(0,110));
-    if(coords){var o={};o[GPS_FIELDS[which]]=coords;
-      await fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({fields:o,typecast:true})});}
-    toast("✓ תועד"+(coords?" עם מיקום מדויק":" · GPS לא זמין"));
-    refetchCard(rid,0);
-  }catch(e){toast("התיעוד נכשל: "+String(e.message).slice(0,55),1);}
-  inp.value="";
-}
+/* uploadLoc הישן הוסר — הוא הצהיר על אותו שם מאוחר יותר בקובץ ולכן דרס
+   את העטיפה החדשה (הצהרות פונקציה עולות למעלה). הנתיב היחיד הוא pfInput. */
 function locBlock(which,title,f){
-  var cfg=PHOTO_LOC[which], atts=f[cfg.f]||[], coords=f[GPS_FIELDS[which]];
+  var cfg=PF["loc-"+which], atts=f[cfg.name]||[], coords=f[cfg.gps];
   return '<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:11px 12px">'
    +'<div style="font-weight:bold;font-size:13.5px;margin-bottom:7px">'+esc(title)+'</div>'
    +thumbs(atts,"loc-"+which,CUR&&CUR.id)
    +mapBox(coords,title)
+   +'<button class="x" style="width:auto;padding:5px 11px;font-size:12.5px;margin-top:7px" '
+     +'onclick="pfGrabGps(\''+which+'\')">\ud83d\udccd \u05ea\u05e4\u05d5\u05e1 \u05de\u05d9\u05e7\u05d5\u05dd</button>'
    +pickHTML("uploadLoc(this,'"+which+"')","image/*",null,atts.length)
    +'</div>';
 }
@@ -1056,7 +1178,12 @@ async function remoteSearch(){
 
 /* ============ CARD ============ */
 /* "שירותים" מוסתר בשלב זה — הפאנל נשאר קיים אך לא מוצג */
-function MTL(){return [[t("details"),0],[t("parts"),1],[t("checks"),3],[t("pay"),4]];}
+function MTL(){
+ /* לשונית "שירותים" נעדרה מכאן — pSvc כתב ל-p2 אבל אף לשונית לא הצביעה עליו.
+    לכן לא היה מאיפה להוסיף או להסיר שירות. */
+ var a=[[t("details"),0],[t("parts"),1],[t("services"),2],[t("checks"),3]];
+ if(can("money"))a.push([t("pay"),4]);
+ return a;}
 var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
   CUR=WOS.filter(function(r){return r.id===id;})[0];
@@ -1194,10 +1321,10 @@ function pDet(){var f=CUR.fields||{};
   +ro("שנת ייצור",txt(f["שנת ייצור"]))+ro("קוד רכב",txt(f["קוד רכב"]))
   +slotPicker(f)
   +statusBlock(f)
-  +sel("סוג טיפול","סוג טיפול",TREAT,txt(f["סוג טיפול"]))
+  +sel("סוג העבודה","סוג טיפול",TREAT,txt(f["סוג טיפול"]))  /* תווית תצוגה בלבד — שם השדה ב-Airtable נשאר "סוג טיפול" */
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
   +num("קילומטראז'","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
-  +photoBox("km","📷 צילום הקילומטראז'",f["צילום הקילומטרז'"])
+  +photoBox("km","📷 צילום הקילומטראז'",f[PHOTO_FIELDS.km])  /* הגרש בשם השדה בא לפני, לא אחרי — הקריאה הישנה לא החזירה דבר */
   +selLink("מיקום לפני טיפול","מיקום לפני טיפול",LOC,ids(f["מיקום לפני טיפול"]))
   +selLink("מיקום בסוף הטיפול","מיקום בסוף הטיפול",LOC,ids(f["מיקום בסוף הטיפול"]))
   +ro("תאריך התור",dt(f["תאריך ושעה"]))+ro("תאריך פתיחה",dt(f["תאריך פתיחה"]))
@@ -1213,34 +1340,42 @@ function pDet(){var f=CUR.fields||{};
   +'';}
 
 function myLines(){return LINES.filter(function(x){return ids((x.fields||{})["כרטיס עבודה"]).indexOf(CUR.id)>=0;});}
-function pParts(){var ls=myLines(),sum=0;
- var head='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span><span class="c2">מחיר ליח\'</span><span class="c3">סה"כ</span><span class="c4"></span></div>';
+function pParts(){var ls=myLines(),sum=0,mon=can("money");
+ /* עמודות המחיר אינן מוסתרות למכונאי — הן פשוט לא נבנות, והערך עצמו כבר
+    לא הגיע מהשרת. אין מה למצוא ב-DevTools. */
+ var head='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span>'
+  +(mon?'<span class="c2">מחיר ליח\''+'</span><span class="c3">סה"כ</span>':'')
+  +'<span class="c4"></span></div>';
  var body=ls.map(function(r){var f=r.fields||{},nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
   var qy=f["כמות"]==null?1:f["כמות"],pr=f["מחיר ליחידה (בזמן השימוש)"]||0,lt=qy*pr;sum+=lt;
-  return '<div class="ln"><div class="nm">'+esc(nm)+(pr?"":"<small>אין מחיר</small>")+'</div>'
+  var flag=mon?(pr?"":"<small>אין מחיר</small>")
+              :(f["ממתין להשלמת מחיר"]?"<small>ממתין להשלמת מחיר</small>":"");
+  return '<div class="ln"><div class="nm">'+esc(nm)+flag+'</div>'
    +'<input type="number" min="1" value="'+qy+'" onchange="setQ(\''+r.id+'\',this.value)">'
-   +'<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
-   +'<div class="lt">'+lt.toFixed(2)+'</div><button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("")
+   +(mon?('<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
+        +'<div class="lt">'+lt.toFixed(2)+'</div>'):'')
+   +'<button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("")
   ||'<div class="empty" style="padding:16px">אין חלפים. חפש חלף להוספה.</div>';
  document.getElementById("p1").innerHTML=head+body
   +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף (שם או מק\u05f4ט)…" autocomplete="off" oninput="sq()"><div class="dd" id="pdd"></div></div>'
   +'<div class="sec">צילום החלפים — זיהוי מק\u05f4ט אוטומטי</div>'
   +'<div class="hint">צלם את החלפים או את הברקודים שעל האריזות. המערכת תקרא את המק\u05f4ט, תזהה את החלפים ותוסיף אותם לרשימה למעלה תוך כדקה.</div>'
   +photoBox("parts","\ud83d\udcf7 צלם / סרוק חלפים",CUR.fields["סריקה של חלקים שהותקנו"])
-  +'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>';}
+  +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
 
-function pSvc(){var f=CUR.fields||{},cur=ids(f["שירותים נוספים:"]);
+function pSvc(){var f=CUR.fields||{},cur=ids(f["שירותים נוספים:"]),mon=can("money");
+ /* ⚠️ שם שדה הקישור הוא "שירותים נוספים:" — עם נקודתיים בסוף. */
  var rowsHtml=cur.map(function(id){var s=SVC.filter(function(x){return x.id===id;})[0];
   return '<div class="ln"><div class="nm">'+esc(s?s.name:"(שירות)")+'</div>'
-   +'<div class="lt">'+(s?Number(s.price||0).toFixed(2):"")+'</div>'
-   +'<button class="x" onclick="rmSvc(\''+id+'\')">✕</button></div>';}).join("")
+   +(mon?'<div class="lt">'+(s?Number(s.price||0).toFixed(2):"")+'</div>':'')
+   +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';}).join("")
   ||'<div class="empty" style="padding:16px">לא נבחרו שירותים</div>';
  var avail=SVC.filter(function(s){return cur.indexOf(s.id)<0;});
- document.getElementById("p2").innerHTML='<div class="hd"><span class="nm">שירות</span><span class="c3">מחיר</span><span class="c4"></span></div>'
+ document.getElementById("p2").innerHTML='<div class="hd"><span class="nm">שירות</span>'+(mon?'<span class="c3">מחיר</span>':'')+'<span class="c4"></span></div>'
   +rowsHtml
-  +'<div class="f" style="margin-top:12px"><label>הוסף שירות מהקטלוג</label><select onchange="addSvc(this.value);this.value=\'\'">'
-  +'<option value="">— בחר שירות —</option>'+avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+' · ₪'+Number(s.price||0).toFixed(2)+'</option>';}).join("")+'</select></div>'
-  +'<div class="tot"><span>סך שירותים</span><span>'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</span></div>';}
+  +'<div class="f" style="margin-top:12px"><label>+ הוסף שירות מהקטלוג</label><select onchange="addSvc(this.value);this.value=\'\'">'
+  +'<option value="">— בחר שירות —</option>'+avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+(mon?' · ₪'+Number(s.price||0).toFixed(2):'')+'</option>';}).join("")+'</select></div>'
+  +(mon?'<div class="tot"><span>סך שירותים</span><span>'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</span></div>':'');}
 
 function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(L(name))+'</span></label>';}
 function pChecks(){var f=CUR.fields||{};
@@ -1255,6 +1390,10 @@ function pChecks(){var f=CUR.fields||{};
   +'<div class="f"><label>תור</label><div class="v">'+esc(txt(f["תור"]))+'</div></div>'
   +'</div>';}
 
+/* חותמת השינוי המקומי האחרון. האזהרה על פער מול Airtable מוצגת רק
+   אחרי 6 שניות — לפני כן השדות המחושבים של Airtable עוד לא הספיקו
+   להתעדכן, והיא מבהילה בלי סיבה. */
+var LAST_LOCAL=0;
 function money(n){return "\u20aa"+Number(n||0).toLocaleString("he-IL",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function pPay(){
   var f=CUR.fields||{};
@@ -1278,7 +1417,7 @@ function pPay(){
   var net=partsSum+svcSum+labour;
   var vat=net*0.18, gross=net+vat;
   var atNet=f['\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de'], atGross=f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd'];
-  var drift=(atGross!=null)&&Math.abs(Number(atGross)-gross)>0.5;
+  var drift=(atGross!=null)&&Math.abs(Number(atGross)-gross)>0.5&&(new Date().getTime()-LAST_LOCAL>6000);
 
   var warn="";
   if(noPrice)warn+='<div class="hint" style="background:#FDECEC;border-color:var(--red);color:#8a1220">\u26a0\ufe0f '+noPrice+' \u05d7\u05dc\u05e4\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8 \u2014 \u05d4\u05dd \u05d9\u05d5\u05e4\u05d9\u05e2\u05d5 \u05d1\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05d1-0.00 \u20aa</div>';
@@ -1545,7 +1684,15 @@ var RULES={
    פועל גם כשקטלוג החלפים עדיין לא תומחר במלואו. */
 function unpricedParts(){
   if(!CUR)return [];
-  return (typeof myLines==="function"?myLines():[]).filter(function(r){
+  var ls=(typeof myLines==="function"?myLines():[]);
+  /* מכונאי אינו מקבל מחירים מהשרת. אילו היינו בודקים כאן את שדה המחיר, כל
+     שורה הייתה נראית "ללא מחיר" והכרטיס לא היה נסגר לעולם. לכן משתמשים בדגל
+     הבוליאני "ממתין להשלמת מחיר" — הוא לא חושף סכום ולכן כן מגיע. */
+  if(!can("money")){
+    return ls.filter(function(r){return !!(r.fields||{})["ממתין להשלמת מחיר"];})
+             .map(function(r){return txt((r.fields||{})["חלף"])||"חלף ללא שם";});
+  }
+  return ls.filter(function(r){
     var f=r.fields||{}, p=f["מחיר ליחידה (בזמן השימוש)"];
     return p===undefined||p===null||p===""||Number(p)<=0;
   }).map(function(r){
@@ -1697,12 +1844,13 @@ function addSvc(id){if(!id)return;var cur=ids((CUR.fields||{})["שירותים �
 function rmSvc(id){var cur=ids((CUR.fields||{})["שירותים נוספים:"]).filter(function(x){return x!==id;});
  patchWO({"שירותים נוספים:":cur},pSvc);}
 function patchLine(id,fields){var i=-1;LINES.forEach(function(r,n){if(r.id===id)i=n;});
- if(i>=0)Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});pParts();
+ if(i>=0)Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});
+ LAST_LOCAL=new Date().getTime();pParts();try{pPay();}catch(e){}
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה",1);});}
 function setQ(id,v){var n=parseInt(v,10);if(!n||n<1)n=1;patchLine(id,{"כמות":n});}
 function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
-function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});pParts();pPay();
+function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});LAST_LOCAL=new Date().getTime();pParts();pPay();
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה",1);});}
 async function sq(){
   var s=(document.getElementById("pq").value||"").trim(),dd=document.getElementById("pdd");
@@ -1713,7 +1861,7 @@ async function sq(){
     dd.innerHTML=recs.length?recs.map(function(r){var f=r.fields||{};
       return '<div onclick="addPart(\''+r.id+'\')"><b>'+esc(f["פריט"]||"")+'</b>'
         +'<div class="muted" style="font-size:12px">'+(f['מק"ט']?'מק"ט '+esc(f['מק"ט']):'')
-        +(f["יצרן"]?' · '+esc(f["יצרן"]):'')+(f["מחיר"]?' · ₪'+Number(f["מחיר"]).toFixed(2):' · ללא מחיר')
+        +(f["יצרן"]?' · '+esc(f["יצרן"]):'')+(can("money")?(f["מחיר"]?' · ₪'+Number(f["מחיר"]).toFixed(2):' · ללא מחיר'):'')
         +(f["כמות במלאי"]!=null?' · במלאי '+f["כמות במלאי"]:'')+'</div></div>';}).join("")
      :'<div class="muted">לא נמצא חלף</div>';
   }catch(e){dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
@@ -1721,7 +1869,7 @@ async function sq(){
 function addPart(pid){document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
  var b={fields:{},typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];b.fields["חלף"]=[pid];b.fields["כמות"]=1;
  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
-  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);pParts();pPay();toast("✓ נוסף");})
+  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);LAST_LOCAL=new Date().getTime();pParts();pPay();toast("✓ נוסף");})
   .catch(function(){toast("ההוספה נכשלה",1);});}
 document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
 
@@ -2396,25 +2544,7 @@ function saveCus(id){
    .then(function(d){FOUND=FOUND.map(function(x){return x.id===d.id?d:x;});toast("✓ הלקוח עודכן");closeCard();draw();})
    .catch(function(){toast("השמירה נכשלה",1);});
 }
-async function upPhoto(inp,tbl,rid,fid,kind){
-  var file=inp.files&&inp.files[0]; if(!file)return;
-  toast("מעלה תמונה…");
-  try{
-    var up=file;
-    if(file.size>1.5*1024*1024){try{up=await downscaleImage(file,1200,0.85);}catch(e){up=file;}}
-    var b64=await new Promise(function(res,rej){var rd=new FileReader();
-      rd.onload=function(){res(rd.result.split(",")[1]);};rd.onerror=rej;rd.readAsDataURL(up);});
-    var CT="https://abn-airtable-proxy.autocareabn.workers.dev/content/v0/";
-    var r=await fetch(CT+B+"/"+rid+"/"+fid+"/uploadAttachment",
-      {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contentType:up.type||"image/jpeg",filename:upName(up,kind),file:b64})});
-    if(!r.ok)throw new Error((await r.text()).slice(0,110));
-    toast("✓ התמונה הועלתה");
-    if(kind==="emp"){reloadEmp();setTimeout(function(){openEmp(rid);},900);}
-    else{var d=await (await fetch(PX+B+"/"+tbl+"/"+rid)).json();openCus(d);}
-  }catch(e){toast("ההעלאה נכשלה: "+String(e.message||"").slice(0,80),1);}
-  inp.value="";
-}
+/* upPhoto הישן הוסר מאותה סיבה — pfInput מטפל גם בעובדים ובלקוחות. */
 function reloadEmp(){
   all(T.emp).then(function(rs){
     EMP=rs.map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});
