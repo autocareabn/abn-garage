@@ -607,6 +607,281 @@ function tag(fld,val){var v=txt(val);if(!v)return '<span class="muted">—</span
  var c=(CLR[fld]||{})[v]||"gray";return '<span class="pill at-'+c+'">'+esc(L(v))+'</span>';}
 
 var D={
+/* ============================================================================
+   מילון התצוגה — עברית → אנגלית / תאילנדית
+   ----------------------------------------------------------------------------
+   המפתח הוא הטקסט כפי שהוא מוצג על המסך, אחרי trim. הוא משמש גם ל-L()
+   בקוד וגם למנוע התרגום שסורק את ה-DOM (ראה trNode). כל מה שאינו כאן
+   נשאר כמות שהוא — וזה בכוונה: שמות לקוחות, רכבים וחלפים הם נתונים,
+   לא ממשק, ואין לתרגם אותם.
+   ========================================================================== */
+"חשבון ללקוח":{en:"Customer bill",th:"ใบแจ้งหนี้ลูกค้า"},
+"עבודות":{en:"Labour",th:"ค่าแรง"},
+"חלקים":{en:"Parts",th:"อะไหล่"},
+"שירותים נוספים":{en:"Additional services",th:"บริการเสริม"},
+"סה\"כ עבודות":{en:"Labour total",th:"รวมค่าแรง"},
+"סה\"כ חלקים":{en:"Parts total",th:"รวมค่าอะไหล่"},
+"סה\"כ חלפים":{en:"Parts total",th:"รวมค่าอะไหล่"},
+"סה\"כ שירותים":{en:"Services total",th:"รวมค่าบริการ"},
+"סך שירותים":{en:"Services total",th:"รวมค่าบริการ"},
+"סה\"כ לפני מע\"מ":{en:"Subtotal (excl. VAT)",th:"ยอดก่อน VAT"},
+"מע\"מ 18%":{en:"VAT 18%",th:"VAT 18%"},
+"סה\"כ לתשלום":{en:"Total due",th:"ยอดชำระทั้งหมด"},
+"עלות עבודה":{en:"Labour cost",th:"ค่าแรง"},
+"אמצעי תשלום":{en:"Payment method",th:"วิธีชำระเงิน"},
+"מוכנות לחשבונית":{en:"Invoice readiness",th:"ความพร้อมออกใบแจ้งหนี้"},
+"לא הוזנה עלות עבודה":{en:"No labour cost entered",th:"ยังไม่ได้ใส่ค่าแรง"},
+"אין חלפים":{en:"No parts",th:"ไม่มีอะไหล่"},
+"שליחה ללקוח":{en:"Send to customer",th:"ส่งให้ลูกค้า"},
+"תצוגה מקדימה":{en:"Preview",th:"ดูตัวอย่าง"},
+"👁 תצוגה מקדימה":{en:"👁 Preview",th:"👁 ดูตัวอย่าง"},
+"📍 תפוס מיקום":{en:"📍 Capture location",th:"📍 บันทึกตำแหน่ง"},
+"📷 צילום הבעיה (לא חובה)":{en:"📷 Problem photo (optional)",th:"📷 รูปปัญหา (ไม่บังคับ)"},
+"📷 צילום מד הקילומטראז'":{en:"📷 Odometer photo",th:"📷 รูปเลขไมล์"},
+"📷 צילום הבעיה":{en:"📷 Problem photo",th:"📷 รูปปัญหา"},
+"📷 צילום הקילומטראז'":{en:"📷 Odometer photo",th:"📷 รูปเลขไมล์"},
+"📷 צלם / סרוק חלפים":{en:"📷 Photograph / scan parts",th:"📷 ถ่าย/สแกนอะไหล่"},
+"🔍 חפש לקוח":{en:"🔍 Search customer",th:"🔍 ค้นหาลูกค้า"},
+"מחפש…":{en:"Searching…",th:"กำลังค้นหา…"},
+"לא נמצא חלף":{en:"No part found",th:"ไม่พบอะไหล่"},
+"← חזרה לטלפון":{en:"← Back to phone",th:"← กลับไปเบอร์โทร"},
+"← חזרה לרכב":{en:"← Back to vehicle",th:"← กลับไปที่รถ"},
+"✓ צור כרטיס עבודה":{en:"✓ Create work card",th:"✓ สร้างบัตรงาน"},
+"✓ שמור":{en:"✓ Save",th:"✓ บันทึก"},
+"✓ שמור רכב":{en:"✓ Save vehicle",th:"✓ บันทึกรถ"},
+"✓ הרכב עודכן":{en:"✓ Vehicle updated",th:"✓ อัปเดตรถแล้ว"},
+"✓ נמחק":{en:"✓ Deleted",th:"✓ ลบแล้ว"},
+"✓ הקובץ נמחק":{en:"✓ File deleted",th:"✓ ลบไฟล์แล้ว"},
+"✓ תועד עם מיקום מדויק":{en:"✓ Recorded with exact location",th:"✓ บันทึกพร้อมตำแหน่งแม่นยำ"},
+"✓ התמונה הועלתה · מיקום לא זמין":{en:"✓ Photo uploaded · location unavailable",th:"✓ อัปโหลดรูปแล้ว · ไม่มีตำแหน่ง"},
+"ההעלאה נכשלה":{en:"Upload failed",th:"อัปโหลดไม่สำเร็จ"},
+"המחיקה נכשלה":{en:"Delete failed",th:"ลบไม่สำเร็จ"},
+"התמונה הועלתה אך לא נמצאה לזיהוי":{en:"Photo uploaded but not found for identification",th:"อัปโหลดรูปแล้วแต่ไม่พบเพื่อระบุ"},
+"טלפון משותף אינו כפילות":{en:"A shared phone is not a duplicate",th:"เบอร์ร่วมกันไม่ถือว่าซ้ำ"},
+"עם אותו שם ואותו טלפון":{en:"with the same name and phone",th:"ชื่อและเบอร์เดียวกัน"},
+"כדי להחליף קובץ — מחק אותו ב-✕ והעלה חדש":{en:"To replace a file — delete it with ✕ and upload a new one",th:"หากต้องการเปลี่ยนไฟล์ — ลบด้วย ✕ แล้วอัปโหลดใหม่"},
+"שם לקוח":{en:"Customer name",th:"ชื่อลูกค้า"},
+"שם מלא":{en:"Full name",th:"ชื่อเต็ม"},
+"טלפון נייד":{en:"Mobile",th:"มือถือ"},
+"מספר טלפון נייד":{en:"Mobile number",th:"เบอร์มือถือ"},
+"מספר טלפון":{en:"Phone number",th:"เบอร์โทรศัพท์"},
+"בחר תאריך":{en:"Choose a date",th:"เลือกวันที่"},
+"שעת התור":{en:"Appointment time",th:"เวลานัด"},
+"מספר רכב * (7 או 8 ספרות)":{en:"Plate * (7 or 8 digits)",th:"ทะเบียน * (7 หรือ 8 หลัก)"},
+"בתור טסט חובה לוודא את תאריך תוקף הטסט":{en:"For a test booking you must confirm the test expiry date",th:"สำหรับนัดตรวจสภาพ ต้องยืนยันวันหมดอายุการตรวจ"},
+"⚠️ התראה":{en:"⚠️ Alert",th:"⚠️ การแจ้งเตือน"},
+"הזיהוי נכשל":{en:"Identification failed",th:"ระบุไม่สำเร็จ"},
+"✓ נוצר רכב — פרטיו יושלמו מגוב.יל":{en:"✓ Vehicle created — details will come from the registry",th:"✓ สร้างรถแล้ว — ข้อมูลจะดึงจากทะเบียนราษฎร์"},
+"🔍 מזהה את החלפים בתמונה…":{en:"🔍 Identifying parts in the photo…",th:"🔍 กำลังระบุอะไหล่ในรูป…"},
+"צריך למלא":{en:"Please fill in",th:"กรุณากรอก"},
+"החישוב כאן שונה מהסכום ב-Airtable — ייתכן שהשדות המחושבים טרם התעדכנו":{en:"The figure here differs from Airtable — the computed fields may not have caught up",th:"ยอดที่นี่ต่างจาก Airtable — ฟิลด์คำนวณอาจยังไม่อัปเดต"},
+"היום":{en:"Today",th:"วันนี้"},
+"מחר":{en:"Tomorrow",th:"พรุ่งนี้"},
+"טסטים מחר":{en:"Tests tomorrow",th:"ตรวจสภาพพรุ่งนี้"},
+"עתידיים":{en:"Upcoming",th:"ที่จะถึง"},
+"נסגרו היום":{en:"Closed today",th:"ปิดวันนี้"},
+"הכל":{en:"All",th:"ทั้งหมด"},
+"+ כרטיס חדש":{en:"+ New card",th:"+ บัตรใหม่"},
+"עבודה":{en:"Work",th:"งาน"},
+"לקוחות":{en:"Customers",th:"ลูกค้า"},
+"רכבים":{en:"Vehicles",th:"รถ"},
+"מיקומים":{en:"Locations",th:"ตำแหน่ง"},
+"הגדרות":{en:"Settings",th:"ตั้งค่า"},
+"פרטים":{en:"Details",th:"รายละเอียด"},
+"חלפים":{en:"Parts",th:"อะไหล่"},
+"שירותים":{en:"Services",th:"บริการ"},
+"בדיקות":{en:"Inspections",th:"ตรวจสอบ"},
+"תשלום":{en:"Payment",th:"ชำระเงิน"},
+"לקוח":{en:"Customer",th:"ลูกค้า"},
+"טלפון":{en:"Phone",th:"โทรศัพท์"},
+"מספר רכב":{en:"Plate",th:"ทะเบียน"},
+"יצרן / דגם":{en:"Make / Model",th:"ยี่ห้อ/รุ่น"},
+"יצרן":{en:"Make",th:"ยี่ห้อ"},
+"דגם":{en:"Model",th:"รุ่น"},
+"שנת ייצור":{en:"Year",th:"ปีที่ผลิต"},
+"שנה":{en:"Year",th:"ปี"},
+"צבע":{en:"Colour",th:"สี"},
+"סוג מנוע":{en:"Engine",th:"เครื่องยนต์"},
+"קוד רכב":{en:"Start code",th:"รหัสสตาร์ท"},
+"קוד רכב (קוד התנעה)":{en:"Start code",th:"รหัสสตาร์ท"},
+"סטטוס":{en:"Status",th:"สถานะ"},
+"סוג העבודה":{en:"Work type",th:"ประเภทงาน"},
+"סוג טיפול":{en:"Service type",th:"ประเภทบริการ"},
+"סוג הטיפול":{en:"Service type",th:"ประเภทบริการ"},
+"מכונאי אחראי":{en:"Mechanic",th:"ช่างผู้รับผิดชอบ"},
+"מכונאי":{en:"Mechanic",th:"ช่าง"},
+"קילומטראז'":{en:"Odometer",th:"เลขไมล์"},
+"קילומטראז' אחרון":{en:"Last odometer",th:"เลขไมล์ล่าสุด"},
+"קילומטראז' נוכחי":{en:"Current odometer",th:"เลขไมล์ปัจจุบัน"},
+"מיקום לפני טיפול":{en:"Location in",th:"ตำแหน่งก่อนซ่อม"},
+"מיקום בסוף הטיפול":{en:"Location out",th:"ตำแหน่งหลังซ่อม"},
+"תאריך התור":{en:"Appointment",th:"วันนัด"},
+"תאריך פתיחה":{en:"Opened",th:"วันเปิดงาน"},
+"מועד התור":{en:"Appointment",th:"เวลานัด"},
+"סיבת הגעה":{en:"Reason for visit",th:"เหตุผลที่มา"},
+"סיבת ההגעה":{en:"Reason for visit",th:"เหตุผลที่มา"},
+"הערות מכונאי":{en:"Mechanic notes",th:"บันทึกช่าง"},
+"הערות":{en:"Notes",th:"หมายเหตุ"},
+"תיאור":{en:"Description",th:"คำอธิบาย"},
+"תיאור התקלה / הבקשה":{en:"Problem / request",th:"ปัญหา/คำขอ"},
+"מה הביא את הלקוח למוסך?":{en:"What brought the customer in?",th:"ลูกค้ามาด้วยเรื่องอะไร?"},
+"שם":{en:"Name",th:"ชื่อ"},
+"כתובת":{en:"Address",th:"ที่อยู่"},
+"דוא\"ל":{en:"Email",th:"อีเมล"},
+"טלפון נוסף":{en:"Second phone",th:"โทรศัพท์สำรอง"},
+"ח.פ / ת.ז":{en:"Tax ID",th:"เลขประจำตัวผู้เสียภาษี"},
+"סוג לקוח (לחשבונית)":{en:"Customer type",th:"ประเภทลูกค้า"},
+"סטטוס לקוח":{en:"Customer status",th:"สถานะลูกค้า"},
+"סטטוס רכב":{en:"Vehicle status",th:"สถานะรถ"},
+"בעלים":{en:"Owner",th:"เจ้าของ"},
+"תפקיד":{en:"Role",th:"ตำแหน่งงาน"},
+"תאריך תחילת עבודה":{en:"Start date",th:"วันเริ่มงาน"},
+"תמונה":{en:"Photo",th:"รูปภาพ"},
+"תמונת עובד":{en:"Employee photo",th:"รูปพนักงาน"},
+"תוקף הטסט":{en:"Test expiry",th:"วันหมดอายุตรวจสภาพ"},
+"ביקור אחרון":{en:"Last visit",th:"เข้ารับบริการล่าสุด"},
+"מונית / רכב ציבורי":{en:"Taxi / public vehicle",th:"แท็กซี่/รถสาธารณะ"},
+"אופן העדכון":{en:"Update method",th:"วิธีอัปเดต"},
+"איזה טיפול תקופתי?":{en:"Which periodic service?",th:"บริการตามระยะแบบใด?"},
+"מיקום":{en:"Location",th:"ตำแหน่ง"},
+"עובדים":{en:"Employees",th:"พนักงาน"},
+"רכב":{en:"Vehicle",th:"รถ"},
+"כרטיס":{en:"Card",th:"บัตร"},
+"כרטיסים":{en:"cards",th:"บัตร"},
+"תאריך":{en:"Date",th:"วันที่"},
+"שירות":{en:"Service",th:"บริการ"},
+"חלף":{en:"Part",th:"อะไหล่"},
+"כמות":{en:"Qty",th:"จำนวน"},
+"מחיר":{en:"Price",th:"ราคา"},
+"מחיר ליח'":{en:"Unit price",th:"ราคา/หน่วย"},
+"סה\"כ":{en:"Total",th:"รวม"},
+"לתשלום":{en:"To pay",th:"ยอดชำระ"},
+"מערכות":{en:"Systems",th:"ระบบ"},
+"מערכת בלמים קידמית":{en:"Front brakes",th:"เบรกหน้า"},
+"מערכת בלמים אחורית":{en:"Rear brakes",th:"เบรกหลัง"},
+"נוזל בלמים":{en:"Brake fluid",th:"น้ำมันเบรก"},
+"נוזל קירור":{en:"Coolant",th:"น้ำหล่อเย็น"},
+"תיעוד מיקום הרכב — צילום":{en:"Vehicle location — photo",th:"ตำแหน่งรถ — รูปถ่าย"},
+"קטלוג שירותים נוספים":{en:"Additional services catalogue",th:"แคตตาล็อกบริการเสริม"},
+"הוסף שירות מהקטלוג":{en:"Add a service",th:"เพิ่มบริการ"},
+"+ הוסף שירות מהקטלוג":{en:"+ Add a service",th:"+ เพิ่มบริการ"},
+"שירותים בכרטיס":{en:"Services on this card",th:"บริการในบัตรนี้"},
+"רכבי הלקוח":{en:"Customer vehicles",th:"รถของลูกค้า"},
+"כרטיסים במיקום":{en:"Cards at this location",th:"บัตรในตำแหน่งนี้"},
+"מיקומים במוסך":{en:"Garage locations",th:"ตำแหน่งในอู่"},
+"סה\"כ ביקורים":{en:"Total visits",th:"จำนวนครั้งที่เข้ารับบริการ"},
+"סה\"כ הוצאה על הרכב":{en:"Total spent on this vehicle",th:"ค่าใช้จ่ายรวมของรถคันนี้"},
+"סה\"כ הכנסות מהלקוח":{en:"Total revenue from customer",th:"รายได้รวมจากลูกค้า"},
+"מתוכם שולמו":{en:"of which paid",th:"ชำระแล้ว"},
+"בדיקת לחץ אויר":{en:"Tyre pressure",th:"ตรวจลมยาง"},
+"בדיקת שמשות":{en:"Windscreen",th:"ตรวจกระจก"},
+"בדיקת גומיות ריקות":{en:"Wiper rubbers",th:"ตรวจยางปัดน้ำฝน"},
+"בדיקת חופשים":{en:"Play / clearance",th:"ตรวจระยะฟรี"},
+"בדיקת צמיגים":{en:"Tyres",th:"ตรวจยาง"},
+"בדיקת אורות":{en:"Lights",th:"ตรวจไฟ"},
+"בדיקת מיסבים (סיבוב גלגלים)":{en:"Wheel bearings",th:"ตรวจลูกปืนล้อ"},
+"איפוס טיפול":{en:"Service reset",th:"รีเซ็ตระยะบริการ"},
+"סימון בורג אגן שמן":{en:"Sump bolt marked",th:"ทำเครื่องหมายน็อตอ่างน้ำมัน"},
+"בעיית הלקוח טופלה":{en:"Customer issue resolved",th:"แก้ปัญหาลูกค้าแล้ว"},
+"✓ סיימתי את העבודה":{en:"✓ Work finished",th:"✓ งานเสร็จแล้ว"},
+"✓ סיימתי":{en:"✓ Done",th:"✓ เสร็จ"},
+"✕ בטל תור":{en:"✕ Cancel appointment",th:"✕ ยกเลิกนัด"},
+"✕ סגור":{en:"✕ Close",th:"✕ ปิด"},
+"↻ שנה תור":{en:"↻ Reschedule",th:"↻ เปลี่ยนนัด"},
+"🖨 הדפס":{en:"🖨 Print",th:"🖨 พิมพ์"},
+"🖨 הדפס כרטיס":{en:"🖨 Print card",th:"🖨 พิมพ์บัตร"},
+"+ הוסף":{en:"+ Add",th:"+ เพิ่ม"},
+"בחר":{en:"Choose",th:"เลือก"},
+"בחר אותו":{en:"Select this one",th:"เลือกอันนี้"},
+"זה הוא":{en:"That's him",th:"ใช่คนนี้"},
+"בטל":{en:"Cancel",th:"ยกเลิก"},
+"אישור":{en:"OK",th:"ตกลง"},
+"ביטול":{en:"Cancel",th:"ยกเลิก"},
+"לא אני?":{en:"Not me?",th:"ไม่ใช่ฉัน?"},
+"כניסה עם חשבון אחר":{en:"Sign in with another account",th:"เข้าสู่ระบบด้วยบัญชีอื่น"},
+"← חזרה לחיפוש טלפון":{en:"← Back to phone search",th:"← กลับไปค้นหาเบอร์"},
+"← חזרה לרשימת הרכבים":{en:"← Back to vehicles",th:"← กลับไปรายการรถ"},
+"מחק קובץ":{en:"Delete file",th:"ลบไฟล์"},
+"הסר שירות":{en:"Remove service",th:"ลบบริการ"},
+"📍 תפוס מיקום":{en:"📍 Capture location",th:"📍 บันทึกตำแหน่ง"},
+"📷 צלם או בחר תמונה":{en:"📷 Take or choose a photo",th:"📷 ถ่ายหรือเลือกรูป"},
+"📷 הוסף תמונה נוספת":{en:"📷 Add another photo",th:"📷 เพิ่มรูป"},
+"צלם או בחר תמונה":{en:"Take or choose a photo",th:"ถ่ายหรือเลือกรูป"},
+"הוסף תמונה נוספת":{en:"Add another photo",th:"เพิ่มรูป"},
+"✓ צור לקוח":{en:"✓ Create customer",th:"✓ สร้างลูกค้า"},
+"✓ צור רכב":{en:"✓ Create vehicle",th:"✓ สร้างรถ"},
+"✓ שמור לקוח":{en:"✓ Save customer",th:"✓ บันทึกลูกค้า"},
+"✓ שמור עובד":{en:"✓ Save employee",th:"✓ บันทึกพนักงาน"},
+"אין כרטיסים להצגה":{en:"No cards to show",th:"ไม่มีบัตรที่จะแสดง"},
+"אין חלפים. חפש חלף להוספה.":{en:"No parts. Search to add one.",th:"ไม่มีอะไหล่ ค้นหาเพื่อเพิ่ม"},
+"לא נבחרו שירותים — בחר מהתפריט למעלה":{en:"No services — pick one from the menu above",th:"ยังไม่ได้เลือกบริการ — เลือกจากเมนูด้านบน"},
+"אין מיקום מתועד":{en:"No location recorded",th:"ไม่มีตำแหน่งบันทึกไว้"},
+"אין שירותים":{en:"No services",th:"ไม่มีบริการ"},
+"— בחר —":{en:"— Choose —",th:"— เลือก —"},
+"— בחר שירות —":{en:"— Choose a service —",th:"— เลือกบริการ —"},
+"— בחר שעה —":{en:"— Choose a time —",th:"— เลือกเวลา —"},
+"— בחר קודם תאריך —":{en:"— Choose a date first —",th:"— เลือกวันที่ก่อน —"},
+"— טוען… —":{en:"— Loading… —",th:"— กำลังโหลด… —"},
+"טוען כרטיס…":{en:"Loading card…",th:"กำลังโหลดบัตร…"},
+"חיפוש…":{en:"Search…",th:"ค้นหา…"},
+"ממתין להזדהות…":{en:"Waiting for sign-in…",th:"รอการเข้าสู่ระบบ…"},
+"מעלה תמונה…":{en:"Uploading photo…",th:"กำลังอัปโหลดรูป…"},
+"מעביר תור…":{en:"Moving appointment…",th:"กำลังย้ายนัด…"},
+"מרענן…":{en:"Refreshing…",th:"กำลังรีเฟรช…"},
+"מזהה…":{en:"Identifying…",th:"กำลังระบุตัวตน…"},
+"לחץ להגדלה":{en:"Click to enlarge",th:"คลิกเพื่อขยาย"},
+"לחץ לפתיחת הכרטיס":{en:"Open card",th:"เปิดบัตร"},
+"לחץ לפתיחת כרטיס הלקוח":{en:"Open customer",th:"เปิดข้อมูลลูกค้า"},
+"לחץ לפתיחת כרטיס הרכב":{en:"Open vehicle",th:"เปิดข้อมูลรถ"},
+"אין לך הרשאה לערוך את הרשימה הזו":{en:"You don't have permission to edit this list",th:"คุณไม่มีสิทธิ์แก้ไขรายการนี้"},
+"הסטטוס מתעדכן אוטומטית לפי החוקים":{en:"Status updates automatically by the rules",th:"สถานะอัปเดตอัตโนมัติตามกฎ"},
+"✓ נשמר":{en:"✓ Saved",th:"✓ บันทึกแล้ว"},
+"✓ נוסף":{en:"✓ Added",th:"✓ เพิ่มแล้ว"},
+"✓ הוסר":{en:"✓ Removed",th:"✓ ลบแล้ว"},
+"✓ הקובץ נמחק":{en:"✓ File deleted",th:"✓ ลบไฟล์แล้ว"},
+"✓ התמונה הועלתה":{en:"✓ Photo uploaded",th:"✓ อัปโหลดรูปแล้ว"},
+"✓ הלקוח עודכן":{en:"✓ Customer updated",th:"✓ อัปเดตลูกค้าแล้ว"},
+"✓ העובד עודכן":{en:"✓ Employee updated",th:"✓ อัปเดตพนักงานแล้ว"},
+"✓ נבחר לקוח קיים":{en:"✓ Existing customer selected",th:"✓ เลือกลูกค้าเดิมแล้ว"},
+"✓ נבחר רכב קיים":{en:"✓ Existing vehicle selected",th:"✓ เลือกรถเดิมแล้ว"},
+"✓ החלפים זוהו והתווספו":{en:"✓ Parts identified and added",th:"✓ ระบุและเพิ่มอะไหล่แล้ว"},
+"✓ המיקום נתפס":{en:"✓ Location captured",th:"✓ บันทึกตำแหน่งแล้ว"},
+"השמירה נכשלה":{en:"Save failed",th:"บันทึกไม่สำเร็จ"},
+"השמירה נכשלה — רענן":{en:"Save failed — refresh",th:"บันทึกไม่สำเร็จ — รีเฟรช"},
+"ההוספה נכשלה":{en:"Add failed",th:"เพิ่มไม่สำเร็จ"},
+"המחיקה נכשלה":{en:"Delete failed",th:"ลบไม่สำเร็จ"},
+"היצירה נכשלה":{en:"Create failed",th:"สร้างไม่สำเร็จ"},
+"החיפוש נכשל":{en:"Search failed",th:"ค้นหาไม่สำเร็จ"},
+"ההזדהות נכשלה":{en:"Sign-in failed",th:"เข้าสู่ระบบไม่สำเร็จ"},
+"שגיאה בהדפסה":{en:"Print error",th:"พิมพ์ผิดพลาด"},
+"הכרטיס לא נמצא":{en:"Card not found",th:"ไม่พบบัตร"},
+"הרכב לא נמצא":{en:"Vehicle not found",th:"ไม่พบรถ"},
+"הרשומה לא נמצאה":{en:"Record not found",th:"ไม่พบข้อมูล"},
+"טלפון לא תקין":{en:"Invalid phone",th:"เบอร์ไม่ถูกต้อง"},
+"טלפון נייד לא תקין — 10 ספרות שמתחילות ב-05":{en:"Invalid mobile — 10 digits starting 05",th:"เบอร์มือถือไม่ถูกต้อง — 10 หลักขึ้นต้น 05"},
+"מספר רכב חייב 7 או 8 ספרות":{en:"Plate must be 7 or 8 digits",th:"ทะเบียนต้องมี 7 หรือ 8 หลัก"},
+"צריך שם":{en:"Name required",th:"ต้องระบุชื่อ"},
+"צריך שם מלא":{en:"Full name required",th:"ต้องระบุชื่อเต็ม"},
+"צריך לבחור לקוח ורכב":{en:"Choose a customer and a vehicle",th:"ต้องเลือกลูกค้าและรถ"},
+"צריך לבחור לקוח קודם":{en:"Choose a customer first",th:"เลือกลูกค้าก่อน"},
+"צריך לבחור סוג טיפול":{en:"Choose a service type",th:"ต้องเลือกประเภทบริการ"},
+"צריך לבחור תאריך ושעה לתור":{en:"Choose a date and time",th:"ต้องเลือกวันและเวลานัด"},
+"לא נבחרו כרטיסים להדפסה":{en:"No cards selected to print",th:"ยังไม่ได้เลือกบัตรเพื่อพิมพ์"},
+"זה כבר התור הנוכחי":{en:"That's already the current slot",th:"นี่คือนัดปัจจุบันอยู่แล้ว"},
+"שחרור הסלוט נכשל — בדוק ידנית":{en:"Slot release failed — check manually",th:"ปล่อยช่วงเวลาไม่สำเร็จ — ตรวจสอบเอง"},
+"התמונה הזו כבר עובדה":{en:"This photo was already processed",th:"รูปนี้ประมวลผลแล้ว"},
+"לא זוהו חלפים בתמונה — צלם שוב, קרוב יותר לאריזה":{en:"No parts found — retake closer to the box",th:"ไม่พบอะไหล่ — ถ่ายใหม่ให้ใกล้กล่องขึ้น"},
+"מיקום לא זמין — הרשאת המיקום כבויה בדפדפן":{en:"Location unavailable — permission is off in the browser",th:"ไม่มีตำแหน่ง — สิทธิ์ตำแหน่งปิดอยู่ในเบราว์เซอร์"},
+"ההזדהות פגה — נא להתחבר מחדש":{en:"Session expired — please sign in again",th:"เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่"},
+"אין לך הרשאה לפעולה הזו":{en:"You don't have permission for this action",th:"คุณไม่มีสิทธิ์ทำรายการนี้"},
+"ההזדהות פגה או נדחתה — נא להתחבר מחדש":{en:"Sign-in expired or denied — please sign in again",th:"การเข้าสู่ระบบหมดอายุหรือถูกปฏิเสธ — กรุณาเข้าสู่ระบบใหม่"},
+"אין רשומה לשיוך התמונה":{en:"No record to attach the photo to",th:"ไม่มีข้อมูลสำหรับแนบรูป"},
+"ממתין להשלמת מחיר":{en:"Awaiting price",th:"รอกำหนดราคา"},
+"אין מחיר":{en:"No price",th:"ไม่มีราคา"},
+"לקוח חדש":{en:"New customer",th:"ลูกค้าใหม่"},
+"רכב חדש":{en:"New vehicle",th:"รถใหม่"},
+"טסט":{en:"Test",th:"ตรวจสภาพ"},
+"אישור":{en:"OK",th:"ตกลง"},"ביטול":{en:"Cancel",th:"ยกเลิก"},
 "סוג העבודה":{en:"Work type",th:"ประเภทงาน"},
 "חדש":{en:"New",th:"ใหม่"},"מחכה לטיפול":{en:"Waiting",th:"รอซ่อม"},"בטיפול":{en:"In service",th:"กำลังซ่อม"},
 "מוכן לתשלום":{en:"Ready to pay",th:"พร้อมชำระ"},"שולם":{en:"Paid",th:"ชำระแล้ว"},"בוטל":{en:"Cancelled",th:"ยกเลิก"},
@@ -636,6 +911,63 @@ var D={
 "עבודות":{en:"Labour",th:"ค่าแรง"},"חלקים":{en:"Parts",th:"อะไหล่"},"שירותים נוספים":{en:"Extra services",th:"บริการเสริม"}};
 function L(v){var k=txt(v); if(LANG==="he"||!k)return k; var e=D[k]; return e&&e[LANG]?e[LANG]:k;}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+/* ============================================================================
+   דיאלוגים בתוך האפליקציה — לא של הדפדפן
+   ----------------------------------------------------------------------------
+   הדיאלוגים המובנים של הדפדפן מציגים "האתר autocareabn.github.io אומר…",
+   נראים כמו אזהרת אבטחה, חוסמים את כל הטאב, לא ניתנים לעיצוב ולא מתורגמים.
+   appAsk / appTell מחליפים אותם בחלונית של האפליקציה: מעוצבת, בשפה הנבחרת,
+   Enter=אישור, Escape=ביטול, ומחזירים Promise כך שהקוד הקורא כמעט לא משתנה.
+   ========================================================================== */
+function appModal(msg,opts){
+  opts=opts||{};
+  return new Promise(function(res){
+    var ov=document.getElementById("askOv");
+    if(!ov){
+      ov=document.createElement("div"); ov.id="askOv";
+      ov.style.cssText="position:fixed;inset:0;background:rgba(16,20,32,.55);display:none;"
+        +"align-items:center;justify-content:center;z-index:9999;padding:18px";
+      ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:470px;width:100%;'
+        +'box-shadow:0 18px 50px rgba(0,0,0,.28);overflow:hidden">'
+        +'<div id="askMsg" style="padding:20px 22px;font-size:15px;line-height:1.65;'
+        +'white-space:pre-wrap;color:#1d2130"></div>'
+        +'<div id="askBtns" style="display:flex;gap:10px;padding:0 18px 18px"></div></div>';
+      document.body.appendChild(ov);
+    }
+    ov.dir=(LANG==="he"?"rtl":"ltr");
+    document.getElementById("askMsg").textContent=msg;
+    var b=document.getElementById("askBtns"); b.innerHTML="";
+    function shut(v){
+      ov.style.display="none";
+      document.removeEventListener("keydown",onKey,true);
+      res(v);
+    }
+    function onKey(e){
+      if(e.key==="Escape"){e.stopPropagation();e.preventDefault();shut(false);}
+      else if(e.key==="Enter"){e.stopPropagation();e.preventDefault();shut(true);}
+    }
+    var ok=document.createElement("button");
+    ok.textContent=opts.ok||L("אישור");
+    ok.style.cssText="flex:1;padding:11px 14px;border:0;border-radius:9px;color:#fff;"
+      +"font-size:15px;font-weight:bold;cursor:pointer;background:"+(opts.danger?"#ED1E24":"#1B7F35");
+    ok.onclick=function(){shut(true);};
+    b.appendChild(ok);
+    if(!opts.tellOnly){
+      var no=document.createElement("button");
+      no.textContent=opts.cancel||L("ביטול");
+      no.style.cssText="flex:1;padding:11px 14px;border:1px solid #cfd5e0;border-radius:9px;"
+        +"background:#fff;color:#1d2130;font-size:15px;cursor:pointer";
+      no.onclick=function(){shut(false);};
+      b.appendChild(no);
+    }
+    ov.style.display="flex";
+    document.addEventListener("keydown",onKey,true);
+    setTimeout(function(){try{ok.focus();}catch(e){}},50);
+  });
+}
+function appAsk(msg,opts){return appModal(msg,opts||{});}
+function appTell(msg){return appModal(msg,{tellOnly:true});}
+
 function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2300);}
 function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
 function ids(v){return (v||[]).map(function(x){return (x&&x.id)||x;});}
@@ -727,7 +1059,7 @@ async function markDone(){
   if(!CUR)return;
   var f=CUR.fields||{};
   if(!f["מיקום בסוף הטיפול"]||!ids(f["מיקום בסוף הטיפול"]).length){
-    if(!confirm("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
+    if(!await appAsk("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
   }
   var st=txt(f["סטטוס"]);
   if(!f["בעיית הלקוח טופלה"]){
@@ -736,7 +1068,7 @@ async function markDone(){
   }
   if(st==="מוכן לתשלום"||st==="שולם"){pDet();pPay();return;}
   if(!RULES.canMove(st,"מוכן לתשלום")){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
-  if(!confirm("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))return;
+  if(!await appAsk("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))return;
   window.__viaDone=true;
   try{ await changeStatus("מוכן לתשלום"); }
   finally{ window.__viaDone=false; }
@@ -955,7 +1287,7 @@ async function rmAtt(key,rid,attId){
 
   var msg="\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e7\u05d5\u05d1\u05e5?";
   if(lines.length)msg="\u05d9\u05d9\u05de\u05d7\u05e7\u05d5 \u05d2\u05dd "+lines.length+" \u05e9\u05d5\u05e8\u05d5\u05ea \u05d7\u05dc\u05e4\u05d9\u05dd \u05e9\u05d6\u05d5\u05d4\u05d5 \u05de\u05ea\u05de\u05d5\u05e0\u05d4 \u05d6\u05d5. \u05dc\u05d4\u05de\u05e9\u05d9\u05da?";
-  if(!confirm(msg+"\n\n\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05d0\u05d9\u05e0\u05d4 \u05d4\u05e4\u05d9\u05db\u05d4."))return;
+  if(!await appAsk(msg+"\n\n\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05d0\u05d9\u05e0\u05d4 \u05d4\u05e4\u05d9\u05db\u05d4."))return;
 
   try{
     /* 1. השורות שנוצרו מהתמונה — קודם, כדי שלא יישארו יתומות אם משהו ייכשל */
@@ -1093,11 +1425,97 @@ var UI={
  th:{work:"งาน",cus:"ลูกค้า",veh:"รถ",loc:"ตำแหน่ง",set:"ตั้งค่า",search:"ค้นหา…",
      details:"รายละเอียด",parts:"อะไหล่",services:"บริการ",checks:"ตรวจสอบ",pay:"ชำระเงิน",
      print:"🖨 พิมพ์บัตร",done:"✓ งานเสร็จแล้ว",close:"✕ ปิด",newcard:"+ บัตรใหม่"}};
+/* ============================================================================
+   מנוע התרגום — סריקת DOM, לא עטיפה של כל מחרוזת
+   ----------------------------------------------------------------------------
+   באפליקציה יש כמה מאות מחרוזות מוצגות, והן נבנות בתוך מחרוזות HTML.
+   לעטוף כל אחת ב-L() פירושו מאות עריכות ידניות ומאות הזדמנויות לפספס אחת —
+   וזה בדיוק מה שקרה עד עכשיו: הלשוניות תורגמו והשדות נשארו בעברית.
+   במקום זה: כל טקסט שנכנס ל-DOM עובר דרך המילון. Observer קולט גם תוכן
+   שנוצר אחרי הרינדור (חלוניות, טוסטים, תפריטים).
+   הטקסט המקורי נשמר על הצומת (__he) כדי שחזרה לעברית תהיה מדויקת.
+   ========================================================================== */
+var TR_ATTRS=["placeholder","title","aria-label","data-l"];
+function trLookup(t){
+  if(!t)return null;
+  var k=String(t).trim(); if(!k)return null;
+  var e=D[k]; if(e&&e[LANG])return String(t).replace(k,e[LANG]);
+  var m=k.match(/^(.*?)\s*\((\d+)\)$/);          /* "שירותים בכרטיס (3)" */
+  if(m){var e2=D[m[1]]; if(e2&&e2[LANG])return String(t).replace(k,e2[LANG]+" ("+m[2]+")");}
+  var st=k.match(/^(.*?)\s*\*$/);                  /* "שם לקוח *" — שדה חובה */
+  if(st){var e3=D[st[1]]; if(e3&&e3[LANG])return String(t).replace(k,e3[LANG]+" *");}
+  var cl=k.match(/^(.*?)\s*:$/);                    /* "הזיהוי נכשל:" */
+  if(cl){var e4=D[cl[1]]; if(e4&&e4[LANG])return String(t).replace(k,e4[LANG]+":");}
+  return null;
+}
+function trTextNode(n){
+  var v=trLookup(n.nodeValue);
+  if(v===null)return;
+  if(n.__he===undefined)n.__he=n.nodeValue;
+  n.nodeValue=v;
+}
+function trNode(root){
+  if(LANG==="he"||!root)return;
+  try{
+    if(root.nodeType===3){trTextNode(root);return;}
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false),n,jobs=[];
+    while(n=w.nextNode())jobs.push(n);
+    jobs.forEach(trTextNode);
+    var els=root.querySelectorAll?root.querySelectorAll("*"):[];
+    [].forEach.call(els,function(el){
+      TR_ATTRS.forEach(function(a){
+        var v=el.getAttribute&&el.getAttribute(a); if(!v)return;
+        var nv=trLookup(v); if(nv===null)return;
+        if(el.getAttribute("data-he-"+a)===null)el.setAttribute("data-he-"+a,v);
+        el.setAttribute(a,nv);
+      });
+    });
+  }catch(e){}
+}
+/* חזרה לעברית — משחזרים את המקור במקום לתרגם הפוך */
+function trRestore(root){
+  root=root||document.body; if(!root)return;
+  try{
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false),n;
+    while(n=w.nextNode())if(n.__he!==undefined){n.nodeValue=n.__he;n.__he=undefined;}
+    [].forEach.call(root.querySelectorAll("*"),function(el){
+      TR_ATTRS.forEach(function(a){
+        var o=el.getAttribute("data-he-"+a);
+        if(o!==null){el.setAttribute(a,o);el.removeAttribute("data-he-"+a);}
+      });
+    });
+  }catch(e){}
+}
+var TR_OBS=null;
+function trStart(){
+  if(TR_OBS||typeof MutationObserver==="undefined"||!document.body)return;
+  TR_OBS=new MutationObserver(function(muts){
+    if(LANG==="he")return;
+    TR_OBS.disconnect();
+    try{
+      muts.forEach(function(m){
+        [].forEach.call(m.addedNodes,function(n){
+          if(n.nodeType===3)trTextNode(n); else if(n.nodeType===1)trNode(n);
+        });
+      });
+    }catch(e){}
+    TR_OBS.observe(document.body,{childList:true,subtree:true});
+  });
+  TR_OBS.observe(document.body,{childList:true,subtree:true});
+}
+
 function t(k){return (UI[LANG]||UI.he)[k]||(UI.he[k]||k);}
-function setLang(l){LANG=l;try{localStorage.setItem("abnLang",l);}catch(e){}
+function setLang(l){
+ /* סדר הפעולות חשוב: קודם משחזרים את העברית המקורית (אחרת נתרגם טקסט
+    שכבר תורגם ולא נמצא במילון), אחר כך מרנדרים, ורק אז מתרגמים הכל. */
+ trRestore(document.body);
+ LANG=l;try{localStorage.setItem("abnLang",l);}catch(e){}
  document.documentElement.dir=(l==="he"?"rtl":"ltr");
  drawNav();drawTabs();draw();if(CUR){var id=CUR.id;closeCard();openCard(id);}
- document.getElementById("q").placeholder=t("search");}
+ var qq=document.getElementById("q"); if(qq)qq.placeholder=t("search");
+ try{greet();}catch(e){}
+ if(l!=="he"){trStart();trNode(document.body);}
+}
 /* ============ NAV ============ */
 function drawNav(){var ok=myViews();
  document.getElementById("nav").innerHTML=VIEWS.filter(function(v){return ok.indexOf(v[0])>=0;}).map(function(v){
@@ -1110,7 +1528,7 @@ function setV(v){VIEW=v;FOUND=[];document.getElementById("q").value="";drawNav()
 function onSearch(){if(VIEW==="cus"||VIEW==="veh"){clearTimeout(window.__t);window.__t=setTimeout(remoteSearch,350);}else draw();}
 
 /* ============ WORK ============ */
-var TABS=[["today","היום"],["tomorrow","מחר"],["test","טסטים מחר"],["future","עתידיים"],["work","בטיפול"],["pay","מוכן לתשלום"],["openc","לא נסגרו"],["closed","נסגרו היום"],["all","הכל"]];
+var TABS=[["today","היום"],["tomorrow","מחר"],["test","טסטים מחר"],["future","עתידיים"],["work","בטיפול"],["pay","מוכן לתשלום"],["closed","נסגרו היום"],["all","הכל"]];
 function match(r,k){var f=r.fields||{},d=dk(f["תאריך ושעה"]),st=txt(f["סטטוס"]),tp=txt(f["סוג טיפול"]);
  /* כרטיס ששולם יורד מכל המסכים — חוץ מ"נסגרו היום" ו"הכל" */
  if(st==="שולם"&&k!=="closed"&&k!=="all")return false;
@@ -1287,7 +1705,7 @@ async function fillMoveTimes(){
 async function moveSlot(id){
   if(!id||!CUR)return;
   var r=SLOTS.filter(function(x){return x.id===id;})[0];
-  if(!confirm("להעביר את הכרטיס ל: "+slotLabel(r)+" ?\n\nהסלוט הנוכחי ישוחרר והלקוח יקבל הודעה."))return;
+  if(!await appAsk("להעביר את הכרטיס ל: "+slotLabel(r)+" ?\n\nהסלוט הנוכחי ישוחרר והלקוח יקבל הודעה."))return;
   var f=CUR.fields||{}, oldId=ids(f["תור"])[0]||null, woId=CUR.id;
   if(oldId===id){toast("זה כבר התור הנוכחי");return;}
   toast("מעביר תור…");
@@ -1305,7 +1723,7 @@ async function moveSlot(id){
 }
 async function cancelAppt(){
   if(!CUR)return;
-  if(!confirm("לבטל את התור?\n\nהסלוט ישוחרר והלקוח יקבל הודעת ביטול."))return;
+  if(!await appAsk("לבטל את התור?\n\nהסלוט ישוחרר והלקוח יקבל הודעת ביטול."))return;
   await changeStatus("בוטל");
   loadSlots();
 }
@@ -1451,7 +1869,13 @@ function pPay(){
   var net=partsSum+svcSum+labour;
   var vat=net*0.18, gross=net+vat;
   var atNet=f['\u05e1\u05d4"\u05db \u05dc\u05e4\u05e0\u05d9 \u05de\u05e2"\u05de'], atGross=f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd'];
-  var drift=(atGross!=null)&&Math.abs(Number(atGross)-gross)>0.5&&(new Date().getTime()-LAST_LOCAL>6000);
+  /* ⚠️ הנוסחה "סה\"כ לשורה" ב-Airtable מכפילה בכמות את *מחיר הקטלוג*, לא את
+     "מחיר ליחידה (בזמן השימוש)" שמוקלד כאן. לחלף שמחירו בקטלוג 0 השניים לעולם
+     לא יתלכדו — זו אינה בעיית תזמון ואין טעם להתריע עליה. */
+  var catGap=ls.some(function(r){var g=r.fields||{};
+    return Number(g["מחיר קטלוג"]||0)===0 && Number(g["מחיר ליחידה (בזמן השימוש)"]||0)>0;});
+  var drift=(atGross!=null)&&Math.abs(Number(atGross)-gross)>0.5
+            &&(new Date().getTime()-LAST_LOCAL>6000)&&!catGap;
 
   var warn="";
   if(noPrice)warn+='<div class="hint" style="background:#FDECEC;border-color:var(--red);color:#8a1220">\u26a0\ufe0f '+noPrice+' \u05d7\u05dc\u05e4\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8 \u2014 \u05d4\u05dd \u05d9\u05d5\u05e4\u05d9\u05e2\u05d5 \u05d1\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05d1-0.00 \u20aa</div>';
@@ -1648,7 +2072,7 @@ async function sendToCustomer(){
   var f=CUR.fields||{};
   var loc=txt(f["\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc"]);
   var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
-  if(!confirm("\u05dc\u05e9\u05dc\u05d5\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea?\n\n\u2022 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df\n\u2022 \u05de\u05d9\u05e7\u05d5\u05dd: "+loc
+  if(!await appAsk("\u05dc\u05e9\u05dc\u05d5\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea?\n\n\u2022 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df\n\u2022 \u05de\u05d9\u05e7\u05d5\u05dd: "+loc
     +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
   patchWO({"\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":new Date().toISOString().slice(0,10)},pPay,
     "\u05e0\u05e9\u05dc\u05d7\u05d4 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d0\u05d5\u05d7\u05d3\u05ea \u05dc\u05dc\u05e7\u05d5\u05d7");
@@ -1763,11 +2187,15 @@ async function releaseSlot(slotId){
 function patchWO(fields,rd,note){
   var rid=CUR.id;
   Object.keys(fields).forEach(function(k){CUR.fields[k]=fields[k];});
+  LAST_LOCAL=new Date().getTime();
   if(rd)rd();draw();drawTabs();
   fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
    .then(function(r){return r.ok?r.json():Promise.reject();})
    .then(function(d){var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
-     if(CUR&&CUR.id===d.id)CUR=d;
+     if(CUR&&CUR.id===d.id){CUR=d;
+       /* הרשומה חזרה מהשרת — מציירים מחדש מיד במקום לחכות ל-refetchCard */
+       if(rd)try{rd();}catch(e){}
+     }
      toast("✓ נשמר"+(note?" · "+note:""));draw();drawTabs();
      if(note)refetchCard(rid,0);})
    .catch(function(){toast("השמירה נכשלה — רענן",1);});}
@@ -1798,22 +2226,22 @@ async function changeStatus(to){
   if(to==="מוכן לתשלום"){
     /* 2.0 שער יחיד: המעבר מתבצע אך ורק דרך "✓ סיימתי את העבודה" של המכונאי. */
     if(!window.__viaDone){
-      alert("⛔ אי אפשר להעביר ידנית ל\"מוכן לתשלום\".\n\nהמעבר מתבצע רק אחרי שהמכונאי לוחץ על \"✓ סיימתי את העבודה\" בכרטיס.");
+      await appTell("⛔ אי אפשר להעביר ידנית ל\"מוכן לתשלום\".\n\nהמעבר מתבצע רק אחרי שהמכונאי לוחץ על \"✓ סיימתי את העבודה\" בכרטיס.");
       pDet();return;
     }
     /* 2א. חסימה קשיחה: חלף ללא מחיר → חשבונית שגויה. אין דריסה. */
     var noPrice=unpricedParts();
     if(noPrice.length){
-      alert("⛔ לא ניתן לסגור לתשלום — "+noPrice.length+" חלפים ללא מחיר:\n\n• "
+      await appTell("⛔ לא ניתן לסגור לתשלום — "+noPrice.length+" חלפים ללא מחיר:\n\n• "
         +noPrice.slice(0,8).join("\n• ")+(noPrice.length>8?"\n• ועוד "+(noPrice.length-8):"")
         +"\n\nהשלם מחיר בלשונית \"חלפים\" ונסה שוב.\nחשבונית עם שורת 0.00 ₪ לא תצא מהמערכת.");
       mt(1); pParts(); return;
     }
     if(!ids(f["מיקום בסוף הטיפול"]).length){
-      if(!confirm("⚠️ לא עודכן מיקום הרכב בסוף הטיפול.\n\nלהמשיך בכל זאת?")){pDet();return;}
+      if(!await appAsk("⚠️ לא עודכן מיקום הרכב בסוף הטיפול.\n\nלהמשיך בכל זאת?")){pDet();return;}
     }
     if(!f["בעיית הלקוח טופלה"]){
-      if(!confirm("⚠️ \"בעיית הלקוח טופלה\" לא מסומן.\n\nלא ניתן לסגור כרטיס בלי לטפל בבעיית הלקוח.\nלסמן ולהמשיך?")){pDet();return;}
+      if(!await appAsk("⚠️ \"בעיית הלקוח טופלה\" לא מסומן.\n\nלא ניתן לסגור כרטיס בלי לטפל בבעיית הלקוח.\nלסמן ולהמשיך?")){pDet();return;}
       extra["בעיית הלקוח טופלה"]=true;
     }
     if(!f["תאריך סגירה"]){extra["תאריך סגירה"]=new Date().toISOString();}
@@ -1865,7 +2293,7 @@ function refetchCard(id,tries){
        draw();drawTabs();
        if(tries<1)refetchCard(id,tries+1);
      }).catch(function(){});
-  },tries===0?2200:4000);
+  },tries===0?900:3000);
 }
 function setChk(name,on){var o={};o[name]=!!on;patchWO(o,pChecks);}
 function setLink(fld,id){
@@ -1873,10 +2301,13 @@ function setLink(fld,id){
   var o={};o[fld]=id?[id]:[];patchWO(o,pDet);}
 function setNum(fld,v){var o={};var n=parseFloat(v);o[fld]=isNaN(n)?null:n;patchWO(o,fld==="עלות עבודה"?pPay:pDet);}
 function setTxt(fld,v){var o={};o[fld]=v||"";patchWO(o,null);}
+/* הוספת/הסרת שירות משנה גם את החשבון — שתי הלשוניות מצוירות מחדש מיד,
+   מהנתונים שכבר בזיכרון, בלי להמתין לשדות המחושבים של Airtable. */
+function svcRepaint(){try{pSvc();}catch(e){} try{pPay();}catch(e){}}
 function addSvc(id){if(!id)return;var cur=ids((CUR.fields||{})["שירותים נוספים:"]);if(cur.indexOf(id)<0)cur.push(id);
- patchWO({"שירותים נוספים:":cur},pSvc);}
+ patchWO({"שירותים נוספים:":cur},svcRepaint);}
 function rmSvc(id){var cur=ids((CUR.fields||{})["שירותים נוספים:"]).filter(function(x){return x!==id;});
- patchWO({"שירותים נוספים:":cur},pSvc);}
+ patchWO({"שירותים נוספים:":cur},svcRepaint);}
 function patchLine(id,fields){var i=-1;LINES.forEach(function(r,n){if(r.id===id)i=n;});
  if(i>=0)Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});
  LAST_LOCAL=new Date().getTime();pParts();try{pPay();}catch(e){}
@@ -2264,7 +2695,7 @@ async function createCard(){
 
     WOS.push(rec);drawTabs();draw();
     toast("\u2713 נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||""));
-    if(lux)setTimeout(function(){alert("\ud83d\ude97 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
+    if(lux)setTimeout(function(){appTell("\ud83d\ude97 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
     RULES.fire("newCard",rec.id);
     closeCard();setTimeout(function(){openCard(rec.id);},400);
   }catch(e){
@@ -2419,11 +2850,11 @@ function saveRec(kind,id){
    .then(function(){toast("\u2713 נשמר");closeCard();reloadRefs();})
    .catch(function(){toast("השמירה נכשלה",1);});
 }
-function delRec(kind,id){
+async function delRec(kind,id){
   var c=CRUD[kind]; if(!c)return;
   var nm=txt(((EDIT_REC||{}).fields||{})[c.key])||"";
-  if(!confirm("למחוק את "+c.label+' "'+nm+'" לצמיתות?\n\nהפעולה אינה הפיכה. רשומות שמקושרות אליה יאבדו את הקישור.'))return;
-  if(!confirm("אישור אחרון \u2014 למחוק את \""+nm+"\"?"))return;
+  if(!await appAsk("למחוק את "+c.label+' "'+nm+'" לצמיתות?\n\nהפעולה אינה הפיכה. רשומות שמקושרות אליה יאבדו את הקישור.'))return;
+  if(!await appAsk("אישור אחרון \u2014 למחוק את \""+nm+"\"?"))return;
   fetch(PX+B+"/"+c.tbl+"/"+id,{method:"DELETE"})
    .then(function(r){return r.ok?r.json():Promise.reject();})
    .then(function(){toast("\u2713 נמחק");closeCard();reloadRefs();})
@@ -2630,6 +3061,7 @@ function bootWhenReady(){
   try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
   document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
   try{drawNav();}catch(e){}
+  if(LANG!=="he"){trStart();trNode(document.body);}
   if(window.__idToken){bootOnce();return;}
   /* ⚠️ אין להמתין כאן לטוקן בלולאה. showGate() הוא זה שמאתחל את ספריית
      גוגל ומפעיל את החידוש השקט — המתנה לפניו פירושה המתנה למשהו שעוד
