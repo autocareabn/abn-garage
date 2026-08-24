@@ -484,6 +484,8 @@ function switchMechanic(){try{localStorage.removeItem("abnMech");}catch(e){} pic
 function finishSignIn(){
   document.getElementById("gate").style.display="none";
   applyRole(); greet(); drawNav(); drawTabs(); draw();
+  /* עכשיו יש טוקן — זה הרגע למשוך נתונים, לא לפני כן */
+  bootOnce();
   return true;
 }
 function signOut(){
@@ -2557,7 +2559,16 @@ async function boot(){
   document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
   drawNav();
   try{WOS=await all(T.wo);drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
-  catch(e){document.getElementById("list").innerHTML='<div class="empty">שגיאה בטעינה: '+esc(String(e.message||e))+'</div>';return;}
+  catch(e){
+    var msg=String(e.message||e);
+    BOOTED=false;                       /* שניתן יהיה לנסות שוב אחרי התחברות */
+    if(/\b(401|403)\b|PROXY_FORBIDDEN|Authorization|token/i.test(msg)){
+      document.getElementById("list").innerHTML='<div class="empty">\u05d4\u05d4\u05d6\u05d3\u05d4\u05d5\u05ea \u05e4\u05d2\u05d4 \u05d0\u05d5 \u05e0\u05d3\u05d7\u05ea\u05d4 \u2014 \u05e0\u05d0 \u05dc\u05d4\u05ea\u05d7\u05d1\u05e8 \u05de\u05d7\u05d3\u05e9</div>';
+      try{showGate();}catch(x){}
+      return;
+    }
+    document.getElementById("list").innerHTML='<div class="empty">\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05d4: '+esc(msg)+'</div>';return;
+  }
   try{LINES=await all(T.ln);if(CUR){pParts();pPay();}}catch(e){}
   loadSlots().then(function(){if(CUR)pDet();});
   try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
@@ -2568,7 +2579,37 @@ async function boot(){
   if(!ME.role)showGate(); else {applyRole();greet();drawNav();drawTabs();draw();}
 }
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
-boot();
+
+/* ============================================================================
+   סדר האתחול — קודם זהות, אחר כך נתונים
+   ----------------------------------------------------------------------------
+   עד כאן boot() נקרא מיד עם טעינת הדף, לפני שגוגל החזירה טוקן.
+   הבקשה הראשונה יצאה בלי כותרת Authorization. כל עוד ה-Worker היה
+   ב-AUTH_MODE=report הוא העביר אותה בכל זאת והכל עבד. ברגע שהאכיפה
+   הופעלה, אותה בקשה מקבלת 401, boot() נופל ב-catch ועושה return —
+   ולכן WOS, LINES, SVC, EMP נשארים ריקים. אחר כך ההתחברות מסתיימת,
+   draw() דורס את הודעת השגיאה ב-"אין כרטיסים להצגה", והמשתמש רואה
+   מסך ריק בלי שום רמז למה קרה.
+   הבאג הזה קיים מ-WP-8; מצב report הסתיר אותו.
+   ========================================================================== */
+var BOOTED=false;
+function bootOnce(){ if(BOOTED)return; BOOTED=true; boot(); }
+async function bootWhenReady(){
+  try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
+  document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
+  try{drawNav();}catch(e){}
+  var el=document.getElementById("list");
+  if(el)el.innerHTML='<div class="boot"><div class="sp">\u23f3</div><div style="margin-top:10px">\u05de\u05de\u05ea\u05d9\u05df \u05dc\u05d4\u05d6\u05d3\u05d4\u05d5\u05ea\u2026</div></div>';
+  /* ממתינים עד 30 שניות לטוקן. finishSignIn בדרך כלל יקדים אותנו. */
+  for(var i=0;i<60;i++){
+    if(window.__idToken||BOOTED)break;
+    await new Promise(function(r){setTimeout(r,500);});
+  }
+  if(BOOTED)return;
+  if(!window.__idToken){showGate();return;}
+  bootOnce();
+}
+bootWhenReady();
 </script>
 </body>
 </html>
