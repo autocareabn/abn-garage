@@ -564,13 +564,34 @@ function showGate(){
       {theme:"filled_blue",size:"large",text:"signin_with",locale:"he"});
   }catch(e){g.querySelector("p").textContent="טעינת Google נכשלה — רענן את הדף";}
 }
+/* ============================================================================
+   טעינת טבלת העובדים — לפני זיהוי המשתמש, אחרי שיש טוקן
+   ----------------------------------------------------------------------------
+   signInWithEmail ו-pickMechanic שניהם נסמכים על EMP: הראשון כדי לזהות
+   כתובת שאינה ברשימה הקבועה, השני כדי להציג "מי אתה?" לחשבון המכונאים
+   המשותף. עד עכשיו EMP נטען ב-boot() שרץ ראשון, ולכן זה עבד. מרגע
+   שהאכיפה הופעלה, boot() רץ רק אחרי ההתחברות — ו-EMP היה ריק בדיוק
+   כשהיו צריכים אותו. התוצאה: כל מכונאי נכנס בתור "מכונאי" גנרי, בלי
+   שנשאל מי הוא, והכרטיסים לא שויכו נכון.
+   ========================================================================== */
+var EMP_LOADED=false;
+async function ensureEmp(){
+  if(EMP_LOADED&&EMP.length)return EMP;
+  try{ EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};}); EMP_LOADED=true; }catch(e){}
+  return EMP;
+}
+
 function onGoogle(res){
+  var p;
   try{
-    var p=JSON.parse(decodeURIComponent(atob(res.credential.split(".")[1])
+    p=JSON.parse(decodeURIComponent(atob(res.credential.split(".")[1])
         .split("").map(function(c){return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
     window.__idToken=res.credential;      /* נשלח ל-Worker בכל בקשה אחרי WP-8 */
-    signInWithEmail(p.email);
-  }catch(e){toast("ההזדהות נכשלה",1);}
+  }catch(e){toast("ההזדהות נכשלה",1);return;}
+  try{var pp=document.querySelector("#gate p"); if(pp)pp.textContent="מזהה…";}catch(e){}
+  /* EMP חייב להיות טעון לפני signInWithEmail — ראה ההערה מעל ensureEmp */
+  ensureEmp().then(function(){ signInWithEmail(p.email); })
+             .catch(function(){ signInWithEmail(p.email); });
 }
 
 
@@ -1366,17 +1387,26 @@ function pParts(){var ls=myLines(),sum=0,mon=can("money");
   +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
 
 function pSvc(){var f=CUR.fields||{},cur=ids(f["שירותים נוספים:"]),mon=can("money");
- /* ⚠️ שם שדה הקישור הוא "שירותים נוספים:" — עם נקודתיים בסוף. */
+ /* ⚠️ שם שדה הקישור הוא "שירותים נוספים:" — עם נקודתיים בסוף.
+    תפריט ההוספה נמצא למעלה, לפני הרשימה: זה מה שמחפשים כשנכנסים לכאן. */
+ var avail=SVC.filter(function(s){return cur.indexOf(s.id)<0;})
+   .sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""),"he");});
+ var add='<div class="f" style="margin-top:0"><label>הוסף שירות מהקטלוג</label>'
+  +'<select onchange="addSvc(this.value);this.value=\'\'">'
+  +'<option value="">— בחר שירות —</option>'
+  +avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+(mon&&Number(s.price)>0?' · ₪'+Number(s.price).toFixed(2):'')+'</option>';}).join("")
+  +'</select></div>';
+
  var rowsHtml=cur.map(function(id){var s=SVC.filter(function(x){return x.id===id;})[0];
   return '<div class="ln"><div class="nm">'+esc(s?s.name:"(שירות)")+'</div>'
-   +(mon?'<div class="lt">'+(s?Number(s.price||0).toFixed(2):"")+'</div>':'')
-   +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';}).join("")
-  ||'<div class="empty" style="padding:16px">לא נבחרו שירותים</div>';
- var avail=SVC.filter(function(s){return cur.indexOf(s.id)<0;});
- document.getElementById("p2").innerHTML='<div class="hd"><span class="nm">שירות</span>'+(mon?'<span class="c3">מחיר</span>':'')+'<span class="c4"></span></div>'
-  +rowsHtml
-  +'<div class="f" style="margin-top:12px"><label>+ הוסף שירות מהקטלוג</label><select onchange="addSvc(this.value);this.value=\'\'">'
-  +'<option value="">— בחר שירות —</option>'+avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+(mon?' · ₪'+Number(s.price||0).toFixed(2):'')+'</option>';}).join("")+'</select></div>'
+   +(mon?'<div class="lt">'+(s&&Number(s.price)>0?Number(s.price).toFixed(2):"—")+'</div>':'')
+   +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';}).join("");
+
+ document.getElementById("p2").innerHTML=add
+  +'<div class="sec">שירותים בכרטיס ('+cur.length+')</div>'
+  +(rowsHtml
+     ? '<div class="hd"><span class="nm">שירות</span>'+(mon?'<span class="c3">מחיר</span>':'')+'<span class="c4"></span></div>'+rowsHtml
+     : '<div class="empty" style="padding:16px">לא נבחרו שירותים — בחר מהתפריט למעלה</div>')
   +(mon?'<div class="tot"><span>סך שירותים</span><span>'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</span></div>':'');}
 
 function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(L(name))+'</span></label>';}
@@ -1386,11 +1416,13 @@ function pChecks(){var f=CUR.fields||{};
   +sel("מערכת בלמים אחורית","מערכת בלמים אחורית",BRAKE,txt(f["מערכת בלמים אחורית"]))
   +sel("נוזל בלמים","נוזל בלמים",FLUID,txt(f["נוזל בלמים"]))
   +sel("נוזל קירור","נוזל קירור",COOL,txt(f["נוזל קירור"]))
-  +'</div><div class="sec">בדיקות</div><div class="g3">'+CHECKS.map(function(c){return chk(c,!!f[c]);}).join("")+'</div>'
-  +'<div class="sec">שדות נוספים</div><div class="grid">'
-  +'<div class="f"><label>בונוס לטיפול</label><input type="number" value="'+(f["בונוס לטיפול"]==null?"":f["בונוס לטיפול"])+'" onchange="setNum(\'בונוס לטיפול\',this.value)"></div>'
-  +'<div class="f"><label>תור</label><div class="v">'+esc(txt(f["תור"]))+'</div></div>'
-  +'</div>';}
+  +'</div><div class="sec">בדיקות</div><div class="g3">'+CHECKS.map(function(c){return chk(c,!!f[c]);}).join("")+'</div>';}
+/* ⚠️ הוסר: בלוק "שדות נוספים" שהיה כאן.
+   "בונוס לטיפול" הוא שדה lookup (fld9cT5nXbTshxQS2) — קריאה בלבד ב-Airtable.
+   התיבה נראתה כמו שדה עריכה אבל כל הקלדה בה הוחזרה ב-422 בשקט. הבונוס
+   מחושב מטבלת "ימי עבודה למכונאי" ואין מה לערוך אותו כאן.
+   "תור" הציג מזהה רשומה גולמי (recxzuup6Z1oPMRda) — חסר משמעות למשתמש.
+   תאריך התור כבר מוצג בלשונית "פרטים" תחת "תאריך התור". */
 
 /* חותמת השינוי המקומי האחרון. האזהרה על פער מול Airtable מוצגת רק
    אחרי 6 שניות — לפני כן השדות המחושבים של Airtable עוד לא הספיקו
@@ -2573,7 +2605,7 @@ async function boot(){
   loadSlots().then(function(){if(CUR)pDet();});
   try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
   try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
-  try{EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};});}catch(e){}
+  await ensureEmp();
   if(VIEW!=="work")draw();
   document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים · "+APP_VERSION;
   if(!ME.role)showGate(); else {applyRole();greet();drawNav();drawTabs();draw();}
@@ -2594,20 +2626,15 @@ function reload(){document.getElementById("list").innerHTML='<div class="boot"><
    ========================================================================== */
 var BOOTED=false;
 function bootOnce(){ if(BOOTED)return; BOOTED=true; boot(); }
-async function bootWhenReady(){
+function bootWhenReady(){
   try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
   document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
   try{drawNav();}catch(e){}
-  var el=document.getElementById("list");
-  if(el)el.innerHTML='<div class="boot"><div class="sp">\u23f3</div><div style="margin-top:10px">\u05de\u05de\u05ea\u05d9\u05df \u05dc\u05d4\u05d6\u05d3\u05d4\u05d5\u05ea\u2026</div></div>';
-  /* ממתינים עד 30 שניות לטוקן. finishSignIn בדרך כלל יקדים אותנו. */
-  for(var i=0;i<60;i++){
-    if(window.__idToken||BOOTED)break;
-    await new Promise(function(r){setTimeout(r,500);});
-  }
-  if(BOOTED)return;
-  if(!window.__idToken){showGate();return;}
-  bootOnce();
+  if(window.__idToken){bootOnce();return;}
+  /* ⚠️ אין להמתין כאן לטוקן בלולאה. showGate() הוא זה שמאתחל את ספריית
+     גוגל ומפעיל את החידוש השקט — המתנה לפניו פירושה המתנה למשהו שעוד
+     לא התחיל. הטוקן מגיע באירוע (onGoogle), לא בסקר. */
+  showGate();
 }
 bootWhenReady();
 </script>
