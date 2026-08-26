@@ -356,21 +356,51 @@ var PROXY_HOST="abn-airtable-proxy.autocareabn.workers.dev";
     init.headers=h;
     return _f(u,init).then(function(r){
       try{var sr=r.headers.get("X-ABN-Role"); if(sr)srvRole(sr);}catch(e){}
-      if(r.status===401||r.status===403)proxyDenied(r.status);
+      if(r.status===401||r.status===403){
+        /* קוראים את הסיבה מהשרת על עותק, כדי לא לצרוך את הגוף המקורי.
+           בלי זה כל כישלון הזדהות נראה אותו דבר ואי אפשר לאבחן. */
+        try{
+          r.clone().text().then(function(t){
+            var m=""; try{m=((JSON.parse(t)||{}).error||{}).message||"";}catch(e){m=String(t).slice(0,140);}
+            proxyDenied(r.status,m);
+          },function(){proxyDenied(r.status,"");});
+        }catch(e){proxyDenied(r.status,"");}
+      }
       return r;
     });
   };
 })();
-var __deniedAt=0;
-function proxyDenied(code){
+var __deniedAt=0, __authFails=0, AUTH_ERR="";
+/* ============================================================================
+   ⚠️ v20 — הבאג שנעל את האפליקציה על מסך "מזהה…"
+   קודם לכן כל 401 בודד עשה שני דברים הרסניים: איפס את הטוקן, והציג מחדש
+   את השער. השער מפעיל את google.accounts.id.prompt() עם auto_select, גוגל
+   מחזירה מיד קרדנציאל, onGoogle כותב "מזהה…", boot() נכשל שוב ב-401 —
+   וחוזר חלילה, לנצח. מסך תקוע בלי שום הודעת שגיאה.
+   עכשיו: טוקן שעדיין בתוקף לא מנותק בגלל 401 בודד, השער לא מבקש
+   התחברות אוטומטית אחרי כישלון, וסיבת הדחייה מהשרת מוצגת על המסך.
+   ========================================================================== */
+function proxyDenied(code,msg){
   var now=new Date().getTime();
-  if(now-__deniedAt<6000)return;          /* לא להציף בהודעות */
-  __deniedAt=now;
-  try{toast(code===401?"ההזדהות פגה — נא להתחבר מחדש":"אין לך הרשאה לפעולה הזו",1);}catch(e){}
-  if(code===401){
-    window.__idToken=null;
-    setTimeout(function(){try{showGate();}catch(e){}},1200);
+  if(code!==401){
+    if(now-__deniedAt>6000){__deniedAt=now;try{toast("אין לך הרשאה לפעולה הזו",1);}catch(e){}}
+    return;
   }
+  __authFails++;
+  var live = window.__idExp && now < (window.__idExp-30000);
+  if(live && ME.role && __authFails<3){
+    /* הטוקן חי והמשתמש כבר מחובר — זו דחייה נקודתית, לא פקיעה.
+       לא מנתקים ולא מציגים שער: זה בדיוק מה שיצר את הלולאה. */
+    if(now-__deniedAt>6000){__deniedAt=now;try{toast("השרת דחה את הבקשה"+(msg?" — "+msg:""),1);}catch(e){}}
+    return;
+  }
+  if(now-__deniedAt<6000)return;
+  __deniedAt=now;
+  AUTH_ERR=String(msg||"401");
+  try{toast("ההזדהות פגה — נא להתחבר מחדש",1);}catch(e){}
+  window.__idToken=null; window.__idExp=0;
+  try{if(typeof google!=="undefined"&&google.accounts)google.accounts.id.disableAutoSelect();}catch(e){}
+  setTimeout(function(){try{showGate();}catch(e){}},1200);
 }
 /* ===== WP-9 — התפקיד נקבע בשרת, לא באפליקציה =====
    ה-Worker (v4) מחזיר X-ABN-Role בכל תשובה והוא הסמכות היחידה. אם הוא אמר
@@ -385,7 +415,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v19";
+var APP_VERSION="v20";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -494,6 +524,7 @@ function chooseMechanic(id){
 function switchMechanic(){try{localStorage.removeItem("abnMech");}catch(e){} pickMechanic();}
 
 function finishSignIn(){
+  AUTH_ERR=""; __authFails=0; BOOT_FAILS=0;
   document.getElementById("gate").style.display="none";
   applyRole(); greet(); drawNav(); drawTabs(); draw();
   /* עכשיו יש טוקן — זה הרגע למשוך נתונים, לא לפני כן */
@@ -502,7 +533,9 @@ function finishSignIn(){
 }
 function signOut(){
   ME={email:null,role:null,name:"",empId:null};
+  window.__idToken=null; window.__idExp=0; AUTH_ERR=""; __authFails=0; BOOT_FAILS=0;
   try{localStorage.removeItem("abnMech");}catch(e){}
+  try{if(typeof google!=="undefined"&&google.accounts)google.accounts.id.disableAutoSelect();}catch(e){}
   showGate();
 }
 
@@ -564,14 +597,18 @@ function showGate(){
     return;
   }
   g.innerHTML='<div class="gate-box"><div class="gate-logo">ABN</div>'
-    +'<h2>ניהול מוסך אמיר בן ניסן</h2><p>כניסה עם חשבון Google</p>'
+    +'<h2>ניהול מוסך אמיר בן ניסן</h2>'
+    +'<p>'+(AUTH_ERR?"ההזדהות נדחתה — נסה להתחבר שוב":"כניסה עם חשבון Google")+'</p>'
+    +(AUTH_ERR?'<p style="color:var(--red);font-size:12px;direction:ltr;text-align:left;word-break:break-word;max-width:320px;margin:0 auto 10px">'+esc(AUTH_ERR)+'</p>':'')
     +'<div id="gbtn"></div></div>';
   if(typeof google==="undefined"||!google.accounts){   /* הסקריפט של Google עדיין נטען */
     setTimeout(showGate,300); return;
   }
   try{
-    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:true,itp_support:true});
-    google.accounts.id.prompt();   /* חידוש שקט של הטוקן ברענון דף */
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle,auto_select:!AUTH_ERR,itp_support:true});
+    /* ⚠️ אחרי כישלון הזדהות אין prompt אוטומטי — אחרת גוגל מחזירה מיד
+       את אותו טוקן שנדחה, וזו הלולאה. המשתמש לוחץ על הכפתור במודע. */
+    if(!AUTH_ERR)google.accounts.id.prompt();
     google.accounts.id.renderButton(document.getElementById("gbtn"),
       {theme:"filled_blue",size:"large",text:"signin_with",locale:"he"});
   }catch(e){g.querySelector("p").textContent="טעינת Google נכשלה — רענן את הדף";}
@@ -589,7 +626,8 @@ function showGate(){
 var EMP_LOADED=false;
 async function ensureEmp(){
   if(EMP_LOADED&&EMP.length)return EMP;
-  try{ EMP=(await all(T.emp)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};}); EMP_LOADED=true; }catch(e){}
+  try{ EMP=(await Promise.race([all(T.emp),
+        new Promise(function(_,rj){setTimeout(function(){rj(new Error("emp timeout"));},9000);})])).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם מלא"]||f["שם עובד"]||f["שם"]||"",email:txt(f["אימייל"]||f["Email"]||f["דוא\"ל"]||""),role:txt(f["תפקיד"]),status:txt(f["סטטוס"]),cards:f["מספר כרטיסי עבודה"]||0,raw:r};}); EMP_LOADED=true; }catch(e){}
   return EMP;
 }
 
@@ -599,11 +637,16 @@ function onGoogle(res){
     p=JSON.parse(decodeURIComponent(atob(res.credential.split(".")[1])
         .split("").map(function(c){return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
     window.__idToken=res.credential;      /* נשלח ל-Worker בכל בקשה אחרי WP-8 */
+    window.__idExp=(p.exp?p.exp*1000:0);  /* מתי הוא פג — משמש את proxyDenied */
   }catch(e){toast("ההזדהות נכשלה",1);return;}
+  AUTH_ERR=""; __authFails=0;
   try{var pp=document.querySelector("#gate p"); if(pp)pp.textContent="מזהה…";}catch(e){}
   /* EMP חייב להיות טעון לפני signInWithEmail — ראה ההערה מעל ensureEmp */
-  ensureEmp().then(function(){ signInWithEmail(p.email); })
-             .catch(function(){ signInWithEmail(p.email); });
+  function go(){
+    try{ signInWithEmail(p.email); }
+    catch(e){ AUTH_ERR="sign-in error: "+(e&&e.message||e); try{showGate();}catch(x){} }
+  }
+  ensureEmp().then(go,go);
 }
 
 
@@ -3089,13 +3132,20 @@ async function boot(){
   try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
   document.documentElement.dir=(LANG==="he"?"rtl":"ltr");
   drawNav();
-  try{WOS=await all(T.wo);drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
+  try{WOS=await all(T.wo);BOOT_FAILS=0;AUTH_ERR="";drawTabs();draw();document.getElementById("stamp").textContent=WOS.length+" כרטיסים";}
   catch(e){
     var msg=String(e.message||e);
     BOOTED=false;                       /* שניתן יהיה לנסות שוב אחרי התחברות */
     if(/\b(401|403)\b|PROXY_FORBIDDEN|Authorization|token/i.test(msg)){
-      document.getElementById("list").innerHTML='<div class="empty">\u05d4\u05d4\u05d6\u05d3\u05d4\u05d5\u05ea \u05e4\u05d2\u05d4 \u05d0\u05d5 \u05e0\u05d3\u05d7\u05ea\u05d4 \u2014 \u05e0\u05d0 \u05dc\u05d4\u05ea\u05d7\u05d1\u05e8 \u05de\u05d7\u05d3\u05e9</div>';
-      try{showGate();}catch(x){}
+      BOOT_FAILS++;
+      try{var jm=((JSON.parse(msg)||{}).error||{}).message; if(jm)msg=jm;}catch(x){}
+      AUTH_ERR=msg.slice(0,180);
+      document.getElementById("list").innerHTML='<div class="empty">ההזדהות פגה או נדחתה — נא להתחבר מחדש'
+        +'<br><span style="font-size:12px;color:var(--red);direction:ltr;display:inline-block;margin-top:8px;word-break:break-word">'+esc(AUTH_ERR)+'</span></div>';
+      /* ⚠️ אחרי שלושה כישלונות עוצרים. השער מפעיל התחברות אוטומטית,
+         ההתחברות מפעילה boot(), boot() נכשל — זו הלולאה של v19. */
+      if(BOOT_FAILS<3){try{showGate();}catch(x){}}
+      else{try{document.getElementById("gate").style.display="none";}catch(x){}}
       return;
     }
     document.getElementById("list").innerHTML='<div class="empty">\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05d4: '+esc(msg)+'</div>';return;
@@ -3123,7 +3173,7 @@ function reload(){document.getElementById("list").innerHTML='<div class="boot"><
    מסך ריק בלי שום רמז למה קרה.
    הבאג הזה קיים מ-WP-8; מצב report הסתיר אותו.
    ========================================================================== */
-var BOOTED=false;
+var BOOTED=false, BOOT_FAILS=0;
 function bootOnce(){ if(BOOTED)return; BOOTED=true; boot(); }
 function bootWhenReady(){
   try{var L=localStorage.getItem("abnLang");if(L)LANG=L;}catch(e){}
