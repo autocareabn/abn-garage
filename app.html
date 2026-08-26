@@ -118,6 +118,15 @@ table.itab td.empty{color:#888;text-align:center}
 .dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8;white-space:normal;line-height:1.45;font-size:13.5px}
 .dd div:hover{background:#fdecef}
 .tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
+/* הסטטוס בכותרת הכרטיס — נראה מכל לשונית, לא רק מ"פרטים" */
+.mstat{display:inline-flex;align-items:center;margin-inline-start:10px;vertical-align:middle}
+.mstat .pill{font-size:12px;padding:3px 10px}
+.mh .t{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+/* מצב בחירה מרובה */
+.selmode-btn{background:#fff;border:1px solid #cfd5e0;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+.selmode-btn.on{background:var(--red);color:#fff;border-color:var(--red);font-weight:bold}
+body.selmode tr.r{cursor:pointer}
+body.selmode tr.r td.opencell{opacity:.25}
 .selbar{position:fixed;bottom:0;right:0;left:0;background:var(--red);color:#fff;padding:11px 16px;display:none;align-items:center;gap:12px;z-index:70;box-shadow:0 -3px 14px rgba(0,0,0,.25)}
 .selbar.on{display:flex}
 .selbar button{background:#fff;color:var(--red);border:0;border-radius:8px;padding:7px 14px;font-weight:bold;cursor:pointer}
@@ -245,6 +254,9 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  /* בנייד השורה כולה לחיצה — אין צורך בחץ, והסימון עובר לסרגל הפעולות */
  tr.r td.opencell{display:none}
  tr.r td:first-child:has(input[type=checkbox]){display:none}
+ /* במצב בחירה מרובה תיבות הסימון חוזרות — זו הדרך היחידה לבחור בנייד */
+ body.selmode tr.r td:first-child:has(input[type=checkbox]){display:flex}
+ body.selmode tr.r td:first-child input[type=checkbox]{width:22px;height:22px}
  .md{max-width:100%;border-radius:12px}
  .mt{top:auto;position:static;overflow-x:auto;flex-wrap:nowrap}
  .mt button{flex:0 0 auto}
@@ -315,7 +327,7 @@ button,select,input,textarea,a{min-height:38px}
 </div>
 <div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="mT" onclick="if(event.target.id==='ov')closeCard()">
   <div class="md">
-    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button onclick="cancelAppt()" style="background:rgba(255,255,255,.12)">✕ בטל תור</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
+    <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span><span id="mStat" class="mstat"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button id="btnCancel" onclick="cancelAppt()" style="background:rgba(255,255,255,.12)">✕ בטל תור</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
     <div class="mt" id="mTabs"></div>
     <div class="pane on" id="p0"></div><div class="pane" id="p1"></div>
     <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div>
@@ -615,6 +627,12 @@ var D={
    נשאר כמות שהוא — וזה בכוונה: שמות לקוחות, רכבים וחלפים הם נתונים,
    לא ממשק, ואין לתרגם אותם.
    ========================================================================== */
+"☑ בחירה מרובה":{en:"☑ Multi-select",th:"☑ เลือกหลายรายการ"},
+"☑ בוחר להדפסה":{en:"☑ Selecting to print",th:"☑ กำลังเลือกเพื่อพิมพ์"},
+"נקה":{en:"Clear",th:"ล้าง"},
+"סיום בחירה":{en:"Done selecting",th:"เลือกเสร็จแล้ว"},
+"עריכה":{en:"Edit",th:"แก้ไข"},
+"רשומה חדשה":{en:"New record",th:"ข้อมูลใหม่"},
 "חשבון ללקוח":{en:"Customer bill",th:"ใบแจ้งหนี้ลูกค้า"},
 "עבודות":{en:"Labour",th:"ค่าแรง"},
 "חלקים":{en:"Parts",th:"อะไหล่"},
@@ -1042,6 +1060,25 @@ function printSelected(){var rs=WOS.filter(function(r){return SEL.indexOf(r.id)>
 
 /* ============ MULTI-SELECT ============ */
 var SEL=[];
+/* ============================================================================
+   בחירה מרובה להדפסה — גם בטלפון ובטאבלט
+   ----------------------------------------------------------------------------
+   בתצוגת נייד הטבלה הופכת לכרטיסים ותיבת הסימון הוסתרה ב-CSS, ולכן לא הייתה
+   שום דרך לבחור כמה כרטיסים להדפסה מהמכשיר. עכשיו יש מצב בחירה: כפתור
+   "בחירה מרובה" בשורת הלשוניות, ובמצב הזה נגיעה בשורה מסמנת אותה במקום
+   לפתוח אותה. בדסקטופ תיבות הסימון ממשיכות לעבוד כרגיל.
+   ========================================================================== */
+var SELMODE=false;
+function toggleSelMode(){
+  SELMODE=!SELMODE;
+  document.body.classList.toggle("selmode",SELMODE);
+  if(!SELMODE)SEL=[];
+  drawTabs();draw();selBar();
+}
+function rowTap(id,ev){
+  if(SELMODE){toggleSel(id,ev);draw();return;}
+  openCard(id);
+}
 function toggleSel(id,ev){if(ev)ev.stopPropagation();
  var i=SEL.indexOf(id); if(i>=0)SEL.splice(i,1); else SEL.push(id); selBar();}
 function selAll(on){SEL=on?woRows().map(function(r){return r.id;}):[];draw();selBar();}
@@ -1051,7 +1088,8 @@ function selBar(){
   b.className="selbar on";
   b.innerHTML='<span>נבחרו '+SEL.length+' כרטיסים</span>'
    +'<button onclick="printSelected()">🖨 הדפס</button>'
-   +'<button onclick="SEL=[];draw();selBar()">בטל</button>';
+   +'<button onclick="SEL=[];draw();selBar()">נקה</button>'
+   +(SELMODE?'<button onclick="toggleSelMode()">סיום בחירה</button>':'');
 }
 
 /* ============ MARK DONE ============ */
@@ -1540,6 +1578,7 @@ function drawTabs(){var el=document.getElementById("tabs");
  if(VIEW!=="work"){el.style.display="none";return;}el.style.display="flex";
  el.innerHTML=TABS.map(function(t){var n=WOS.filter(function(r){return match(r,t[0]);}).length;
   return '<button role="tab" aria-selected="'+(FILTER===t[0]?"true":"false")+'" class="'+(FILTER===t[0]?"on":"")+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'<span class="c" aria-label="'+n+' כרטיסים">'+n+'</span></button>';}).join("")
+  +'<button class="selmode-btn'+(SELMODE?" on":"")+'" onclick="toggleSelMode()">'+(SELMODE?"\u2611 \u05d1\u05d5\u05d7\u05e8 \u05dc\u05d4\u05d3\u05e4\u05e1\u05d4":"\u2611 \u05d1\u05d7\u05d9\u05e8\u05d4 \u05de\u05e8\u05d5\u05d1\u05d4")+'</button>'
   +'<button style="background:#1B7F35;color:#fff;border-color:#1B7F35;font-weight:bold" onclick="newCard()">+ כרטיס חדש</button>';}
 function setF(k){FILTER=k;drawTabs();draw();}
 /* מכונאי רואה רק היום / מחר / עתידי */
@@ -1566,7 +1605,7 @@ function draw(){
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
     el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
-      return '<tr class="r rowlink" onclick="openCard(\''+r.id+'\')" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
+      return '<tr class="r rowlink" onclick="rowTap(\''+r.id+'\',event)" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
        +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
        +'<td data-l="כרטיס"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
@@ -1638,10 +1677,31 @@ function openCard(id){
   document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
   document.getElementById("mS").textContent=[plate(f),(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
   document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" data-pane="'+t[1]+'" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+t[1]+')">'+t[0]+'</button>';}).join("");
+  cardMode("wo");headStatus();
   mt(0);pDet();pParts();pSvc();pChecks();pPay();
   document.getElementById("ov").classList.add("on");
 }
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("ov").classList.contains("on"))closeCard();});
+/* ============================================================================
+   מצב הכותרת — כרטיס עבודה מול רשומה רגילה
+   ----------------------------------------------------------------------------
+   אותה חלונית (#ov) משמשת גם לכרטיס עבודה וגם לעריכת שירות / עובד / מיקום /
+   לקוח / רכב. הכפתורים "סיימתי", "בטל תור" ו"הדפס" שייכים לכרטיס עבודה בלבד —
+   עד כה הם הופיעו גם כשעורכים שירות, ולחיצה עליהם פעלה על הכרטיס הקודם.
+   ========================================================================== */
+function cardMode(mode){
+  var wo=(mode==="wo");
+  ["btnPrint","btnCancel","btnDone"].forEach(function(id){
+    var b=document.getElementById(id); if(b)b.style.display=wo?"":"none";
+  });
+  var st=document.getElementById("mStat");
+  if(st&&!wo)st.innerHTML="";
+}
+/* הסטטוס בראש הכרטיס — נראה מכל לשונית ומתעדכן בכל שינוי */
+function headStatus(){
+  var st=document.getElementById("mStat"); if(!st)return;
+  st.innerHTML=CUR?tag("סטטוס",(CUR.fields||{})["סטטוס"]):"";
+}
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
 function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
  [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
@@ -2195,6 +2255,7 @@ function patchWO(fields,rd,note){
      if(CUR&&CUR.id===d.id){CUR=d;
        /* הרשומה חזרה מהשרת — מציירים מחדש מיד במקום לחכות ל-refetchCard */
        if(rd)try{rd();}catch(e){}
+       try{headStatus();}catch(e){}
      }
      toast("✓ נשמר"+(note?" · "+note:""));draw();drawTabs();
      if(note)refetchCard(rid,0);})
@@ -2288,7 +2349,7 @@ function refetchCard(id,tries){
     fetch(PX+B+"/"+T.wo+"/"+id).then(function(r){return r.ok?r.json():Promise.reject();})
      .then(function(d){
        var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
-       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();
+       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();try{headStatus();}catch(e){}
          if(d.fields["⚠️ התראה"])toast("⚠️ "+d.fields["⚠️ התראה"],1);}
        draw();drawTabs();
        if(tries<1)refetchCard(id,tries+1);
@@ -2350,6 +2411,7 @@ function fmtPlate(v){var d=normPhone(v);
 
 function newCusForm(phone){
   document.getElementById("mS").textContent="לקוח חדש";
+  cardMode("rec");
   document.getElementById("p0").innerHTML='<div class="sec" style="margin-top:0">לקוח חדש</div>'
    +'<div class="grid">'
    +'<div class="f"><label>שם מלא *</label><input id="ncnName" oninput="cusDupCheck()"></div>'
@@ -2413,6 +2475,7 @@ function newVehForm(){
    +'<button class="save" id="nvSave" onclick="createVehicle()">✓ צור רכב</button>'
    +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="ncStep2()">← חזרה לרשימת הרכבים</button>';
   document.getElementById("mS").textContent="רכב חדש";
+  cardMode("rec");
   setTimeout(function(){var e=document.getElementById("nvPlate");if(e)e.focus();},80);
 }
 async function vehDupCheck(){
@@ -2451,6 +2514,7 @@ function ncReset(){window.__ncCus=null;window.__ncVeh=null;window.__ncCusLbl="";
 function ncShell(sub){
   document.getElementById("mT").textContent="כרטיס עבודה חדש";
   document.getElementById("mS").textContent=sub||"";
+  cardMode("rec");
   document.getElementById("mTabs").innerHTML="";
   document.getElementById("p0").className="pane on";
   [1,2,3,4].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane";});
@@ -2718,6 +2782,7 @@ function openVeh(rec){
   EDIT_KIND="veh"; EDIT_REC=rec;
   var f=rec.fields||{};
   document.getElementById("mT").textContent="רכב \u00b7 "+dash(f["מספר רכב"]);
+  cardMode("rec");
   document.getElementById("mS").textContent=[((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||"")).trim(),
     txt(f["שם לקוח (טקסט)"]),txt(f["שנת ייצור"])].filter(function(x){return x&&x.trim();}).join(" \u00b7 ");
   document.getElementById("mTabs").innerHTML=["פרטי הרכב","היסטוריית טיפולים"]
@@ -2816,6 +2881,7 @@ async function openRec(kind,id){
   var f=rec.fields||{};
   document.getElementById("mT").textContent=(id?c.label+" \u00b7 "+(txt(f[c.key])||""):c.label+" חדש");
   document.getElementById("mS").textContent=id?"עריכה":"רשומה חדשה";
+  cardMode("rec");
   document.getElementById("mTabs").innerHTML="";
   [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
   document.getElementById("p0").innerHTML='<div class="grid">'
@@ -2877,6 +2943,7 @@ function openEmp(id){
   var f=EDIT_REC.fields||{};
   document.getElementById("mT").textContent="עובד · "+(f["שם מלא"]||"");
   document.getElementById("mS").textContent=txt(f["תפקיד"])||"";
+  cardMode("rec");
   document.getElementById("mTabs").innerHTML="";
   [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===0?" on":"");});
   var ph=f["תמונה"]||[];
@@ -2917,6 +2984,7 @@ function openCus(rec){
   EDIT_KIND="cus"; EDIT_REC=rec;
   var f=rec.fields||{}, ph=f["תמונה"]||[];
   document.getElementById("mT").textContent="לקוח · "+(f["שם לקוח"]||"");
+  cardMode("rec");
   document.getElementById("mS").textContent=(f["מספר טלפון"]||"")+" · "+txt(f["מספר רכבים"])+" רכבים";
   document.getElementById("mTabs").innerHTML=["פרטים","רכבים","היסטוריית טיפולים"]
     .map(function(l,i){return '<button class="'+(i===0?"on":"")+'" onclick="mt('+i+')">'+esc(l)+'</button>';}).join("");
