@@ -371,6 +371,9 @@ var PROXY_HOST="abn-airtable-proxy.autocareabn.workers.dev";
   };
 })();
 var __deniedAt=0, __authFails=0, AUTH_ERR="";
+/* יומן הזדהות — נשמר בזיכרון בלבד. אם השער חוזר, F12 → Console → __authLog */
+window.__authLog=[];
+function __alog(m){try{window.__authLog.push(new Date().toISOString().slice(11,23)+" "+m);}catch(e){}}
 /* ============================================================================
    ⚠️ v20 — הבאג שנעל את האפליקציה על מסך "מזהה…"
    קודם לכן כל 401 בודד עשה שני דברים הרסניים: איפס את הטוקן, והציג מחדש
@@ -415,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v20";
+var APP_VERSION="v22";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -524,6 +527,7 @@ function chooseMechanic(id){
 function switchMechanic(){try{localStorage.removeItem("abnMech");}catch(e){} pickMechanic();}
 
 function finishSignIn(){
+  __alog("finishSignIn — "+(ME.email||"?")+" as "+(ME.role||"?"));
   AUTH_ERR=""; __authFails=0; BOOT_FAILS=0;
   document.getElementById("gate").style.display="none";
   applyRole(); greet(); drawNav(); drawTabs(); draw();
@@ -533,7 +537,7 @@ function finishSignIn(){
 }
 function signOut(){
   ME={email:null,role:null,name:"",empId:null};
-  window.__idToken=null; window.__idExp=0; AUTH_ERR=""; __authFails=0; BOOT_FAILS=0;
+  window.__idToken=null; window.__idExp=0; window.__idEmail=""; AUTH_ERR=""; __authFails=0; BOOT_FAILS=0;
   try{localStorage.removeItem("abnMech");}catch(e){}
   try{if(typeof google!=="undefined"&&google.accounts)google.accounts.id.disableAutoSelect();}catch(e){}
   showGate();
@@ -580,6 +584,7 @@ function greet(){
 
 /* --- מסך הכניסה --- */
 function showGate(){
+  __alog("showGate (role="+(ME.role||"-")+", token="+(window.__idToken?"yes":"no")+", err="+(AUTH_ERR||"-")+")");
   var g=document.getElementById("gate");
   g.style.display="flex";
   if(!GOOGLE_CLIENT_ID){
@@ -633,12 +638,25 @@ async function ensureEmp(){
 
 function onGoogle(res){
   var p;
+  __alog("onGoogle fired (role="+(ME.role||"-")+", token="+(window.__idToken?"yes":"no")+")");
   try{
     p=JSON.parse(decodeURIComponent(atob(res.credential.split(".")[1])
         .split("").map(function(c){return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2);}).join("")));
     window.__idToken=res.credential;      /* נשלח ל-Worker בכל בקשה אחרי WP-8 */
     window.__idExp=(p.exp?p.exp*1000:0);  /* מתי הוא פג — משמש את proxyDenied */
-  }catch(e){toast("ההזדהות נכשלה",1);return;}
+  }catch(e){__alog("onGoogle: token parse failed");toast("ההזדהות נכשלה",1);return;}
+  window.__idEmail=String(p.email||"").toLowerCase();
+  /* ⚠️ v22 — למה היה צריך להזדהות פעמיים.
+     גוגל מפעילה את onGoogle יותר מפעם אחת: One Tap עם auto_select מחזירה
+     קרדנציאל, והכפתור המצויר מחזיר עוד אחד. בגרסאות קודמות כל קרדנציאל
+     הריץ מחדש signInWithEmail — ש-מ-א-פ-ס את ME בשורה הראשונה שלו. אם זה
+     קרה בזמן ש-boot() רץ, boot הגיע לשורה האחרונה שלו עם ME.role ריק,
+     והציג את השער שוב — נקי, בלי שגיאה. בדיוק המסך שראית.
+     עכשיו: קרדנציאל שני רק מרענן את הטוקן ולא נוגע בזהות ולא בשער. */
+  if(ME.role && !AUTH_ERR){
+    __alog("duplicate credential — token refreshed only, sign-in NOT re-run");
+    return;
+  }
   AUTH_ERR=""; __authFails=0;
   try{var pp=document.querySelector("#gate p"); if(pp)pp.textContent="מזהה…";}catch(e){}
   /* EMP חייב להיות טעון לפני signInWithEmail — ראה ההערה מעל ensureEmp */
@@ -1646,11 +1664,11 @@ function draw(){
   var el=document.getElementById("list");
   if(VIEW==="work"){var rs=woRows();
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
-    el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>כרטיס</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
+    el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
      +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
       return '<tr class="r rowlink" onclick="rowTap(\''+r.id+'\',event)" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
        +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
-       +'<td data-l="כרטיס"><b>'+esc(f["מספר כרטיס עבודה"]||"")+'</b></td><td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
+       +'<td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
        +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
        +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
@@ -1717,7 +1735,7 @@ function openCard(id){
     return;
   }
   var f=CUR.fields||{};
-  document.getElementById("mT").textContent="כרטיס "+(f["מספר כרטיס עבודה"]||"")+" · "+(f["שם להצגה"]||"");
+  document.getElementById("mT").textContent=(f["שם להצגה"]||"כרטיס עבודה");
   document.getElementById("mS").textContent=[plate(f),(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
   document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" data-pane="'+t[1]+'" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+t[1]+')">'+t[0]+'</button>';}).join("");
   cardMode("wo");headStatus();
@@ -2801,7 +2819,7 @@ async function createCard(){
     window.__ncPhotos={};
 
     WOS.push(rec);drawTabs();draw();
-    toast("\u2713 נוצר כרטיס "+(rec.fields["מספר כרטיס עבודה"]||""));
+    toast("\u2713 הכרטיס נוצר");
     if(lux)setTimeout(function(){appTell("\ud83d\ude97 רכב יוקרה (BMW / מרצדס)\n\nהכרטיס נשמר בסטטוס \"ממתין לאישור אמיר\".\nקביעת תור לרכבי יוקרה מתבצעת רק באישור אמיר: 053-536-2156");},300);
     RULES.fire("newCard",rec.id);
     closeCard();setTimeout(function(){openCard(rec.id);},400);
@@ -2889,11 +2907,10 @@ async function loadVehHistory(rec){
       +'<div class="f"><label>סה"כ הוצאה על הרכב</label><div class="v"><b>'+money(total)+'</b></div></div>'
       +'<div class="f"><label>ביקור אחרון</label><div class="v"><b>'+esc(recs.length?(dt((recs[0].fields||{})["תאריך ושעה"])||dt((recs[0].fields||{})["תאריך פתיחה"])||"\u2014"):"\u2014")+'</b></div></div>'
       +'</div>'
-      +(recs.length?'<table><thead><tr><th>תאריך</th><th>כרטיס</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
+      +(recs.length?'<table><thead><tr><th>תאריך</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>לתשלום</th></tr></thead><tbody>'
       +recs.map(function(r){var g=r.fields||{};
         return '<tr class="r rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
           +'<td data-l="תאריך">'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"\u2014")+'</td>'
-          +'<td data-l="כרטיס"><b>'+esc(g["מספר כרטיס עבודה"]||"")+'</b></td>'
           +'<td data-l="טיפול">'+esc(txt(g["סוג טיפול"])||"\u2014")+'</td>'
           +'<td data-l="מכונאי" class="muted">'+esc(txt(g["מכונאי אחראי"])||"\u2014")+'</td>'
           +'<td data-l="סטטוס">'+tag("סטטוס",g["סטטוס"])+'</td>'
@@ -3157,7 +3174,13 @@ async function boot(){
   await ensureEmp();
   if(VIEW!=="work")draw();
   document.getElementById("stamp").textContent=WOS.length+" כרטיסים · "+EMP.length+" עובדים · "+APP_VERSION;
-  if(!ME.role)showGate(); else {applyRole();greet();drawNav();drawTabs();draw();}
+  if(!ME.role){
+    /* יש טוקן חי אבל אין תפקיד — משחזרים מהטוקן במקום לבקש הזדהות שוב */
+    if(window.__idToken && window.__idEmail){
+      __alog("boot ended with no role — recovering from token, no gate");
+      try{signInWithEmail(window.__idEmail);}catch(e){__alog("recover failed: "+e);showGate();}
+    } else { __alog("boot ended with no role and no token — showing gate"); showGate(); }
+  } else {applyRole();greet();drawNav();drawTabs();draw();}
 }
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
 
