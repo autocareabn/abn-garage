@@ -418,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v22";
+var APP_VERSION="v23";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -664,7 +664,24 @@ function onGoogle(res){
     try{ signInWithEmail(p.email); }
     catch(e){ AUTH_ERR="sign-in error: "+(e&&e.message||e); try{showGate();}catch(x){} }
   }
-  ensureEmp().then(go,go);
+  /* ============================================================================
+     ⚠️ v23 — למה ההזדהות עדיין הרגישה כמו פעמיים
+     ביומן ההזדהות נמדדו 9 שניות בין onGoogle ל-finishSignIn. כל אותו זמן
+     המסך הציג "מזהה…" בלי שום תזוזה, אז המשתמש לחץ שוב. זו לא הייתה לולאה
+     (v22 תפס את הקרדנציאל השני נכון) — זו הייתה המתנה ל-ensureEmp, שמושך
+     את כל טבלת העובדים.
+     אבל EMP דרוש רק כשהאימייל אינו ברשימת ההרשאות — כלומר לחשבון המשותף
+     של המכונאים, שצריך את הרשימה כדי להציג "מי אתה?". לכל שאר הכתובות
+     התפקיד ידוע מיידית, ואפשר להיכנס עכשיו ולטעון עובדים ברקע.
+     ========================================================================== */
+  if(ROLE_BY_EMAIL[String(p.email||"").trim().toLowerCase()]){
+    __alog("known email — signing in now, employees load in background");
+    go();
+    ensureEmp();          /* ברקע; מי שצריך אותו ימתין לו בנפרד */
+  } else {
+    try{var pw=document.querySelector("#gate p"); if(pw)pw.textContent="טוען את רשימת העובדים…";}catch(e){}
+    ensureEmp().then(go,go);
+  }
 }
 
 
