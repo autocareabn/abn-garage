@@ -418,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v25";
+var APP_VERSION="v26";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2069,7 +2069,155 @@ function pPay(){
      +'<div class="f"><label>\u05de\u05d5\u05db\u05e0\u05d5\u05ea \u05dc\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea</label><div class="v">'
        +'<span class="pill '+(okInv?"at-greenBright":"at-redBright")+'">'+esc(ready||"\u2014")+'</span></div></div>'
    +'</div>'
-   +invoiceActions(gross);
+   +invoiceActions(gross)
+   +cashActions(gross);
+}
+
+/* ============================================================================
+   ============ קבלת תשלום — הכפתור שמנפיק חשבונית מס קבלה ==================
+   ----------------------------------------------------------------------------
+   עד כאן לא היה שום דבר שקרא ל-/icount/confirm-cash. סימון "שולם" בבורר
+   הסטטוס רק כתב שדה — לא נוצרה חשבונית, לא נשלחה הודעה, ולא נרשם תאריך
+   תשלום. כאן נסגר הנתק.
+
+   השרשרת המלאה:
+     confirmCash()  →  Worker /icount/confirm-cash
+                    →  MAKE_CASH_HOOK (webhook)
+                    →  Make 7305365
+                    →  Worker /icount/invoice {commit:true, doctype:"invrec"}
+                    →  iCount מנפיק חשבונית מס קבלה
+                    →  Airtable: מספר חשבונית, תאריך תשלום, סטטוס חשבון="שולם"
+                    →  WhatsApp ללקוח
+
+   ⚠️ למה כפתור נפרד ולא סימון סטטוס: "שולם" הוא מסמך חשבונאי מול רשות
+      המסים. סימון בטעות בבורר הסטטוס לא אמור להנפיק מסמך אמיתי.
+   ⚠️ למה לא משנים סטטוס לפני שהחשבונית חזרה: אחרת כרטיס יסומן כשולם גם
+      כשההנפקה נכשלה, והכסף ייעלם מהמעקב. הסטטוס מתעדכן רק אחרי אישור.
+   ⚠️ הגנה מפני כפילות: confirm-cash בשרת בודק "סטטוס חשבון"=שולם ומחזיר
+      already:paid בלי לפנות ל-Make. גם אם לוחצים פעמיים — חשבונית אחת.
+   ========================================================================== */
+
+/* ממתין שהחשבונית תחזור מ-iCount דרך Make. מחזיר מספר מסמך, או null בפסק זמן. */
+async function waitForInvrec(rid, tries){
+  for(var i=0;i<(tries||20);i++){
+    await new Promise(function(r){setTimeout(r,2000);});
+    try{
+      var rec=await api("/"+T.wo+"/"+rid);
+      var g=rec.fields||{};
+      var num=txt(g["מספר חשבונית מס קבלה"]);
+      if(num||txt(g["סטטוס חשבון"])==="שולם"){
+        var k=-1;WOS.forEach(function(x,n){if(x.id===rid)k=n;});
+        if(k>=0)WOS[k]=rec;
+        if(CUR&&CUR.id===rid)CUR=rec;
+        return num||"—";
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
+async function confirmCash(btn){
+  if(!CUR)return;
+  var rid=CUR.id, f=CUR.fields||{};
+
+  if(txt(f["סטטוס חשבון"])==="שולם"){ toast("הכרטיס כבר מסומן כשולם"); return; }
+
+  var pm=txt(f["אמצעי תשלום"]);
+  if(!pm){ await appTell('⛔ לא נבחר אמצעי תשלום.\n\nבחר מזומן / כרטיס אשראי / צ\'ק / העברה בנקאית בשדה "אמצעי תשלום", ואז נסה שוב.'); return; }
+
+  var unp=unpricedParts();
+  if(unp.length){
+    await appTell("⛔ "+unp.length+" חלפים מסומנים \"דורש תמחור\" וטרם תומחרו:\n\n• "
+      +unp.slice(0,8).join("\n• ")+(unp.length>8?"\n• ועוד "+(unp.length-8):"")
+      +"\n\nחשבונית עם שורת 0.00 ₪ לא תצא מהמערכת.");
+    mt(1); pParts(); return;
+  }
+
+  var gross=Number(f['סה"כ לתשלום']||0);
+  if(!(gross>0)){ await appTell('⛔ סה"כ לתשלום הוא 0 — אין מה לחייב.'); return; }
+
+  var st=txt(f["סטטוס"]);
+  if(st!=="מוכן לתשלום"){
+    await appTell('⛔ אפשר לקבל תשלום רק על כרטיס במצב "מוכן לתשלום".\n\nהמצב הנוכחי: '+(st||"—"));
+    return;
+  }
+
+  if(!await appAsk("לאשר קבלת תשלום?\n\n• אמצעי תשלום: "+pm+"\n• סכום: "+money(gross)
+    +"\n\nתונפק חשבונית מס קבלה ב-iCount ותישלח ללקוח בוואטסאפ.\nהפעולה אינה הפיכה."))return;
+
+  var lbl = btn ? btn.textContent : "";
+  if(btn){ btn.disabled=true; btn.textContent="⏳ מנפיק חשבונית…"; }
+
+  try{
+    var r=await fetch("https://"+PROXY_HOST+"/icount/confirm-cash",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ recordId: rid })
+    });
+    var d={}; try{ d=await r.json(); }catch(e){}
+    if(!r.ok || d.ok===false){
+      var m=(d.error && (d.error.message || d.error)) || ("שרת "+r.status);
+      throw new Error(String(m));
+    }
+    if(d.already==="paid"){ toast("הכרטיס כבר סומן כשולם"); return; }
+
+    if(btn) btn.textContent="⏳ ממתין ל-iCount…";
+    var num=await waitForInvrec(rid,20);
+
+    if(num){
+      toast("✓ שולם · חשבונית מס קבלה "+num);
+      try{ await changeStatus("שולם"); }catch(e){ console.error("status:",e); }
+    }else{
+      await appTell("⏳ הבקשה נשלחה, אך אישור מ-iCount טרם חזר.\n\n"
+        +"אל תלחץ שוב — לחיצה נוספת עלולה ליצור חשבונית כפולה.\n\n"
+        +"רענן בעוד דקה ובדוק את השדה \"מספר חשבונית מס קבלה\".\n"
+        +"אם הוא נשאר ריק — בדוק את טבלת יומן השגיאות.");
+    }
+  }catch(e){
+    console.error("confirmCash:",e);
+    await appTell("⛔ אישור התשלום נכשל\n\n"+String(e.message||e).slice(0,300)
+      +"\n\nלא נוצרה חשבונית. אפשר לתקן ולנסות שוב.");
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=lbl; }
+    refetchCard(rid,0);
+  }
+}
+
+/* בלוק "קבלת תשלום" בלשונית התשלום */
+function cashActions(gross){
+  var f=CUR.fields||{};
+  var pm=txt(f["אמצעי תשלום"]);
+  var invrec=txt(f["מספר חשבונית מס קבלה"]);
+  var paid=(txt(f["סטטוס חשבון"])==="שולם");
+
+  var html='<div class="sec">קבלת תשלום</div>';
+
+  if(paid){
+    return html+'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      +'<span class="pill at-greenBright">✓ שולם'+(pm?" · "+esc(pm):"")+'</span>'
+      +(invrec?'<span class="pill at-blueLight2">חשבונית מס קבלה '+esc(invrec)+'</span>':'')
+      +(f["תאריך תשלום"]?'<span class="mini">'+esc(dt(f["תאריך תשלום"]))+'</span>':'')
+      +'</div>';
+  }
+
+  var reasons=[];
+  if(!pm)reasons.push("לא נבחר אמצעי תשלום");
+  if(!(gross>0))reasons.push('סה"כ לתשלום 0');
+  if(unpricedParts().length)reasons.push("יש חלף שדורש תמחור");
+  if(txt(f["סטטוס"])!=="מוכן לתשלום")reasons.push('הכרטיס אינו "מוכן לתשלום"');
+
+  html+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+    +'<button class="save" style="width:auto;padding:10px 20px;margin:0"'
+      +(reasons.length?" disabled":"")+' onclick="confirmCash(this)">💵 התקבל תשלום</button>'
+    +(pm?'<span class="pill at-'+(((CLR["אמצעי תשלום"]||{})[pm])||"gray")+'">'+esc(pm)+'</span>':'')
+    +'<span style="font-size:17px;font-weight:bold;color:var(--red)">'+money(gross)+'</span>'
+    +'</div>';
+
+  html+=reasons.length
+    ? '<div class="mini" style="color:var(--red);margin-top:6px">⛔ '+esc(reasons.join(" · "))+'</div>'
+    : '<div class="mini" style="margin-top:6px">תונפק חשבונית מס קבלה ב-iCount, תירשם בכרטיס, ותישלח ללקוח בוואטסאפ. פעולה חד-פעמית.</div>';
+
+  return html;
 }
 
 /* ===== תצוגה מקדימה של החשבונית + שליחה מאוחדת ללקוח ===== */
