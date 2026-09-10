@@ -418,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v24";
+var APP_VERSION="v25";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2101,10 +2101,65 @@ var SHOP={
   /* כותרת המסמך. האפליקציה אינה מנפיקה חשבוניות מס — ראה הערה בהסבר. */
   docTitle:"\u05d7\u05e9\u05d1\u05d5\u05df \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"
 };
-function previewInvoice(){
+/* ============================================================================
+   תצוגה מקדימה — המסמך נבנה בשרת (/icount/invoice-html) ונפתח בחלון נפרד.
+   ----------------------------------------------------------------------------
+   ⚠️ החלון נפתח לפני ה-fetch ולא אחריו: window.open שנקרא אחרי await כבר
+      אינו חלק מאירוע הלחיצה, והדפדפן חוסם אותו.
+   ⚠️ אין להוסיף כאן Authorization — עוטף ה-fetch (WP-8) חותם כל קריאה
+      שכתובתה מכילה את PROXY_HOST, וכך srvRole ו-proxyDenied ממשיכים לפעול.
+   נפילה לאחור: אם השרת נכשל (iCount לא זמין, 403, רשת) — מוצגת התצוגה
+   המקומית invoiceHTML(), כדי ששרה לא תישאר בלי חשבון להראות ללקוח.
+   ========================================================================== */
+function previewInvoice(btn){
   if(!CUR)return;
-  document.getElementById("invBody").innerHTML=invoiceHTML();
-  document.getElementById("invOv").classList.add("on");
+  if(!btn){
+    try{
+      btn=[].filter.call(document.querySelectorAll("#p4 button"),function(b){
+        return b.textContent.indexOf("תצוגה מקדימה")>=0;
+      })[0]||null;
+    }catch(e){ btn=null; }
+  }
+  var w=window.open("","inv-preview","width=880,height=940,scrollbars=yes,resizable=yes");
+  if(!w){ toast("הדפדפן חסם את החלון — אפשר פופאפים לאתר הזה",1); return; }
+  try{
+    w.document.write('<meta charset="utf-8">'
+      +'<div style="font-family:Arial,sans-serif;direction:rtl;padding:60px;text-align:center;color:#666">'
+      +'⏳ טוען תצוגה מקדימה…</div>');
+  }catch(e){}
+  var lbl = btn ? btn.textContent : "";
+  if(btn){ btn.disabled=true; btn.textContent="⏳ טוען…"; }
+  var pm = txt((CUR.fields||{})["אמצעי תשלום"]);
+  fetch("https://"+PROXY_HOST+"/icount/invoice-html",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ recordId:CUR.id, doctype:"deal", payMethod:pm })
+  })
+  .then(function(r){
+    if(!r.ok){
+      return r.text().then(function(t){
+        var m=t;
+        try{ m=((JSON.parse(t)||{}).error||{}).message||t; }catch(e){}
+        throw new Error("שרת "+r.status+" — "+String(m).slice(0,180));
+      });
+    }
+    return r.text();
+  })
+  .then(function(html){
+    w.document.open(); w.document.write(html); w.document.close();
+  })
+  .catch(function(e){
+    try{ w.close(); }catch(x){}
+    console.error("previewInvoice:",e);
+    toast("תצוגת השרת נכשלה — מציג תצוגה מקומית",1);
+    try{
+      document.getElementById("invBody").innerHTML=invoiceHTML();
+      document.getElementById("invOv").classList.add("on");
+    }catch(x){}
+  })
+  .then(function(){
+    if(btn){ btn.disabled=false; btn.textContent=lbl; }
+  });
 }
 function closeInv(){document.getElementById("invOv").classList.remove("on");}
 function printInvoice(){window.print();}
