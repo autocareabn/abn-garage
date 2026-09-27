@@ -2447,7 +2447,7 @@ async function sendToCustomer(){
     +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
   patchWO({"\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":new Date().toISOString().slice(0,10)},pPay,
     "\u05e0\u05e9\u05dc\u05d7\u05d4 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d0\u05d5\u05d7\u05d3\u05ea \u05dc\u05dc\u05e7\u05d5\u05d7");
-  RULES.fire("ready",CUR.id);
+  RULES.fire("ready",CUR.id,{kind:"customer"});
 }
 /* ============================================================
    ============ RULES ENGINE (שכבת הקוד) — v5 =================
@@ -2502,9 +2502,11 @@ var RULES={
     move:   "https://hook.eu1.make.com/fc6n5qcfrgu17odbq2qwumexi4w6csyr",
     cancel: "https://hook.eu1.make.com/upa4tc2qr9tegf6jjwv4a8waka5v5mj2"
   },
-  fire:function(kind,recId){
+  fire:function(kind,recId,extra){
+    /* extra.kind מבדיל בתרחיש "ready" בין הודעה לשרה (sara) לבין שליחה ללקוח (customer) */
+    var b={id:recId}; if(extra)for(var k in extra)b[k]=extra[k];
     try{fetch(RULES.HOOK[kind],{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({id:recId})}).catch(function(){});}catch(e){}
+        body:JSON.stringify(b)}).catch(function(){});}catch(e){}
   }
 };
 
@@ -2632,7 +2634,7 @@ async function changeStatus(to){
   patchWO(extra,pDet,note);
 
   /* 6. הודעות יוצאות — פעם אחת בלבד (רק במעבר הראשון) */
-  if(to==="מוכן לתשלום"&&!f["תאריך סגירה"])RULES.fire("ready",CUR.id);
+  if(to==="מוכן לתשלום"&&!f["תאריך סגירה"])RULES.fire("ready",CUR.id,{kind:"sara"});
   if(to==="בוטל")RULES.fire("cancel",CUR.id);
 }
 
