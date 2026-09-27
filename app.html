@@ -1287,6 +1287,9 @@ async function pfInput(inp,key,rid){
     /* מיקום: נתפס רק אם ההרשאה כבר ניתנה. לעולם לא מבקשים אותה מהמשתמש. */
     if(c&&c.gps){
       var co=await gpsIfGranted();
+      /* צילום חדש בלי קואורדינטה לא יורש קואורדינטה ישנה — אחרת נשלח ללקוח מיקום שלא שייך לתמונה */
+      if(!co&&key==="loc-out"){var z={};z[c.gps]="";
+        await fetch(PX+B+"/"+pfTbl(c)+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:z,typecast:true})});}
       if(co){var o={};o[c.gps]=co;
         await fetch(PX+B+"/"+pfTbl(c)+"/"+rid,{method:"PATCH",
           headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:o,typecast:true})});}
@@ -2223,11 +2226,13 @@ function cashActions(gross){
 /* ===== תצוגה מקדימה של החשבונית + שליחה מאוחדת ללקוח ===== */
 function invoiceActions(gross){
   var f=CUR.fields||{}, sent=!!f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"];
-  var loc=txt(f["\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc"]);
+  /* המיקום שנשלח ללקוח = צילום היציאה + ה-GPS שנתפס איתו. לא הרשימה הידנית. */
+  var loc=exitLoc(f);
   var blocked=[];
   if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
   if(unpricedParts().length)blocked.push("\u05d9\u05e9 \u05d7\u05dc\u05e3 \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8");
-  if(!loc)blocked.push("\u05dc\u05d0 \u05e2\u05d5\u05d3\u05db\u05df \u05de\u05d9\u05e7\u05d5\u05dd \u05d4\u05e8\u05db\u05d1");
+  if(!loc.photo)blocked.push("אין צילום מיקום יציאה");
+  else if(!loc.gps)blocked.push("לצילום היציאה אין קואורדינטה — צלמו שוב עם הרשאת מיקום");
   return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
    +'<button class="x" onclick="previewInvoice()">\ud83d\udc41 \u05ea\u05e6\u05d5\u05d2\u05d4 \u05de\u05e7\u05d3\u05d9\u05de\u05d4</button>'
@@ -2427,10 +2432,18 @@ function invoiceHTML(){
     +'<div>\u05d7\u05ea\u05d9\u05de\u05ea \u05d4\u05dc\u05e7\u05d5\u05d7: ______________</div></div>';
 }
 
+/* מיקום היציאה שנשלח ללקוח: צילום + GPS שנתפס ברגע הצילום */
+function exitLoc(f){
+  var c=PF["loc-out"], atts=f[c.name]||[], gps=String(f[c.gps]||"").trim();
+  var ok=/^-?\d{1,2}\.\d+,-?\d{1,3}\.\d+$/.test(gps);
+  return {photo:atts.length>0, gps:ok?gps:"", url:ok?"https://maps.google.com/?q="+gps:""};
+}
 async function sendToCustomer(){
   if(!CUR)return;
   var f=CUR.fields||{};
-  var loc=txt(f["\u05de\u05d9\u05e7\u05d5\u05dd \u05d1\u05e1\u05d5\u05e3 \u05d4\u05d8\u05d9\u05e4\u05d5\u05dc"]);
+  var L=exitLoc(f);
+  if(!L.photo||!L.gps){toast("אין צילום יציאה עם קואורדינטה — לא נשלח",1);return;}
+  var loc=L.url;
   var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
   if(!await appAsk("\u05dc\u05e9\u05dc\u05d5\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea?\n\n\u2022 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df\n\u2022 \u05de\u05d9\u05e7\u05d5\u05dd: "+loc
     +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
