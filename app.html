@@ -418,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v27";
+var APP_VERSION="v30";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1191,8 +1191,15 @@ function selBar(){
 
 /* ============ MARK DONE ============ */
 async function markDone(){
-  if(!CUR)return;
+  if(!CUR||window.__doneBusy)return;
   var f=CUR.fields||{};
+  var db=doneBlock(f);
+  window.__saraOverride="";
+  if(db.r){
+    if(!(db.soft&&canSetStatus())){ toast("⛔ "+db.r,1); headButtons(); return; }
+    if(!await appAsk("⚠️ "+db.r+".\n\nלעקוף ולסמן את העבודה כגמורה בכל זאת?\nהעקיפה תירשם בכרטיס."))return;
+    window.__saraOverride=db.r;
+  }
   if(!f["מיקום בסוף הטיפול"]||!ids(f["מיקום בסוף הטיפול"]).length){
     if(!await appAsk("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
   }
@@ -1202,11 +1209,11 @@ async function markDone(){
     patchWO({"בעיית הלקוח טופלה":true},function(){pChecks();},"סומן שהבעיה טופלה");
   }
   if(st==="מוכן לתשלום"||st==="שולם"){pDet();pPay();return;}
-  if(!RULES.canMove(st,"מוכן לתשלום")){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
-  if(!await appAsk("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nהמשרד (שרה) יקבל הודעה שהרכב מוכן.\nללקוח לא נשלח דבר בשלב הזה — המשרד שולח לו את קישור התשלום אחרי בדיקת החשבון."))return;
-  window.__viaDone=true;
+  if(!RULES.canMove(st,"מוכן לתשלום")&&!window.__saraOverride){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
+  if(!await appAsk("להעביר את הכרטיס למוכן לתשלום?\n\nשרה תקבל הודעה, תעדכן את החשבון ותשלח ללקוח את קישור התשלום.\nללקוח לא נשלח דבר בשלב הזה."))return;
+  window.__viaDone=true; window.__doneBusy=true; headButtons();
   try{ await changeStatus("מוכן לתשלום"); }
-  finally{ window.__viaDone=false; }
+  finally{ window.__viaDone=false; window.__doneBusy=false; window.__saraOverride=""; try{headStatus();}catch(e){} }
 }
 
 /* ============ PHOTOS ============ */
@@ -1801,6 +1808,46 @@ function cardMode(mode){
 function headStatus(){
   var st=document.getElementById("mStat"); if(!st)return;
   st.innerHTML=CUR?tag("סטטוס",(CUR.fields||{})["סטטוס"]):"";
+  headButtons();
+}
+/* ============================================================================
+   כלל UX (החלטת לאו 27/09/2026): כפתור שממתין לפעולה קודמת — נעול.
+   כל כפתור פעולה מקבל מצב פעיל/נעול לפי הסטטוס, ובנעילה מוצגת הסיבה
+   (title בדסקטופ + שורה קטנה ליד הסטטוס — גם בטלפון).
+   ========================================================================== */
+/* soft = נעילה ששרה (ואדמין) רשאית לעקוף, עם אישור מפורש שנרשם בכרטיס (החלטת לאו 27/09/2026) */
+function doneBlock(f){
+  var st=txt(f["סטטוס"]);
+  if(st==="מוכן לתשלום"||st==="שולם")return {r:"העבודה כבר סומנה כגמורה",soft:false};
+  if(st==="בוטל")return {r:"התור בוטל",soft:false};
+  if(st===""||st==="חדש"||st==="ממתין לאישור אמיר")return {r:"הכרטיס טרם אושר לטיפול",soft:true};
+  if(!ids(f["מכונאי אחראי"]).length)return {r:"ממתין לשיוך מכונאי",soft:true};
+  return {r:"",soft:false};
+}
+function doneBlockReason(f){return doneBlock(f).r;}
+function lockBtn(b,reason){
+  if(!b)return;
+  b.disabled=!!reason;
+  b.title=reason||"";
+  b.style.opacity=reason?".45":"";
+  b.style.cursor=reason?"not-allowed":"";
+}
+function headButtons(){
+  if(!CUR)return;
+  var f=CUR.fields||{}, st=txt(f["סטטוס"]);
+  var db=doneBlock(f), canOv=db.soft&&canSetStatus();
+  var dr=window.__doneBusy?"מעדכן…":db.r;
+  var d=document.getElementById("btnDone");
+  if(d){
+    lockBtn(d,canOv&&!window.__doneBusy?"":dr);
+    if(canOv&&!window.__doneBusy)d.title=dr+" — אפשר לעקוף";
+    d.textContent=(st==="מוכן לתשלום"||st==="שולם")?"✓ הושלם":(window.__doneBusy?"⏳ מעדכן…":(canOv?"✓ סיימתי (עקיפה)":"✓ סיימתי"));
+  }
+  lockBtn(document.getElementById("btnCancel"),
+    st==="שולם"?"כרטיס ששולם נעול":(st==="בוטל"?"התור כבר בוטל":""));
+  var el=document.getElementById("mStat");
+  if(el&&dr&&dr!=="העבודה כבר סומנה כגמורה"&&dr!=="מעדכן…")
+    el.innerHTML+='<span class="mini" style="color:#ffd6d6;margin-inline-start:8px;font-size:11.5px">⏳ '+esc(dr)+(canOv?" · אפשר לעקוף":"")+'</span>';
 }
 function closeCard(){document.getElementById("ov").classList.remove("on");CUR=null;}
 function mt(i){[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
@@ -1838,7 +1885,8 @@ function slotPicker(f){
   var cur=txt(f["תאריך ושעה"]), isTest=needsTestSlot(txt(f["סוג טיפול"]));
   window.__mvTest=isTest;
   return '<div class="f"><label>תאריך התור</label><div class="v"><b>'+esc(dt(cur)||"—")+'</b>'
-   +' <button id="mvBtn" class="x" style="padding:4px 10px;font-size:12.5px;margin-inline-start:8px" onclick="toggleMove()">↻ שנה תור</button></div>'
+   +(function(){var st=txt(f["סטטוס"]), r=(st==="שולם"||st==="בוטל"||st==="מוכן לתשלום")?"אי אפשר לשנות תור לכרטיס במצב "+st:"";
+      return ' <button id="mvBtn" class="x" style="padding:4px 10px;font-size:12.5px;margin-inline-start:8px'+(r?';opacity:.45;cursor:not-allowed':'')+'"'+(r?' disabled title="'+esc(r)+'"':'')+' onclick="toggleMove()">↻ שנה תור</button>';})()+'</div>'
    +'<div id="mvBox" style="display:none;margin-top:8px;padding:12px;background:#f6f8fa;border:1px solid #dfe3ea;border-radius:10px">'
      +'<div class="mini" style="margin-bottom:8px">בחר תאריך, ואז תוצג רשימת השעות הפנויות באותו יום</div>'
      +(isTest?'<div class="mini" style="margin-bottom:8px">🔧 תור טסט — יוצגו רק שעות ועמדות טסט</div>':'')
@@ -2165,7 +2213,7 @@ async function confirmCash(btn){
   }
 
   if(!await appAsk("לאשר קבלת תשלום?\n\n• אמצעי תשלום: "+pm+"\n• סכום: "+money(gross)
-    +"\n\nתונפק חשבונית מס קבלה ב-iCount ותישלח ללקוח בוואטסאפ.\nהפעולה אינה הפיכה."))return;
+    +"\n\nתונפק חשבונית מס קבלה ב-iCount ותישלח ללקוח בוואטסאפ.\nהפעולה אינה הפיכה.\n\n⚠️ הלקוח שילם בקישור ששלחנו לו? לחץ ביטול — הכרטיס יתעדכן לבד, ואישור כאן יפיק חשבונית כפולה."))return;
 
   var lbl = btn ? btn.textContent : "";
   if(btn){ btn.disabled=true; btn.textContent="⏳ מנפיק חשבונית…"; }
@@ -2226,7 +2274,7 @@ function cashActions(gross){
   if(!pm)reasons.push("לא נבחר אמצעי תשלום");
   if(!(gross>0))reasons.push('סה"כ לתשלום 0');
   if(unpricedParts().length)reasons.push("יש חלף שדורש תמחור");
-  if(txt(f["סטטוס"])!=="מוכן לתשלום")reasons.push('הכרטיס אינו "מוכן לתשלום"');
+  if(txt(f["סטטוס"])!=="מוכן לתשלום")reasons.push('הכרטיס אינו "מוכן לתשלום" — המכונאי טרם לחץ סיימתי');
 
   html+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
     +'<button class="save" style="width:auto;padding:10px 20px;margin:0"'
@@ -2237,7 +2285,7 @@ function cashActions(gross){
 
   html+=reasons.length
     ? '<div class="mini" style="color:var(--red);margin-top:6px">⛔ '+esc(reasons.join(" · "))+'</div>'
-    : '<div class="mini" style="margin-top:6px">תונפק חשבונית מס קבלה ב-iCount, תירשם בכרטיס, ותישלח ללקוח בוואטסאפ. פעולה חד-פעמית.</div>';
+    : '<div class="mini" style="margin-top:6px">רק לתשלום שהתקבל במוסך (מזומן / צ\'ק / העברה / מסוף אשראי). לקוח ששילם בקישור — לא לוחצים, הכרטיס מתעדכן לבד. תונפק חשבונית מס קבלה ותישלח ללקוח בוואטסאפ. פעולה חד-פעמית.</div>';
 
   return html;
 }
@@ -2466,6 +2514,7 @@ async function sendToCustomer(){
     return;
   }
   if(f["תאריך שליחה לתשלום"]){ toast("ההודעה כבר נשלחה ללקוח"); return; }
+  if(window.__sendBusy)return;
   var L=exitLoc(f);
   var loc=L.url||"ללא מיקום — ההודעה תישלח בלי שורת המיקום";
   var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
@@ -2473,6 +2522,7 @@ async function sendToCustomer(){
     +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
   patchWO({"\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":new Date().toISOString().slice(0,10)},pPay,
     "\u05e0\u05e9\u05dc\u05d7\u05d4 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d0\u05d5\u05d7\u05d3\u05ea \u05dc\u05dc\u05e7\u05d5\u05d7");
+  window.__sendBusy=true; setTimeout(function(){window.__sendBusy=false;},15000);
   RULES.fire("ready",CUR.id,{kind:"customer"});
 }
 /* ============================================================
@@ -2583,7 +2633,7 @@ function patchWO(fields,rd,note){
   var rid=CUR.id;
   Object.keys(fields).forEach(function(k){CUR.fields[k]=fields[k];});
   LAST_LOCAL=new Date().getTime();
-  if(rd)rd();draw();drawTabs();
+  if(rd)rd();draw();drawTabs();try{headStatus();}catch(e){}
   fetch(PX+B+"/"+T.wo+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
    .then(function(r){return r.ok?r.json():Promise.reject();})
    .then(function(d){var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
@@ -2616,7 +2666,8 @@ async function changeStatus(to){
   if(!to||to===from){pDet();return;}
 
   /* 1. מעבר חוקי? */
-  if(!RULES.canMove(from,to)){toast(RULES.blockReason(from,to),1);pDet();return;}
+  var ovOK=!!window.__saraOverride&&to==="מוכן לתשלום"&&["","חדש","ממתין לאישור אמיר","מחכה לטיפול","בטיפול"].indexOf(from)>=0;
+  if(!RULES.canMove(from,to)&&!ovOK){toast(RULES.blockReason(from,to),1);pDet();return;}
 
   /* 2. תנאים מקדימים לכניסה ל"מוכן לתשלום" — נבדקים לפני, לא כתיקון בדיעבד */
   if(to==="מוכן לתשלום"){
@@ -2641,7 +2692,8 @@ async function changeStatus(to){
       extra["בעיית הלקוח טופלה"]=true;
     }
     if(!f["תאריך סגירה"]){extra["תאריך סגירה"]=new Date().toISOString();}
-    note="נקבע תאריך סגירה · נשלחה הודעה ללקוח";
+    if(!f["תאריך פתיחה"]){extra["תאריך פתיחה"]=new Date().toISOString();}
+    note="נקבע תאריך סגירה · נשלחה הודעה לשרה";
   }
 
   /* 3. כניסה ל"בטיפול" — חותמת תאריך פתיחה (פעם אחת בלבד) */
@@ -2656,7 +2708,7 @@ async function changeStatus(to){
 
   /* 5. כתיבה */
   extra["סטטוס"]=to;
-  extra["⚠️ התראה"]="";
+  extra["⚠️ התראה"]=ovOK?("סיימתי בעקיפה ע\"י "+(ME.name||ME.email||"")+" · "+window.__saraOverride+" · "+new Date().toLocaleString("he-IL")):"";
   patchWO(extra,pDet,note);
 
   /* 6. הודעות יוצאות — פעם אחת בלבד (רק במעבר הראשון) */
