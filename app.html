@@ -2231,8 +2231,7 @@ function invoiceActions(gross){
   var blocked=[];
   if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
   if(unpricedParts().length)blocked.push("\u05d9\u05e9 \u05d7\u05dc\u05e3 \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8");
-  if(!loc.photo)blocked.push("אין צילום מיקום יציאה");
-  else if(!loc.gps)blocked.push("לצילום היציאה אין קואורדינטה — צלמו שוב עם הרשאת מיקום");
+  /* מיקום אינו חובה (החלטת לאו 27/09/2026): בלי קואורדינטה ההודעה יוצאת בלי שורת המיקום */
   return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
    +'<button class="x" onclick="previewInvoice()">\ud83d\udc41 \u05ea\u05e6\u05d5\u05d2\u05d4 \u05de\u05e7\u05d3\u05d9\u05de\u05d4</button>'
@@ -2442,8 +2441,7 @@ async function sendToCustomer(){
   if(!CUR)return;
   var f=CUR.fields||{};
   var L=exitLoc(f);
-  if(!L.photo||!L.gps){toast("אין צילום יציאה עם קואורדינטה — לא נשלח",1);return;}
-  var loc=L.url;
+  var loc=L.url||"ללא מיקום — ההודעה תישלח בלי שורת המיקום";
   var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
   if(!await appAsk("\u05dc\u05e9\u05dc\u05d5\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea?\n\n\u2022 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df\n\u2022 \u05de\u05d9\u05e7\u05d5\u05dd: "+loc
     +"\n\u2022 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: "+tot))return;
