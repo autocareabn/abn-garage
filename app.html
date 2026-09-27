@@ -418,7 +418,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v26";
+var APP_VERSION="v27";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1067,6 +1067,25 @@ function appTell(msg){return appModal(msg,{tellOnly:true});}
 function toast(m,bad){var t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" err":"");setTimeout(function(){t.className="toast";},2300);}
 function txt(v){if(v==null)return"";if(Array.isArray(v))return v.map(txt).filter(Boolean).join(", ");if(typeof v==="object")return txt(v.name!==undefined?v.name:(v.value!==undefined?v.value:""));return String(v);}
 function ids(v){return (v||[]).map(function(x){return (x&&x.id)||x;});}
+/* שם המכונאי לתצוגה: קישור Airtable חוזר כמזהה רשומה (rec…) — ממפים לשם מתוך EMP.
+   אם EMP טרם נטען: טוענים ברקע ומציירים מחדש פעם אחת; בינתיים "—" ולא מזהה גולמי. */
+var __empRedraw=false;
+function empNames(v){
+  var arr=Array.isArray(v)?v:(v?[v]:[]);
+  var out=arr.map(function(x){
+    if(x&&typeof x==="object"&&x.name)return x.name;
+    var id=(x&&x.id)||x; id=String(id||"");
+    var e=(EMP||[]).filter(function(m){return m.id===id;})[0];
+    if(e&&e.name)return e.name;
+    if(/^rec[A-Za-z0-9]{14}$/.test(id)){
+      if(!__empRedraw&&typeof ensureEmp==="function"){__empRedraw=true;
+        ensureEmp().then(function(){try{draw();}catch(e){}});}
+      return "";
+    }
+    return id;
+  }).filter(Boolean);
+  return out.join(", ");
+}
 function dt(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
 function dk(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[0]:"";}
 function ds(o){var d=new Date();d.setDate(d.getDate()+(o||0));return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -1108,7 +1127,7 @@ function cardRows(r){
     ["סוג טיפול",      T(f["סוג טיפול"])],
     ["סיבת הגעה",      f["סיבת הגעה"]||""],
     ["סטטוס",          T(f["סטטוס"])],
-    ["מכונאי אחראי",   T(f["מכונאי אחראי"])],
+    ["מכונאי אחראי",   empNames(f["מכונאי אחראי"])||T(f["מכונאי אחראי"])],
     ["כניסה",          T(f["מיקום לפני טיפול"])],
     ["יציאה",          T(f["מיקום בסוף הטיפול"])]
   ];
@@ -1184,7 +1203,7 @@ async function markDone(){
   }
   if(st==="מוכן לתשלום"||st==="שולם"){pDet();pPay();return;}
   if(!RULES.canMove(st,"מוכן לתשלום")){toast(RULES.blockReason(st,"מוכן לתשלום"),1);return;}
-  if(!await appAsk("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nתישלח הודעת וואטסאפ ללקוח."))return;
+  if(!await appAsk("להעביר את הכרטיס ל\"מוכן לתשלום\"?\n\nהמשרד (שרה) יקבל הודעה שהרכב מוכן.\nללקוח לא נשלח דבר בשלב הזה — המשרד שולח לו את קישור התשלום אחרי בדיקת החשבון."))return;
   window.__viaDone=true;
   try{ await changeStatus("מוכן לתשלום"); }
   finally{ window.__viaDone=false; }
@@ -1690,7 +1709,7 @@ function draw(){
        +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
        +'<td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
-       +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(txt(f["מכונאי אחראי"]))+'</td>'
+       +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(empNames(f["מכונאי אחראי"])||"—")+'</td>'
        +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
        +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
@@ -2231,6 +2250,8 @@ function invoiceActions(gross){
   var blocked=[];
   if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
   if(unpricedParts().length)blocked.push("\u05d9\u05e9 \u05d7\u05dc\u05e3 \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8");
+  /* שער סטטוס: קישור תשלום יוצא רק אחרי "סיימתי" של המכונאי */
+  if(txt(f["סטטוס"])!=="מוכן לתשלום")blocked.push("הכרטיס אינו \"מוכן לתשלום\" — המכונאי טרם לחץ סיימתי");
   /* מיקום אינו חובה (החלטת לאו 27/09/2026): בלי קואורדינטה ההודעה יוצאת בלי שורת המיקום */
   return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
@@ -2440,6 +2461,11 @@ function exitLoc(f){
 async function sendToCustomer(){
   if(!CUR)return;
   var f=CUR.fields||{};
+  if(txt(f["סטטוס"])!=="מוכן לתשלום"){
+    await appTell('⛔ אפשר לשלוח ללקוח רק כרטיס במצב "מוכן לתשלום".\n\nהמצב הנוכחי: '+(txt(f["סטטוס"])||"—")+'\nהמעבר נעשה כשהמכונאי לוחץ "✓ סיימתי".');
+    return;
+  }
+  if(f["תאריך שליחה לתשלום"]){ toast("ההודעה כבר נשלחה ללקוח"); return; }
   var L=exitLoc(f);
   var loc=L.url||"ללא מיקום — ההודעה תישלח בלי שורת המיקום";
   var tot=money(f['\u05e1\u05d4"\u05db \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd']||0);
@@ -3160,7 +3186,7 @@ async function loadVehHistory(rec){
         return '<tr class="r rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
           +'<td data-l="תאריך">'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"\u2014")+'</td>'
           +'<td data-l="טיפול">'+esc(txt(g["סוג טיפול"])||"\u2014")+'</td>'
-          +'<td data-l="מכונאי" class="muted">'+esc(txt(g["מכונאי אחראי"])||"\u2014")+'</td>'
+          +'<td data-l="מכונאי" class="muted">'+esc(empNames(g["מכונאי אחראי"])||"\u2014")+'</td>'
           +'<td data-l="סטטוס">'+tag("סטטוס",g["סטטוס"])+'</td>'
           +'<td data-l="לתשלום">'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
       +'</tbody></table>':'<div class="muted" style="padding:12px">אין היסטוריית טיפולים לרכב הזה</div>');
