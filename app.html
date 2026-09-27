@@ -419,7 +419,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v31";
+var APP_VERSION="v32";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -808,6 +808,7 @@ var D={
 "מכונאי אחראי":{en:"Mechanic",th:"ช่างผู้รับผิดชอบ"},
 "מכונאי":{en:"Mechanic",th:"ช่าง"},
 "קילומטראז'":{en:"Odometer",th:"เลขไมล์"},
+"קילומטראז' — הקלדה או צילום":{en:"Odometer — type or photo",th:"เลขไมล์ — พิมพ์หรือถ่ายรูป"},
 "קילומטראז' אחרון":{en:"Last odometer",th:"เลขไมล์ล่าสุด"},
 "קילומטראז' נוכחי":{en:"Current odometer",th:"เลขไมล์ปัจจุบัน"},
 "מיקום לפני טיפול":{en:"Location in",th:"ตำแหน่งก่อนซ่อม"},
@@ -1374,7 +1375,7 @@ async function identifyParts(rid,att){
     var msg="✓ זוהו "+ps.length+" חלפים";
     if(low)msg+=" · "+low+" בביטחון נמוך — בדוק";
     if(noPrice)msg+=" · "+noPrice+" ללא מחיר";
-    toast(msg,(low||noPrice)?1:0);
+    toast(msg,low?1:0);
     var L=await all(T.ln); LINES=L; LAST_LOCAL=new Date().getTime();
     if(CUR&&CUR.id===rid){pParts();try{pPay();}catch(e){}}
     refetchCard(rid,0);
@@ -1973,7 +1974,7 @@ function pDet(){var f=CUR.fields||{};
   +statusBlock(f)
   +sel("סוג העבודה","סוג טיפול",TREAT,txt(f["סוג טיפול"]))  /* תווית תצוגה בלבד — שם השדה ב-Airtable נשאר "סוג טיפול" */
   +selLink("מכונאי אחראי","מכונאי אחראי",EMP,ids(f["מכונאי אחראי"]))
-  +num("קילומטראז'","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
+  +num("קילומטראז' — הקלדה או צילום","עדכון קילומטרז' ידני",f["עדכון קילומטרז' ידני"])
   +photoBox("km","📷 צילום הקילומטראז'",f[PHOTO_FIELDS.km])  /* הגרש בשם השדה בא לפני, לא אחרי — הקריאה הישנה לא החזירה דבר */
   +selLink("מיקום לפני טיפול","מיקום לפני טיפול",LOC,ids(f["מיקום לפני טיפול"]))
   +selLink("מיקום בסוף הטיפול","מיקום בסוף הטיפול",LOC,ids(f["מיקום בסוף הטיפול"]))
@@ -2106,7 +2107,7 @@ function pPay(){
             &&(new Date().getTime()-LAST_LOCAL>6000)&&!catGap;
 
   var warn="";
-  if(noPrice)warn+='<div class="hint" style="background:#FDECEC;border-color:var(--red);color:#8a1220">\u26a0\ufe0f '+noPrice+' \u05d7\u05dc\u05e4\u05d9\u05dd \u05de\u05e1\u05d5\u05de\u05e0\u05d9\u05dd "\u05d3\u05d5\u05e8\u05e9 \u05ea\u05de\u05d7\u05d5\u05e8" \u05d5\u05d8\u05e8\u05dd \u05d4\u05d5\u05d6\u05df \u05dc\u05d4\u05dd \u05de\u05d7\u05d9\u05e8</div>';
+  if(noPrice)warn+='<div class="hint" style="background:#FFF7E6;border-color:#B87503;color:#8a5b00">\u26a0\ufe0f תזכורת: '+noPrice+' חלפים מסומנים "דורש תמחור" ועדיין במחיר 0. זה תקין אם החיוב נמצא בפריט אחר (למשל ערכה) — לא חוסם.</div>';
   if(!labour)warn+='<div class="hint" style="background:#FFF7E6;border-color:#B87503;color:#8a5b00">\u26a0\ufe0f \u05dc\u05d0 \u05d4\u05d5\u05d6\u05e0\u05d4 \u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</div>';
   if(drift)warn+='<div class="hint" style="background:#FFF7E6;border-color:#B87503;color:#8a5b00">\u26a0\ufe0f \u05d4\u05d7\u05d9\u05e9\u05d5\u05d1 \u05db\u05d0\u05df ('+money(gross)+') \u05e9\u05d5\u05e0\u05d4 \u05de\u05d4\u05e1\u05db\u05d5\u05dd \u05d1-Airtable ('+money(atGross)+') \u2014 \u05d9\u05d9\u05ea\u05db\u05df \u05e9\u05d4\u05e9\u05d3\u05d5\u05ea \u05d4\u05de\u05d7\u05d5\u05e9\u05d1\u05d9\u05dd \u05d8\u05e8\u05dd \u05d4\u05ea\u05e2\u05d3\u05db\u05e0\u05d5</div>';
 
@@ -2196,12 +2197,13 @@ async function confirmCash(btn){
   var pm=txt(f["אמצעי תשלום"]);
   if(!pm){ await appTell('⛔ לא נבחר אמצעי תשלום.\n\nבחר מזומן / כרטיס אשראי / צ\'ק / העברה בנקאית בשדה "אמצעי תשלום", ואז נסה שוב.'); return; }
 
+  /* v32 (החלטת לאו 27/09/2026): מחיר 0 לפריט בודד תקין — החיוב יכול לשבת בפריט או בשירות אחר
+     (למשל ערכה). רק הסכום הסופי חייב להיות גדול מ-0. "דורש תמחור" הוא תזכורת, לא חסימה. */
   var unp=unpricedParts();
   if(unp.length){
-    await appTell("⛔ "+unp.length+" חלפים מסומנים \"דורש תמחור\" וטרם תומחרו:\n\n• "
+    if(!await appAsk("תזכורת: "+unp.length+" חלפים מסומנים \"דורש תמחור\" ועדיין במחיר 0:\n\n• "
       +unp.slice(0,8).join("\n• ")+(unp.length>8?"\n• ועוד "+(unp.length-8):"")
-      +"\n\nחשבונית עם שורת 0.00 ₪ לא תצא מהמערכת.");
-    mt(1); pParts(); return;
+      +"\n\nמחיר 0 לפריט תקין אם החיוב נמצא בפריט או בשירות אחר (למשל ערכה).\nלהמשיך לקבלת התשלום?")){ mt(1); pParts(); return; }
   }
 
   var gross=Number(f['סה"כ לתשלום']||0);
@@ -2274,7 +2276,6 @@ function cashActions(gross){
   var reasons=[];
   if(!pm)reasons.push("לא נבחר אמצעי תשלום");
   if(!(gross>0))reasons.push('סה"כ לתשלום 0');
-  if(unpricedParts().length)reasons.push("יש חלף שדורש תמחור");
   if(txt(f["סטטוס"])!=="מוכן לתשלום")reasons.push('הכרטיס אינו "מוכן לתשלום" — המכונאי טרם לחץ סיימתי');
 
   html+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
@@ -2298,7 +2299,6 @@ function invoiceActions(gross){
   var loc=exitLoc(f);
   var blocked=[];
   if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
-  if(unpricedParts().length)blocked.push("\u05d9\u05e9 \u05d7\u05dc\u05e3 \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8");
   /* שער סטטוס: קישור תשלום יוצא רק אחרי "סיימתי" של המכונאי */
   if(txt(f["סטטוס"])!=="מוכן לתשלום")blocked.push("הכרטיס אינו \"מוכן לתשלום\" — המכונאי טרם לחץ סיימתי");
   /* מיקום אינו חובה (החלטת לאו 27/09/2026): בלי קואורדינטה ההודעה יוצאת בלי שורת המיקום */
@@ -2611,9 +2611,9 @@ var RULES={
   }
 };
 
-/* --- חלפים ללא מחיר: חוסם סגירת כרטיס לתשלום ---
-   מגן מפני חשבונית עם שורת 0.00 ₪ (כמו בחשבונית 14980).
-   פועל גם כשקטלוג החלפים עדיין לא תומחר במלואו. */
+/* --- חלפים שסומנו "דורש תמחור" ועדיין ב-0 — תזכורת בלבד (v32) ---
+   מחיר 0 לפריט בודד תקין: החיוב יכול לשבת בפריט או בשירות אחר (ערכה).
+   החסימה היחידה היא סכום סופי 0 — נבדקת ב-confirmCash וב-invoiceActions. */
 function unpricedParts(){
   if(!CUR)return [];
   var ls=(typeof myLines==="function"?myLines():[]);
@@ -2701,14 +2701,7 @@ async function changeStatus(to){
       await appTell("⛔ אי אפשר להעביר ידנית ל\"מוכן לתשלום\".\n\nהמעבר מתבצע רק אחרי שהמכונאי לוחץ על \"✓ סיימתי את העבודה\" בכרטיס.");
       pDet();return;
     }
-    /* 2א. חסימה קשיחה: חלף ללא מחיר → חשבונית שגויה. אין דריסה. */
-    var noPrice=unpricedParts();
-    if(noPrice.length){
-      await appTell("⛔ לא ניתן לסגור לתשלום — "+noPrice.length+" חלפים ללא מחיר:\n\n• "
-        +noPrice.slice(0,8).join("\n• ")+(noPrice.length>8?"\n• ועוד "+(noPrice.length-8):"")
-        +"\n\nהשלם מחיר בלשונית \"חלפים\" ונסה שוב.\nחשבונית עם שורת 0.00 ₪ לא תצא מהמערכת.");
-      mt(1); pParts(); return;
-    }
+    /* 2א. (v32) חלף במחיר 0 אינו חוסם סגירה — שרה משלימה מחירים אחרי "סיימתי". */
     if(!ids(f["מיקום בסוף הטיפול"]).length){
       if(!await appAsk("⚠️ לא עודכן מיקום הרכב בסוף הטיפול.\n\nלהמשיך בכל זאת?")){pDet();return;}
     }
