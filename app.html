@@ -419,7 +419,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v35";
+var APP_VERSION="v36";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -917,6 +917,12 @@ var D={
 "קוד רכב (קוד התנעה)":{en:"Car code (immobiliser)",th:"รหัสรถ (รหัสสตาร์ท)"},
 "✓ צור רכב חדש ללקוח":{en:"✓ Create new vehicle for customer",th:"✓ สร้างรถใหม่ให้ลูกค้า"},
 "🔗 שייך ללקוח הזה":{en:"🔗 Link to this customer",th:"🔗 ผูกกับลูกค้านี้"},
+"הסר מהלקוח":{en:"Remove from customer",th:"นำออกจากลูกค้า"},
+"🗑 מחק רכב":{en:"🗑 Delete vehicle",th:"🗑 ลบรถ"},
+"לחץ שוב להסרה":{en:"Tap again to remove",th:"แตะอีกครั้งเพื่อนำออก"},
+"לחץ שוב למחיקה":{en:"Tap again to delete",th:"แตะอีกครั้งเพื่อลบ"},
+"✓ הרכב הוסר מהלקוח":{en:"✓ Vehicle removed from customer",th:"✓ นำรถออกจากลูกค้าแล้ว"},
+"✓ הרכב נמחק":{en:"✓ Vehicle deleted",th:"✓ ลบรถแล้ว"},
 "✓ כבר משויך ללקוח הזה":{en:"✓ Already linked to this customer",th:"✓ ผูกกับลูกค้านี้แล้ว"},
 "✓ הרכב שויך ללקוח":{en:"✓ Vehicle linked to customer",th:"✓ ผูกรถกับลูกค้าแล้ว"},
 "השיוך נכשל":{en:"Linking failed",th:"ผูกไม่สำเร็จ"},
@@ -3559,7 +3565,7 @@ function cvCreate(cid){
   var btn=document.getElementById("cvSave"); if(btn){btn.disabled=true;btn.textContent="יוצר…";}
   fetch(PX+B+"/"+T.veh,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
    .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(){toast("✓ נוצר רכב — פרטיו יושלמו מגוב.יל");cusRefresh(cid);})
+   .then(function(v){toast("✓ נוצר רכב — פרטיו יושלמו מגוב.יל");cusRefresh(cid,v&&v.id);})
    .catch(function(){if(btn){btn.disabled=false;btn.textContent="✓ צור רכב חדש ללקוח";}toast("היצירה נכשלה",1);});
 }
 function cvLink(vid,cid,btn){
@@ -3568,15 +3574,39 @@ function cvLink(vid,cid,btn){
   var c=((document.getElementById("cvCode")||{}).value||"").trim(); if(c)f["קוד רכב"]=c;
   fetch(PX+B+"/"+T.veh+"/"+vid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:f,typecast:true})})
    .then(function(r){return r.ok?r.json():Promise.reject();})
-   .then(function(){toast("✓ הרכב שויך ללקוח");cusRefresh(cid);})
+   .then(function(){toast("✓ הרכב שויך ללקוח");cusRefresh(cid,vid);})
    .catch(function(){if(btn){btn.disabled=false;btn.textContent="🔗 שייך ללקוח הזה";}toast("השיוך נכשל",1);});
 }
 /* טוען מחדש את הלקוח (הקישור ההפוך מתעדכן ב-Airtable) ומרענן את לשונית הרכבים וההיסטוריה */
-async function cusRefresh(cid){
-  try{var rec=await api("/"+T.cus+"/"+cid); EDIT_REC=rec; var f=rec.fields||{};
-    document.getElementById("mS").textContent=(f["מספר טלפון"]||"")+" · "+txt(f["מספר רכבים"])+" רכבים";
-    await loadCusHistory(rec);
+async function cusRefresh(cid,addId,rmId){
+  try{await loadCusHistory({id:cid,fields:(EDIT_REC&&EDIT_REC.id===cid)?EDIT_REC.fields:{}},addId,rmId);
+    /* ריענון שני אחרי שהקישור ההפוך ב-Airtable התעדכן בוודאות */
+    setTimeout(function(){if(EDIT_KIND==="cus"&&EDIT_REC&&EDIT_REC.id===cid)loadCusHistory(EDIT_REC,addId,rmId);},2500);
   }catch(e){toast("הרענון נכשל — פתח את הלקוח מחדש",1);}
+}
+/* לחיצה ראשונה מחמשת את הכפתור, שנייה (תוך 4 שניות) מבצעת — בלי חלון אישור של הדפדפן */
+function armBtn(btn,label){
+  if(btn.getAttribute("data-armed")==="1")return true;
+  var orig=btn.innerHTML; btn.setAttribute("data-armed","1"); btn.innerHTML=label; btn.style.background="#fdecec";
+  setTimeout(function(){if(btn.isConnected&&btn.getAttribute("data-armed")==="1"){btn.removeAttribute("data-armed");btn.innerHTML=orig;btn.style.background="";}},4000);
+  return false;
+}
+function cvUnlink(vid,cid,btn){
+  if(!armBtn(btn,"לחץ שוב להסרה"))return;
+  btn.disabled=true; btn.textContent="מסיר…";
+  fetch(PX+B+"/"+T.veh+"/"+vid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{"לקוח":[]},typecast:true})})
+   .then(function(r){return r.ok?r.json():Promise.reject();})
+   .then(function(){toast("✓ הרכב הוסר מהלקוח");cusRefresh(cid,null,vid);})
+   .catch(function(){btn.disabled=false;btn.removeAttribute("data-armed");btn.textContent="הסר מהלקוח";toast("ההסרה נכשלה",1);});
+}
+/* מחיקה מלאה — רק לרכב בלי אף כרטיס עבודה (נוצר בטעות), ורק לדרג הניהולי */
+function cvDelete(vid,cid,btn){
+  if(!crudCan()){toast("אין הרשאה למחוק רכבים",1);return;}
+  if(!armBtn(btn,"לחץ שוב למחיקה"))return;
+  btn.disabled=true; btn.textContent="מוחק…";
+  fetch(PX+B+"/"+T.veh+"/"+vid,{method:"DELETE"})
+   .then(function(r){if(!r.ok)throw 0;toast("✓ הרכב נמחק");cusRefresh(cid,null,vid);})
+   .catch(function(){btn.disabled=false;btn.removeAttribute("data-armed");btn.textContent="🗑 מחק רכב";toast("המחיקה נכשלה",1);});
 }
 /* ממסך הרכבים: בוחרים לקוח (טלפון/שם) או יוצרים חדש, ואז נפתח כרטיס הלקוח עם טופס הרכב */
 function newVehStandalone(){
@@ -3646,21 +3676,33 @@ function openCus(rec){
   document.getElementById("ov").classList.add("on");
 }
 /* טוען את כל הרכבים וכל כרטיסי העבודה של הלקוח */
-async function loadCusHistory(rec){
+async function loadCusHistory(rec,addId,rmId){
+  /* v36: הרשומה שהגיעה מתוצאות החיפוש יכולה להיות ישנה (לפני שיוך/יצירת רכב) — טוענים תמיד טרייה מהשרת */
+  try{var fresh=await api("/"+T.cus+"/"+rec.id); if(fresh&&fresh.fields){rec=fresh; if(EDIT_KIND==="cus"&&EDIT_REC&&EDIT_REC.id===rec.id)EDIT_REC=rec;}}catch(e){}
   var f=rec.fields||{}, nm=f["שם לקוח"]||"", cid=rec.id;
   /* --- רכבים --- */
   try{
     var vids=ids(f["רכבים"]||f["מספר רכב"]||[]);
+    /* הקישור ההפוך ב-Airtable עלול להתעדכן בשנייה-שתיים של איחור — מוסיפים/מסירים את מה שהרגע שינינו */
+    if(addId&&vids.indexOf(addId)<0)vids.push(addId);
+    if(rmId)vids=vids.filter(function(v){return v!==rmId;});
     var vehs=[];
     if(vids.length){
       vehs=await find(T.veh,"OR("+vids.map(function(v){return "RECORD_ID()="+q(v);}).join(",")+")",Math.min(100,vids.length));
     }
     var el1=document.getElementById("p1");
-    el1.innerHTML=cusVehBar(cid)+(vehs.length? '<table><thead><tr><th>מספר רכב</th><th>יצרן / דגם</th><th>שנה</th><th>טסט</th></tr></thead><tbody>'
-      +vehs.map(function(v){var g=v.fields||{};
+    if(rmId)vehs=vehs.filter(function(v){return v.id!==rmId;});
+    var ms=document.getElementById("mS"); if(ms&&EDIT_KIND==="cus")ms.textContent=(f["מספר טלפון"]||"")+" · "+vehs.length+" רכבים";
+    var act=!isMech();
+    el1.innerHTML=cusVehBar(cid)+(vehs.length? '<table><thead><tr><th>מספר רכב</th><th>יצרן / דגם</th><th>שנה</th><th>טסט</th>'+(act?'<th></th>':'')+'</tr></thead><tbody>'
+      +vehs.map(function(v){var g=v.fields||{}, nWo=Number(g["סך הכל כרטיסי עבודה לרכב"])||0;
         return '<tr class="r rowlink" onclick="openVehById(\''+v.id+'\')" title="לחץ לפתיחת כרטיס הרכב"><td data-l="רכב"><b>'+esc(dash(g["מספר רכב"]))+'</b></td><td data-l="יצרן / דגם">'
           +esc(((g["יצרן (מלל חופשי)"]||"")+" "+(g["דגם (מלל חופשי)"]||"")).trim()||"—")+'</td><td data-l="שנה">'
-          +esc(txt(g["שנת ייצור"])||"—")+'</td><td data-l="טסט">'+esc(dt(g["תאריך הטסט"])||"—")+'</td></tr>';}).join("")
+          +esc(txt(g["שנת ייצור"])||"—")+'</td><td data-l="טסט">'+esc(dt(g["תאריך הטסט"])||"—")+'</td>'
+          +(act?'<td onclick="event.stopPropagation()" style="white-space:nowrap">'
+            +'<button class="x" style="width:auto;padding:4px 9px;font-size:12px" onclick="cvUnlink(\''+v.id+'\',\''+cid+'\',this)">הסר מהלקוח</button>'
+            +(nWo===0&&crudCan()?' <button class="x" style="width:auto;padding:4px 9px;font-size:12px;color:#8a1220;border-color:#f3b8bb" onclick="cvDelete(\''+v.id+'\',\''+cid+'\',this)">🗑 מחק רכב</button>':'')
+            +'</td>':'')+'</tr>';}).join("")
       +'</tbody></table>' : '<div class="muted" style="padding:12px">אין רכבים משויכים</div>');
     if(window.__cvAutoAdd===cid){window.__cvAutoAdd=null;mt(1);cusAddVeh(cid);}
   }catch(e){document.getElementById("p1").innerHTML='<div class="muted" style="padding:12px">טעינת הרכבים נכשלה</div>';}
