@@ -175,6 +175,13 @@ tr.r{transition:background .12s}
 .pbtn.cam{background:var(--red);color:#fff;border-color:var(--red)}
 .pbtn:active{transform:scale(.985)}
 .pbtn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+/* v39: מצלמה בתוך האפליקציה (מחשב / טאבלט בלי מצלמה מובנית בבורר הקבצים) */
+.camov{position:fixed;inset:0;background:rgba(10,12,20,.92);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;gap:12px}
+.camov video{max-width:100%;max-height:70vh;border-radius:12px;background:#000}
+.camov .cbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.camov .cbar button{min-height:48px;padding:10px 18px;border-radius:12px;border:0;font-size:15px;font-weight:700;cursor:pointer}
+.camov .snap{background:var(--red);color:#fff;min-width:140px}
+.camov .sec2{background:#fff;color:var(--ink)}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .thumbs .th{position:relative;display:inline-block}
 .thumbs img{height:88px;max-width:150px;border-radius:9px;border:1px solid #dfe3ea;object-fit:cover;cursor:zoom-in;display:block}
@@ -419,7 +426,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v38";
+var APP_VERSION="v39";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -909,6 +916,8 @@ var D={
 "הוסף תמונה נוספת":{en:"Add another photo",th:"เพิ่มรูป"},
 "✓ צור לקוח":{en:"✓ Create customer",th:"✓ สร้างลูกค้า"},
 "✓ צור רכב":{en:"✓ Create vehicle",th:"✓ สร้างรถ"},
+"📷 צלם":{en:"📷 Take photo",th:"📷 ถ่ายรูป"},"📷 צלם עוד":{en:"📷 Take another",th:"📷 ถ่ายเพิ่ม"},
+"📸 צלם":{en:"📸 Capture",th:"📸 ถ่าย"},"🔄 החלף מצלמה":{en:"🔄 Switch camera",th:"🔄 สลับกล้อง"},"✕ ביטול":{en:"✕ Cancel",th:"✕ ยกเลิก"},
 "+ הוסף / שייך רכב":{en:"+ Add / link vehicle",th:"+ เพิ่ม / ผูกรถ"},
 "+ רכב חדש":{en:"+ New vehicle",th:"+ รถใหม่"},
 "+ לקוח חדש":{en:"+ New customer",th:"+ ลูกค้าใหม่"},
@@ -1338,7 +1347,7 @@ async function pfInput(inp,key,rid){
     var rec=await pfPut(key,rid,file);
     /* מיקום: נתפס רק אם ההרשאה כבר ניתנה. לעולם לא מבקשים אותה מהמשתמש. */
     if(c&&c.gps){
-      var co=await gpsIfGranted();
+      var gg=await gpsAsk(), co=gg.co||null;   /* v39: צילום מיקום הוא פעולה מפורשת — מבקשים הרשאה אם צריך */
       /* צילום חדש בלי קואורדינטה לא יורש קואורדינטה ישנה — אחרת נשלח ללקוח מיקום שלא שייך לתמונה */
       if(!co&&key==="loc-out"){var z={};z[c.gps]="";
         await fetch(PX+B+"/"+pfTbl(c)+"/"+rid,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:z,typecast:true})});}
@@ -1434,13 +1443,82 @@ function pollParts(rid,n){
    ⚠️ face נשאר בחתימה כדי לא לשבור קוראים קיימים; הוא כבר לא בשימוש.
    ========================================================================== */
 function pickHTML(handler,accept,face,has){
+  /* v39 (החלטת לאו 28/09/2026): כפתור אחד בלבד — "📷 צלם".
+     בטלפון/טאבלט: מצלמת המכשיר נפתחת ישירות (capture). במחשב: מצלמה בתוך האפליקציה.
+     אין בחירה מהגלריה. ה-input המוסתר נשאר רק כצינור אל ה-handler הקיים (ולגיבוי כשאין מצלמה בכלל). */
   accept=accept||"image/*,video/*";
-  var label=has?"\u05d4\u05d5\u05e1\u05e3 \u05ea\u05de\u05d5\u05e0\u05d4 \u05e0\u05d5\u05e1\u05e4\u05ea":"\u05e6\u05dc\u05dd \u05d0\u05d5 \u05d1\u05d7\u05e8 \u05ea\u05de\u05d5\u05e0\u05d4";
+  var camLbl=has?"📷 צלם עוד":"📷 צלם";
   return '<div class="pick">'
-   +'<label class="pbtn cam">\ud83d\udcf7 '+label
-     +'<input type="file" accept="'+accept+'" onchange="'+handler+'"></label>'
+   +'<button type="button" class="pbtn cam" data-face="'+(face==="user"?"user":"environment")+'" onclick="camOpen(this)">'+camLbl+'</button>'
+   +'<input type="file" accept="'+accept+'" style="display:none" onchange="'+handler+'">'
    +'</div>'
-   +(has?'<div class="mini">\u05dc\u05d4\u05d7\u05dc\u05e4\u05ea \u05e7\u05d5\u05d1\u05e5 \u2014 \u05de\u05d7\u05e7 \u05d0\u05d5\u05ea\u05d5 \u05d1-\u2715 \u05d5\u05d4\u05e2\u05dc\u05d4 \u05d7\u05d3\u05e9</div>':'');
+   +(has?'<div class="mini">להחלפת קובץ — מחק אותו ב-✕ וצלם מחדש</div>':'');
+}
+/* מעביר קובץ שצולם אל ה-input של הבורר ומפעיל את ה-handler הרגיל שלו */
+function camFeed(inp,file){
+  try{
+    var dt=new DataTransfer(); dt.items.add(file); inp.files=dt.files;
+    inp.dispatchEvent(new Event("change",{bubbles:true}));
+  }catch(e){
+    try{(new Function(inp.getAttribute("onchange")||"")).call({files:[file],value:""});}
+    catch(e2){toast("העלאת הצילום נכשלה",1);}
+  }
+}
+function camIsTouch(){try{return matchMedia("(pointer:coarse)").matches||("ontouchstart" in window);}catch(e){return false;}}
+function camOpen(btn){
+  var inp=btn.parentNode.querySelector('input[type="file"]'); if(!inp)return;
+  var face=btn.getAttribute("data-face")||"environment";
+  if(camIsTouch()){
+    /* טלפון / טאבלט: המצלמה של מערכת ההפעלה, איכות מלאה */
+    var t=document.createElement("input"); t.type="file"; t.accept="image/*"; t.setAttribute("capture",face);
+    t.style.display="none"; document.body.appendChild(t);
+    t.onchange=function(){var f=t.files&&t.files[0]; if(f)camFeed(inp,f); setTimeout(function(){t.remove();},0);};
+    t.click(); return;
+  }
+  camLive(inp,face);
+}
+/* מחשב: מצלמת הרשת בתוך חלונית — צילום, החלפת מצלמה, ביטול */
+async function camLive(inp,face){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast("אין מצלמה זמינה במכשיר — בחר קובץ",1); inp.click(); return;
+  }
+  var ov=document.createElement("div"); ov.className="camov";
+  ov.innerHTML='<video autoplay playsinline muted></video>'
+    +'<div class="cbar"><button class="snap">📸 צלם</button>'
+    +'<button class="sec2 flip">🔄 החלף מצלמה</button>'
+    +'<button class="sec2 cancel">✕ ביטול</button></div>';
+  document.body.appendChild(ov);
+  var video=ov.querySelector("video"), stream=null, devs=[], di=-1;
+  function stop(){if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}}
+  function close(){stop();ov.remove();document.removeEventListener("keydown",esc1);}
+  function esc1(e){if(e.key==="Escape"){e.stopPropagation();close();}}
+  document.addEventListener("keydown",esc1);
+  async function start(){
+    stop();
+    var c=di>=0&&devs[di]?{deviceId:{exact:devs[di].deviceId}}:{facingMode:face};
+    stream=await navigator.mediaDevices.getUserMedia({video:Object.assign(c,{width:{ideal:1920},height:{ideal:1080}}),audio:false});
+    video.srcObject=stream;
+  }
+  try{
+    await start();
+    try{devs=(await navigator.mediaDevices.enumerateDevices()).filter(function(d){return d.kind==="videoinput";});}catch(e){}
+    if(devs.length<2)ov.querySelector(".flip").style.display="none";
+  }catch(e){
+    close();
+    toast(/NotAllowed|Permission/i.test(String(e&&e.name))?"הגישה למצלמה חסומה בדפדפן — אפשר לבחור קובץ":"לא נמצאה מצלמה — אפשר לבחור קובץ",1);
+    inp.click(); return;
+  }
+  ov.querySelector(".cancel").onclick=close;
+  ov.querySelector(".flip").onclick=function(){if(!devs.length)return;di=(di+1)%devs.length;start().catch(function(){toast("החלפת המצלמה נכשלה",1);});};
+  ov.querySelector(".snap").onclick=function(){
+    var w=video.videoWidth,h=video.videoHeight; if(!w||!h){toast("המצלמה עדיין נטענת",1);return;}
+    var cv=document.createElement("canvas"); cv.width=w; cv.height=h; cv.getContext("2d").drawImage(video,0,0,w,h);
+    cv.toBlob(function(b){
+      close(); if(!b){toast("הצילום נכשל",1);return;}
+      var f=new File([b],"photo-"+Date.now()+".jpg",{type:"image/jpeg"});
+      camFeed(inp,f);
+    },"image/jpeg",0.9);
+  };
 }
 /* ===== ניהול הקבצים המצורפים ===== */
 /* מפתח → הטבלה והשדה. מפתח ולא שם שדה, כי שמות השדות מכילים גרש. */
@@ -1546,17 +1624,31 @@ async function gpsIfGranted(){
     });
   }catch(e){return null;}
 }
+/* v39: לפעולה מפורשת של המשתמש ("תפוס מיקום" / צילום מיקום) — מותר לבקש הרשאה.
+   הדפדפן שואל פעם אחת בלבד לאתר; אחרי אישור זה שקט. מחזיר {co} או {err}. */
+function gpsAsk(){
+  return new Promise(function(res){
+    if(!navigator.geolocation){res({err:"המכשיר לא תומך במיקום"});return;}
+    navigator.geolocation.getCurrentPosition(
+      function(p){res({co:p.coords.latitude.toFixed(6)+","+p.coords.longitude.toFixed(6)});},
+      function(e){res({err:e&&e.code===1?"הרשאת המיקום חסומה — יש לאפשר מיקום לאתר בהגדרות הדפדפן"
+        :(e&&e.code===3?"לא התקבל מיקום בזמן — נסה שוב (עדיף ליד חלון / בחוץ)":"המיקום לא זמין")});},
+      {enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+  });
+}
 /* שם ישן — נשאר כדי לא לשבור קוראים, אבל כבר לא מבקש הרשאה */
 function getPos(){return gpsIfGranted();}
 
 /* לחיצה מפורשת על "תפוס מיקום". גם היא לא מקפיצה דיאלוג. */
 async function pfGrabGps(which){
   if(!CUR)return;
-  var c=PF["loc-"+which];
-  var co=await gpsIfGranted();
-  if(!co){toast("\u05de\u05d9\u05e7\u05d5\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u2014 \u05d4\u05e8\u05e9\u05d0\u05ea \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05db\u05d1\u05d5\u05d9\u05d4 \u05d1\u05d3\u05e4\u05d3\u05e4\u05df",1);return;}
-  var o={}; o[c.gps]=co;
-  patchWO(o,pDet,"\u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e0\u05ea\u05e4\u05e1");
+  var c=PF["loc-"+which], rid=CUR.id;
+  toast("\ud83d\udccd \u05de\u05d0\u05ea\u05e8 \u05de\u05d9\u05e7\u05d5\u05dd\u2026");
+  var g=await gpsAsk();   /* v39: לחיצה מפורשת — מבקשים הרשאה אם צריך (פעם אחת) */
+  if(!g.co){toast(g.err||"\u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df",1);return;}
+  if(!CUR||CUR.id!==rid)return;
+  var o={}; o[c.gps]=g.co;
+  patchWO(o,pDet,"\u2713 \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e0\u05ea\u05e4\u05e1 \u05d5\u05e0\u05e9\u05de\u05e8");
 }
 function mapBox(coords,label){
   if(!coords)return '<div class="muted" style="font-size:12.5px">אין מיקום מתועד</div>';
