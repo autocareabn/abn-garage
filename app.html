@@ -419,7 +419,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v32";
+var APP_VERSION="v33";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1722,8 +1722,10 @@ function draw(){
        +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
        +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
-    if(!FOUND.length){el.innerHTML='<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
-    el.innerHTML='<table><tr><th>שם</th><th>טלפון</th><th>דוא"ל</th><th>כרטיסים</th><th>רכבים</th><th>סטטוס</th></tr>'
+    /* v33: כפתור "לקוח חדש" גם ממסך הלקוחות, לא רק מתוך כרטיס עבודה חדש */
+    var ncBtn=isMech()?'':'<div style="margin-bottom:10px"><button class="save" style="width:auto;padding:9px 18px" onclick="newCusStandalone()">+ לקוח חדש</button></div>';
+    if(!FOUND.length){el.innerHTML=ncBtn+'<div class="hint">הקלד שם לקוח או טלפון בחיפוש למעלה. הטבלה מכילה למעלה מ-10,000 לקוחות, לכן החיפוש רץ בשרת.</div>';return;}
+    el.innerHTML=ncBtn+'<table><tr><th>שם</th><th>טלפון</th><th>דוא"ל</th><th>כרטיסים</th><th>רכבים</th><th>סטטוס</th></tr>'
      +FOUND.map(function(r){var f=r.fields||{};
       return '<tr class="r rowlink" onclick="openCus(FOUND['+FOUND.indexOf(r)+'])" title="לחץ לפתיחת כרטיס הלקוח"><td data-l="שם"><b>'+esc(f["שם לקוח"]||"")+'</b></td><td data-l="טלפון">'+esc(f["מספר טלפון"]||"")+'</td>'
        +'<td class="muted">'+esc(f['דוא"ל']||"")+'</td><td>'+esc(txt(f["מספר כרטיסי עבודה"]))+'</td>'
@@ -2825,7 +2827,9 @@ function newCusForm(phone){
    +'<div class="f"><label>כתובת</label><input id="ncnAddr"></div>'
    +'</div><div id="dupBox"></div>'
    +'<button class="save" id="ncnSave" onclick="createCustomer()">✓ צור לקוח</button>'
-   +'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה לחיפוש טלפון</button>';
+   +(window.__ncStandalone
+      ?'<button class="save" style="background:#5b6172;margin-top:8px" onclick="closeCard()">ביטול</button>'
+      :'<button class="save" style="background:#5b6172;margin-top:8px" onclick="newCard()">← חזרה לחיפוש טלפון</button>');
   window.__dupList=[];
   setTimeout(function(){var e=document.getElementById("ncnName");if(e)e.focus();},80);
 }
@@ -2851,7 +2855,23 @@ async function cusDupCheck(){
         +'<button class="x" style="width:auto;padding:5px 10px;color:#1d7a33;border-color:#a8ddb4" onclick="useExistingCus(\''+r.id+'\',\''+esc((g["שם לקוח"]||"")+" · "+(g["מספר טלפון"]||"")).replace(/\'/g,"")+'\')">זה הוא</button></div>';}).join("");
   }catch(e){box.innerHTML='<div class="hint">בדיקת הכפילויות נכשלה — אפשר להמשיך</div>';}
 }
-function useExistingCus(id,lbl){window.__ncCus=id;window.__ncCusLbl=lbl||"";toast("✓ נבחר לקוח קיים");ncStep2();}
+function newCusStandalone(){
+  CUR=null; ncReset(); window.__ncStandalone=true;
+  var s=(document.getElementById("q").value||"").trim(), d=normPhone(s);
+  document.getElementById("mT").textContent="לקוחות";
+  document.getElementById("mTabs").innerHTML="";
+  document.getElementById("p0").className="pane on";
+  [1,2,3,4].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane";});
+  document.getElementById("ov").classList.add("on");
+  newCusForm(d.length>=9?d:"");
+  if(s&&d.length<9){var n=document.getElementById("ncnName");if(n){n.value=s;cusDupCheck();}}
+}
+async function ncAfterCus(rec){
+  if(!window.__ncStandalone){ncStep2();return;}
+  window.__ncStandalone=false;
+  try{if(!rec)rec=await api("/"+T.cus+"/"+window.__ncCus);openCus(rec);}catch(e){closeCard();}
+}
+function useExistingCus(id,lbl){window.__ncCus=id;window.__ncCusLbl=lbl||"";toast("✓ נבחר לקוח קיים");ncAfterCus(null);}
 function createCustomer(){
   var nm=(document.getElementById("ncnName").value||"").trim();
   var ph=(document.getElementById("ncnPhone").value||"").trim();
@@ -2866,7 +2886,7 @@ function createCustomer(){
   fetch(PX+B+"/"+T.cus,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
    .then(function(r){return r.ok?r.json():Promise.reject();})
    .then(function(rec){window.__ncCus=rec.id;window.__ncCusLbl=nm+" · "+normPhone(ph);
-     toast("✓ נוצר לקוח "+nm);ncStep2();})
+     toast("✓ נוצר לקוח "+nm);ncAfterCus(rec);})
    .catch(function(){btn.disabled=false;btn.textContent="✓ צור לקוח";toast("היצירה נכשלה",1);});
 }
 
@@ -2915,7 +2935,7 @@ function createVehicle(){
 }
 /* ===== כרטיס עבודה חדש — אשף 3 שלבים: טלפון ← רכב ← פרטי ההזמנה =====
    אין כאן בחירת מכונאי: המכונאי משויך בעמדה, והשיוך הוא שמעביר ל"בטיפול". */
-function ncReset(){window.__ncCus=null;window.__ncVeh=null;window.__ncCusLbl="";window.__ncVehLbl="";window.__ncPhotos={};window.__ncFound={};}
+function ncReset(){window.__ncStandalone=false;window.__ncCus=null;window.__ncVeh=null;window.__ncCusLbl="";window.__ncVehLbl="";window.__ncPhotos={};window.__ncFound={};}
 function ncShell(sub){
   document.getElementById("mT").textContent="כרטיס עבודה חדש";
   document.getElementById("mS").textContent=sub||"";
