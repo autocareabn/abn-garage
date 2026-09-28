@@ -419,7 +419,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v36";
+var APP_VERSION="v37";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2841,6 +2841,10 @@ function fmtPlate(v){var d=normPhone(v);
  if(d.length===8)return d.slice(0,3)+"-"+d.slice(3,5)+"-"+d.slice(5);
  if(d.length===7)return d.slice(0,2)+"-"+d.slice(2,5)+"-"+d.slice(5);return d;}
 
+/* v37: אותו כלל כמו הנוסחה "מונית / רכב ציבורי" ב-Airtable — 7 ספרות שמסתיימות ב-25/26, או 8 ספרות שמסתיימות ב-49.
+   רכב פרטי נוצר "מאושר"; מונית / ציבורי נשאר "מחכה לאישור". */
+function isTaxiPlate(v){var d=normPhone(v),e=d.slice(-2);return (d.length===7&&(e==="25"||e==="26"))||(d.length===8&&e==="49");}
+function vehDefaultStatus(v){return isTaxiPlate(v)?"מחכה לאישור":"מאושר";}
 function newCusForm(phone){
   document.getElementById("mS").textContent="לקוח חדש";
   cardMode("rec");
@@ -2909,7 +2913,7 @@ function createCustomer(){
   b.fields["שם לקוח"]=nm; b.fields["מספר טלפון"]=normPhone(ph);
   var m=document.getElementById("ncnMail").value.trim(); if(m)b.fields['דוא"ל']=m;
   var a=document.getElementById("ncnAddr").value.trim(); if(a)b.fields["כתובת"]=a;
-  b.fields["סטטוס לקוח"]="מחכה לאישור";
+  b.fields["סטטוס לקוח"]="מאושר";   /* v37: ברירת מחדל מאושר (החלטת לאו 28/09/2026) */
   var btn=document.getElementById("ncnSave");btn.disabled=true;btn.textContent="יוצר…";
   fetch(PX+B+"/"+T.cus,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
    .then(function(r){return r.ok?r.json():Promise.reject();})
@@ -2952,6 +2956,7 @@ function createVehicle(){
   if(!window.__ncCus){toast("צריך לבחור לקוח קודם",1);return;}
   var b={fields:{},typecast:true};
   b.fields["מספר רכב"]=fmtPlate(pl);
+  b.fields["סטטוס רכב"]=vehDefaultStatus(pl);
   b.fields["לקוח"]=[window.__ncCus];
   var c=document.getElementById("nvCode").value.trim(); if(c)b.fields["קוד רכב"]=c;
   var btn=document.getElementById("nvSave");btn.disabled=true;btn.textContent="יוצר…";
@@ -3560,7 +3565,7 @@ function cvCreate(cid){
   var pl=normPhone(document.getElementById("cvPlate").value);
   if(!validPlate(pl)){toast("מספר רכב חייב 7 או 8 ספרות",1);return;}
   var b={fields:{},typecast:true};
-  b.fields["מספר רכב"]=fmtPlate(pl); b.fields["לקוח"]=[cid];
+  b.fields["מספר רכב"]=fmtPlate(pl); b.fields["לקוח"]=[cid]; b.fields["סטטוס רכב"]=vehDefaultStatus(pl);
   var c=(document.getElementById("cvCode").value||"").trim(); if(c)b.fields["קוד רכב"]=c;
   var btn=document.getElementById("cvSave"); if(btn){btn.disabled=true;btn.textContent="יוצר…";}
   fetch(PX+B+"/"+T.veh,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
@@ -3666,7 +3671,7 @@ function openCus(rec){
    +'<div class="f"><label>סוג לקוח (לחשבונית)</label><select id="cT"><option value=""></option>'
      +["לקוח פרטי","עוסק מורשה / חברה","לא ידוע"].map(function(o){return '<option'+(txt(f["סוג לקוח (לחשבונית)"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
    +'<div class="f"><label>סטטוס לקוח</label><select id="cS"><option value=""></option>'
-     +["פעיל","מחכה לאישור","חסום"].map(function(o){return '<option'+(txt(f["סטטוס לקוח"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+     +["מאושר","מחכה לאישור","פעיל","חסום"].map(function(o){return '<option'+(txt(f["סטטוס לקוח"])===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
    +'</div>'
    +'<div class="f"><label>הערות</label><textarea id="cNote">'+esc(f["הערות"]||"")+'</textarea></div>'
    +'<div class="sec">תמונה</div>'
