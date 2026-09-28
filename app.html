@@ -426,7 +426,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v41";
+var APP_VERSION="v42";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1839,13 +1839,13 @@ function draw(){
   if(VIEW==="work"){var rs=woRows();
     if(!rs.length){el.innerHTML='<div class="empty">אין כרטיסים להצגה</div>';return;}
     el.innerHTML='<table><tr><th style="width:30px"><input type="checkbox" onclick="selAll(this.checked)"></th><th>תאריך</th><th>לקוח</th><th>רכב</th><th>דגם</th><th>סוג טיפול</th><th>מכונאי</th><th>סטטוס</th><th>סה"כ</th><th style="width:26px"></th></tr>'
-     +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]);
+     +rs.map(function(r){var f=r.fields||{},st=txt(f["סטטוס"]),acc=txt(f["סטטוס חשבון"]);
       return '<tr class="r rowlink" onclick="rowTap(\''+r.id+'\',event)" title="לחץ לפתיחת הכרטיס"><td onclick="toggleSel(\''+r.id+'\',event)"><input type="checkbox"'+(SEL.indexOf(r.id)>=0?" checked":"")+'></td>'
        +'<td data-l="תאריך" class="muted">'+esc(dt(f["תאריך ושעה"]))+'</td>'
        +'<td data-l="לקוח">'+esc(f["שם להצגה"]||"")+'</td>'
        +'<td data-l="רכב">'+esc(plate(f))+'</td><td data-l="דגם" class="muted">'+esc((f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""))+'</td>'
        +'<td data-l="טיפול">'+tag("סוג טיפול",f["סוג טיפול"])+'</td><td data-l="מכונאי" class="muted">'+esc(empNames(f["מכונאי אחראי"])||"—")+'</td>'
-       +'<td data-l="סטטוס">'+tag("סטטוס",st)+'</td>'
+       +'<td data-l="סטטוס">'+((acc==="זוכה"||acc==="זוכה חלקית")?tag("סטטוס חשבון",acc):tag("סטטוס",st))+'</td>'   /* v42: כרטיס שזוכה מוצג "זוכה" ולא "שולם" */
        +'<td data-l="סה\u05f4כ">'+(f['סה"כ לתשלום']?"₪"+Number(f['סה"כ לתשלום']).toFixed(2):"—")+'</td><td class="opencell">\u203a</td></tr>';}).join("")+'</table>';return;}
   if(VIEW==="cus"){
     /* v33: כפתור "לקוח חדש" גם ממסך הלקוחות, לא רק מתוך כרטיס עבודה חדש */
@@ -1943,7 +1943,8 @@ function cardMode(mode){
 /* הסטטוס בראש הכרטיס — נראה מכל לשונית ומתעדכן בכל שינוי */
 function headStatus(){
   var st=document.getElementById("mStat"); if(!st)return;
-  st.innerHTML=CUR?tag("סטטוס",(CUR.fields||{})["סטטוס"]):"";
+  var acc0=CUR?txt((CUR.fields||{})["סטטוס חשבון"]):"";
+  st.innerHTML=CUR?(tag("סטטוס",(CUR.fields||{})["סטטוס"])+((acc0==="זוכה"||acc0==="זוכה חלקית")?" "+tag("סטטוס חשבון",acc0):"")):"";
   headButtons();
 }
 /* ============================================================================
