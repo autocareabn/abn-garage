@@ -426,7 +426,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v39";
+var APP_VERSION="v41";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1225,6 +1225,18 @@ function selBar(){
 }
 
 /* ============ MARK DONE ============ */
+/* v40 (החלטת לאו 28/09/2026): מיקום בסוף הטיפול נחשב מעודכן אם נבחר מיקום מהרשימה,
+   או שצולם מיקום יציאה, או שנתפס GPS יציאה. בלי אף אחד מהם — עוצרים עד שיעודכן (אין "להמשיך בכל זאת"). */
+function hasEndLoc(f){
+  f=f||{}; var c=PF["loc-out"];
+  return ids(f["מיקום בסוף הטיפול"]).length>0
+      || ((f[c.name]||f[c.id]||[]).length>0)
+      || !!String(f[c.gps]||"").trim();
+}
+async function endLocGate(){
+  await appTell("⛔ לא עודכן מיקום הרכב בסוף הטיפול.\n\nכדי להמשיך — בחר מיקום ברשימה \"מיקום בסוף הטיפול\", או צלם / תפוס מיקום ב\"מיקום ביציאה\".");
+  try{mt(0);pDet();}catch(e){}
+}
 async function markDone(){
   if(!CUR||window.__doneBusy)return;
   var f=CUR.fields||{};
@@ -1235,9 +1247,7 @@ async function markDone(){
     if(!await appAsk("⚠️ "+db.r+".\n\nלעקוף ולסמן את העבודה כגמורה בכל זאת?\nהעקיפה תירשם בכרטיס."))return;
     window.__saraOverride=db.r;
   }
-  if(!f["מיקום בסוף הטיפול"]||!ids(f["מיקום בסוף הטיפול"]).length){
-    if(!await appAsk("לא הוגדר מיקום בסוף הטיפול.\n\nהמערכת תסמן התראה על הכרטיס.\n\nלהמשיך?"))return;
-  }
+  if(!hasEndLoc(f)){ await endLocGate(); return; }
   var st=txt(f["סטטוס"]);
   if(!f["בעיית הלקוח טופלה"]){
     CUR.fields["בעיית הלקוח טופלה"]=true;
@@ -2950,9 +2960,7 @@ async function changeStatus(to){
       pDet();return;
     }
     /* 2א. (v32) חלף במחיר 0 אינו חוסם סגירה — שרה משלימה מחירים אחרי "סיימתי". */
-    if(!ids(f["מיקום בסוף הטיפול"]).length){
-      if(!await appAsk("⚠️ לא עודכן מיקום הרכב בסוף הטיפול.\n\nלהמשיך בכל זאת?")){pDet();return;}
-    }
+    if(!hasEndLoc(f)){ await endLocGate(); return; }
     if(!f["בעיית הלקוח טופלה"]){
       if(!await appAsk("⚠️ \"בעיית הלקוח טופלה\" לא מסומן.\n\nלא ניתן לסגור כרטיס בלי לטפל בבעיית הלקוח.\nלסמן ולהמשיך?")){pDet();return;}
       extra["בעיית הלקוח טופלה"]=true;
@@ -4025,6 +4033,52 @@ async function boot(){
     } else { __alog("boot ended with no role and no token — showing gate"); showGate(); }
   } else {applyRole();greet();drawNav();drawTabs();draw();}
 }
+/* ============================================================================
+   v41: סנכרון תשלומים חי
+   ----------------------------------------------------------------------------
+   תשלום אונליין מגיע מ-iCount (IPN) ל-Worker, שמעדכן את Airtable. האפליקציה לא ידעה על כך
+   עד רענון ידני. עכשיו: כל 20 שניות (כשהלשונית פתוחה) וברגע החזרה ללשונית, נבדקים רק הכרטיסים
+   שממתינים לתשלום. כשתשלום נקלט — הודעה, רענון הרשימה והכרטיס הפתוח, ואם הכרטיס עדיין
+   "מוכן לתשלום" הוא עובר ל"שולם" (גיבוי למקרה שהשרת לא עדכן את סטטוס העבודה).
+   ========================================================================== */
+var PAY_POLL_MS=20000, PAY_BUSY=false;
+async function paySync(){
+  if(PAY_BUSY||document.hidden||!ME||!ME.role||!WOS||!WOS.length)return;
+  var pend=WOS.filter(function(r){var f=r.fields||{},acc=txt(f["סטטוס חשבון"]);
+    return acc==="נשלח לתשלום"||(acc==="שולם"&&txt(f["סטטוס"])==="מוכן לתשלום");});
+  if(!pend.length)return;
+  PAY_BUSY=true;
+  try{
+    var changed=false;
+    for(var k=0;k<pend.length;k+=40){
+      var ch=pend.slice(k,k+40);
+      var fresh=await find(T.wo,"OR("+ch.map(function(r){return "RECORD_ID()="+q(r.id);}).join(",")+")",100);
+      for(var i=0;i<fresh.length;i++){
+        var d=fresh[i], f=d.fields||{}, idx=-1;
+        WOS.forEach(function(x,n){if(x.id===d.id)idx=n;});
+        var old=idx>=0?(WOS[idx].fields||{}):{};
+        var wasPaid=txt(old["סטטוס חשבון"])==="שולם", isPaid=txt(f["סטטוס חשבון"])==="שולם";
+        if(isPaid&&!wasPaid){
+          toast("💳 התקבל תשלום · "+(f["שם להצגה"]||"")+(f["מספר חשבונית מס קבלה"]?" · חשבונית "+txt(f["מספר חשבונית מס קבלה"]):""));
+        }
+        if(isPaid&&txt(f["סטטוס"])==="מוכן לתשלום"&&can("money")){
+          try{
+            var r=await fetch(PX+B+"/"+T.wo+"/"+d.id,{method:"PATCH",headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({fields:{"סטטוס":"שולם"},typecast:true})});
+            if(r.ok){var upd=await r.json(); d=upd; f=d.fields||{};}
+          }catch(e){}
+        }
+        if(idx>=0&&JSON.stringify(old)!==JSON.stringify(f)){WOS[idx]=d;changed=true;
+          if(CUR&&CUR.id===d.id){CUR=d;try{pDet();pPay();pCredit();headStatus();}catch(e){}}}
+      }
+    }
+    if(changed){try{draw();drawTabs();}catch(e){}}
+  }catch(e){}
+  PAY_BUSY=false;
+}
+setInterval(paySync,PAY_POLL_MS);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(paySync,500);});
+
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
 
 /* ============================================================================
