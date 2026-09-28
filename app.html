@@ -426,7 +426,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v43";
+var APP_VERSION="v44";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2620,7 +2620,7 @@ async function doCredit(){
     if(!r.ok||!d.ok) throw new Error((d&&(d.error&&(d.error.message||d.error)))||("שרת "+r.status));
     var msg="✓ בוצע זיכוי של "+money(d.amount)+" · מסמך "+(d.doctype==="refund"?"חשבונית מס זיכוי":"חשבונית מס קבלה במינוס")+" "+(d.docnum||"");
     toast(msg);
-    var sent=[]; if(d.sent&&d.sent.sms)sent.push("SMS"); if(d.sent&&d.sent.email)sent.push("מייל");
+    var sent=[]; if(d.sent&&d.sent.whatsapp)sent.push("וואטסאפ"); if(d.sent&&d.sent.sms)sent.push("SMS"); if(d.sent&&d.sent.email)sent.push("מייל");
     await appTell(msg+"\n\n"
       +(d.manualRefund?"⚠️ להחזרת הכסף: "+d.manualRefund:"✓ הכסף הוחזר לכרטיס האשראי של הלקוח דרך iCount.")
       +"\n\n"+(sent.length?"המסמך נשלח ללקוח ב-"+sent.join(" וב-")+".":"⚠️ המסמך לא נשלח ללקוח אוטומטית — אפשר לשלוח מתוך iCount.")
