@@ -331,7 +331,7 @@ button,select,input,textarea,a{min-height:38px}
     <div class="mh"><div class="t"><b id="mT">—</b><span id="mS"></span><span id="mStat" class="mstat"></span></div><button id="btnPrint" onclick="printCard()">🖨</button><button id="btnCancel" onclick="cancelAppt()" style="background:rgba(255,255,255,.12)">✕ בטל תור</button><button id="btnDone" onclick="markDone()" style="background:#1B7F35;border-color:#1B7F35">✓ סיימתי</button><button onclick="closeCard()">✕</button></div>
     <div class="mt" id="mTabs"></div>
     <div class="pane on" id="p0"></div><div class="pane" id="p1"></div>
-    <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div>
+    <div class="pane" id="p2"></div><div class="pane" id="p3"></div><div class="pane" id="p4"></div><div class="pane" id="p5"></div>
   </div>
 </div>
 <div class="selbar" id="selbar"></div>
@@ -419,7 +419,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v37";
+var APP_VERSION="v38";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -689,6 +689,7 @@ function onGoogle(res){
 var CLR={
 "סטטוס":{"חדש":"yellowLight2","מחכה לטיפול":"yellowBright","בטיפול":"orangeBright","מוכן לתשלום":"blueBright","שולם":"greenBright","בוטל":"redBright","ממתין לאישור אמיר":"blueLight2"},
 "סוג טיפול":{"טיפול תקופתי":"blueLight2","הכנה לטסט + טסט":"cyanLight2","הכנה לטסט":"greenLight2","תקלות ברכב":"tealLight2","טיפול תקופתי + הכנה לטסט":"yellowLight2","נכשלת בטסט?":"orangeLight2","טיפול תקופתי + טסט":"redLight2","רכב נגרר":"pinkLight2"},
+"סטטוס חשבון":{"טיוטה":"grayLight2","מאושר":"blueLight2","נשלח לתשלום":"blueBright","שולם":"greenBright","בוטל":"redBright","זוכה":"orangeBright","זוכה חלקית":"orangeLight2"},
 "אמצעי תשלום":{"מזומן":"blueLight2","כרטיס אשראי":"cyanLight2","העברה בנקאית":"tealLight2","צ'ק":"greenLight2"},
 "מערכת בלמים קידמית":{"תקין":"blueLight2","25%":"cyanLight2","50%":"tealLight2","לא תקין":"greenLight2"},
 "מערכת בלמים אחורית":{"תקין":"blueLight2","25%":"cyanLight2","50%":"tealLight2","לא תקין":"greenLight2"},
@@ -1005,7 +1006,7 @@ var D={
 "אישור":{en:"OK",th:"ตกลง"},"ביטול":{en:"Cancel",th:"ยกเลิก"},
 "סוג העבודה":{en:"Work type",th:"ประเภทงาน"},
 "חדש":{en:"New",th:"ใหม่"},"מחכה לטיפול":{en:"Waiting",th:"รอซ่อม"},"בטיפול":{en:"In service",th:"กำลังซ่อม"},
-"מוכן לתשלום":{en:"Ready to pay",th:"พร้อมชำระ"},"שולם":{en:"Paid",th:"ชำระแล้ว"},"בוטל":{en:"Cancelled",th:"ยกเลิก"},
+"מוכן לתשלום":{en:"Ready to pay",th:"พร้อมชำระ"},"שולם":{en:"Paid",th:"ชำระแล้ว"},"זוכה":{en:"Credited",th:"คืนเงินแล้ว"},"זוכה חלקית":{en:"Partly credited",th:"คืนเงินบางส่วน"},"בוטל":{en:"Cancelled",th:"ยกเลิก"},
 "ממתין לאישור אמיר":{en:"Awaiting Amir",th:"รออนุมัติ"},
 "טיפול תקופתי":{en:"Periodic service",th:"บริการตามระยะ"},"הכנה לטסט + טסט":{en:"Test prep + test",th:"เตรียมตรวจ+ตรวจ"},
 "הכנה לטסט":{en:"Test prep",th:"เตรียมตรวจ"},"תקלות ברכב":{en:"Faults",th:"ปัญหารถ"},
@@ -1587,13 +1588,13 @@ function locBlock(which,title,f){
 var LANG="he";
 var UI={
  he:{work:"עבודה",cus:"לקוחות",veh:"רכבים",loc:"מיקומים",set:"הגדרות",search:"חיפוש…",
-     details:"פרטים",parts:"חלפים",services:"שירותים",checks:"בדיקות",pay:"תשלום",
+     details:"פרטים",parts:"חלפים",services:"שירותים",checks:"בדיקות",pay:"תשלום",credit:"זיכוי",
      print:"🖨 הדפס כרטיס",done:"✓ סיימתי את העבודה",close:"✕ סגור",newcard:"+ כרטיס חדש"},
  en:{work:"Work",cus:"Customers",veh:"Vehicles",loc:"Locations",set:"Settings",search:"Search…",
-     details:"Details",parts:"Parts",services:"Services",checks:"Inspections",pay:"Payment",
+     details:"Details",parts:"Parts",services:"Services",checks:"Inspections",pay:"Payment",credit:"Credit",
      print:"🖨 Print card",done:"✓ Work finished",close:"✕ Close",newcard:"+ New card"},
  th:{work:"งาน",cus:"ลูกค้า",veh:"รถ",loc:"ตำแหน่ง",set:"ตั้งค่า",search:"ค้นหา…",
-     details:"รายละเอียด",parts:"อะไหล่",services:"บริการ",checks:"ตรวจสอบ",pay:"ชำระเงิน",
+     details:"รายละเอียด",parts:"อะไหล่",services:"บริการ",checks:"ตรวจสอบ",pay:"ชำระเงิน",credit:"คืนเงิน",
      print:"🖨 พิมพ์บัตร",done:"✓ งานเสร็จแล้ว",close:"✕ ปิด",newcard:"+ บัตรใหม่"}};
 /* ============================================================================
    מנוע התרגום — סריקת DOM, לא עטיפה של כל מחרוזת
@@ -1799,7 +1800,10 @@ function MTL(){
     לכן לא היה מאיפה להוסיף או להסיר שירות. */
  var a=[[t("details"),0],[t("parts"),1],[t("services"),2],[t("checks"),3]];
  if(can("money"))a.push([t("pay"),4]);
+ if(canCredit())a.push([t("credit"),5]);   /* v38 */
  return a;}
+/* v38: זיכוי — דרג כספים בלבד, ולא מחשבון המוסך המשותף (גם המכונאים עובדים איתו). השרת אוכף שוב. */
+function canCredit(){return can("money")&&String(ME.email||"").toLowerCase()!=="autocareabn@gmail.com";}
 var MT=["פרטים","חלפים","שירותים","בדיקות","תשלום"];
 function openCard(id){
   CUR=WOS.filter(function(r){return r.id===id;})[0];
@@ -1814,7 +1818,7 @@ function openCard(id){
   document.getElementById("mS").textContent=[plate(f),(f["יצרן (מלל חופשי)"]||"")+" "+(f["דגם (מלל חופשי)"]||""),txt(f["מספר טלפון"])].filter(function(x){return x&&x.trim();}).join(" · ");
   document.getElementById("mTabs").innerHTML=MTL().map(function(t,i){return '<button role="tab" data-pane="'+t[1]+'" aria-selected="'+(i===0)+'" class="'+(i===0?"on":"")+'" onclick="mt('+t[1]+')">'+t[0]+'</button>';}).join("");
   cardMode("wo");headStatus();
-  mt(0);pDet();pParts();pSvc();pChecks();pPay();
+  mt(0);pDet();pParts();pSvc();pChecks();pPay();try{pCredit();}catch(e){}
   document.getElementById("ov").classList.add("on");
 }
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.getElementById("ov").classList.contains("on"))closeCard();});
@@ -1827,6 +1831,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&document.ge
    ========================================================================== */
 function cardMode(mode){
   var wo=(mode==="wo");
+  if(!wo){var p5=document.getElementById("p5");if(p5){p5.className="pane";p5.innerHTML="";}}   /* v38: לשונית הזיכוי שייכת לכרטיס עבודה בלבד */
   ["btnPrint","btnCancel","btnDone"].forEach(function(id){
     var b=document.getElementById(id); if(b)b.style.display=wo?"":"none";
   });
@@ -1880,7 +1885,7 @@ function headButtons(){
 }
 function closeCard(){closeInv();document.getElementById("ov").classList.remove("on");CUR=null;}
 function mt(i){closeInv();[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
- [0,1,2,3,4].forEach(function(n){document.getElementById("p"+n).className="pane"+(n===i?" on":"");});}
+ [0,1,2,3,4,5].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane"+(n===i?" on":"");});}
 var SLOTS=[];
 function slotLabel(r){var f=r.fields||{};var s=txt(f["תאריך ושעה"]);
  var m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
@@ -2219,7 +2224,7 @@ async function confirmCash(btn){
   if(!CUR)return;
   var rid=CUR.id, f=CUR.fields||{};
 
-  if(txt(f["סטטוס חשבון"])==="שולם"){ toast("הכרטיס כבר מסומן כשולם"); return; }
+  if(["שולם","זוכה","זוכה חלקית"].indexOf(txt(f["סטטוס חשבון"]))>=0){ toast("הכרטיס כבר שולם"+(txt(f["סטטוס חשבון"])!=="שולם"?" וזוכה":"")); return; }
 
   var pm=txt(f["אמצעי תשלום"]);
   if(!pm){ await appTell('⛔ לא נבחר אמצעי תשלום.\n\nבחר מזומן / כרטיס אשראי / צ\'ק / העברה בנקאית בשדה "אמצעי תשלום", ואז נסה שוב.'); return; }
@@ -2283,12 +2288,132 @@ async function confirmCash(btn){
   }
 }
 
+
+/* ============================================================================
+   v38 — לשונית "זיכוי" (שרה / הנהלה)
+   זיכוי מלא  → ביטול חשבונית המס-קבלה ב-iCount; iCount מפיק מסמך במינוס באותו אמצעי תשלום
+                (כרטיס שנסלק ב-iCount → הכסף חוזר לכרטיס אוטומטית).
+   זיכוי חלקי → חשבונית מס זיכוי מקושרת למסמך המקורי; הכסף מוחזר ידנית באותו אמצעי.
+   iCount שולח את המסמך ללקוח ב-SMS (ובמייל אם יש). הכול נאכף שוב בשרת: /icount/credit
+   ========================================================================== */
+var CR_MODE="full", CR_CARD=null;
+function crState(){
+  var f=CUR.fields||{}, acc=txt(f["סטטוס חשבון"]);
+  var paid=Number(f['סה"כ לתשלום'])||0, credited=Number(f['סה"כ זוכה'])||0;
+  return {f:f,acc:acc,paid:paid,credited:credited,remaining:Math.round((paid-credited)*100)/100,
+          method:txt(f["אמצעי תשלום"])||"מזומן",invrec:txt(f["מספר חשבונית מס קבלה"]),
+          ref:txt(f["מזהה מסמך קבלה iCount"]),
+          eligible:(acc==="שולם"||acc==="זוכה חלקית")&&!!txt(f["מזהה מסמך קבלה iCount"])};
+}
+function pCredit(){
+  var el=document.getElementById("p5"); if(!el||!CUR)return;
+  if(!canCredit()){el.innerHTML="";return;}
+  var s=crState(), f=s.f;
+  if(CR_CARD!==CUR.id){CR_CARD=CUR.id;CR_MODE="full";}
+  if(s.credited>0&&CR_MODE==="full")CR_MODE="partial";
+  var keepR=(document.getElementById("crReason")||{}).value||"", keepA=(document.getElementById("crAmt")||{}).value||"";
+  var hist=String(f["מסמכי זיכוי iCount"]||"").split("\n").filter(function(x){return x.trim();});
+  var h='<div class="grid" style="margin-bottom:10px">'
+    +'<div class="f"><label>שולם</label><div class="v"><b>'+money(s.paid)+'</b></div></div>'
+    +'<div class="f"><label>אמצעי תשלום</label><div class="v"><b>'+esc(s.method)+'</b></div></div>'
+    +'<div class="f"><label>חשבונית מס קבלה</label><div class="v">'+esc(s.invrec||"—")+'</div></div>'
+    +'<div class="f"><label>זוכה עד כה</label><div class="v"><b>'+money(s.credited)+'</b></div></div>'
+    +'<div class="f"><label>יתרה לזיכוי</label><div class="v"><b>'+money(s.remaining)+'</b></div></div>'
+    +'<div class="f"><label>סטטוס חשבון</label><div class="v">'+tag("סטטוס חשבון",s.acc)+'</div></div>'
+    +'</div>';
+  if(hist.length){
+    h+='<div class="sec">זיכויים שבוצעו</div>'+hist.map(function(l){var p=l.split(" | ");
+      return '<div class="ln"><div class="nm"><b>'+esc(p[1]||"")+'</b> · '+esc(p[0]||"")+'<small style="color:#5b6172">'+esc([p[2],p[3],p[4],p[5]].filter(Boolean).join(" · "))+'</small></div></div>';}).join("")
+      +(/^https:\/\//i.test(txt(f["קישור מסמך זיכוי"]))?'<div style="margin:6px 0 10px"><a href="'+esc(f["קישור מסמך זיכוי"])+'" target="_blank" rel="noopener">📄 מסמך הזיכוי האחרון</a></div>':'');
+  }
+  if(!s.eligible){
+    el.innerHTML=h+'<div class="hint">'+(s.acc==="זוכה"?"✓ הכרטיס זוכה במלואו — אין יתרה לזיכוי."
+      :(!s.ref&&(s.acc==="שולם")?"לכרטיס אין חשבונית מס קבלה מ-iCount, ולכן אין על מה לזכות מכאן."
+      :"זיכוי אפשרי רק אחרי שהלקוח שילם והופקה חשבונית מס קבלה (סטטוס חשבון: שולם)."))+'</div>'
+      +'<button class="save" disabled style="opacity:.45;cursor:not-allowed">💳 בצע זיכוי</button>';
+    return;
+  }
+  var fullOk=s.credited<=0;
+  var card=(s.method==="כרטיס אשראי");
+  var note = CR_MODE==="full"
+    ? (card?"iCount יבטל את החשבונית ויפיק חשבונית מס קבלה במינוס. אם התשלום נסלק ב-iCount (קישור תשלום) — הכסף יחזור לכרטיס אוטומטית; אם שולם במסוף הפיזי — תצטרכי להחזיר במסוף."
+           :"iCount יבטל את החשבונית ויפיק חשבונית מס קבלה במינוס ב"+s.method+". את הכסף עצמו מחזירים ללקוח ב"+s.method+".")
+    : "תופק חשבונית מס זיכוי על הסכום, מקושרת לחשבונית המקורית. את הכסף מחזירים ללקוח ב"+s.method+(card?" (במסוף — זיכוי חלקי אינו חוזר לכרטיס אוטומטית)":"")+".";
+  h+='<div class="sec">זיכוי חדש</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+    +'<label class="chk'+(CR_MODE==="full"?" on":"")+'" style="'+(fullOk?"":"opacity:.45")+'"><input type="radio" name="crm"'+(CR_MODE==="full"?" checked":"")+(fullOk?"":" disabled")+' onchange="CR_MODE=\'full\';pCredit()"><span>זיכוי מלא · '+money(s.paid)+'</span></label>'
+    +'<label class="chk'+(CR_MODE==="partial"?" on":"")+'"><input type="radio" name="crm"'+(CR_MODE==="partial"?" checked":"")+' onchange="CR_MODE=\'partial\';pCredit()"><span>'+(fullOk?"זיכוי חלקי":"זיכוי יתרה / חלקי")+'</span></label>'
+    +'</div>'
+    +(fullOk?'':'<div class="mini" style="margin-bottom:6px">כבר בוצע זיכוי חלקי, ולכן אי אפשר לבטל את החשבונית כולה — אפשר לזכות עד היתרה.</div>')
+    +(CR_MODE==="partial"?'<div class="f"><label>סכום לזיכוי כולל מע"מ (עד '+money(s.remaining)+')</label>'
+       +'<input id="crAmt" type="number" min="0.01" step="0.01" max="'+s.remaining+'" placeholder="0.00" value="'+esc(keepA)+'"></div>':'')
+    +'<div class="f"><label>סיבת הזיכוי *</label><textarea id="crReason" placeholder="למשל: הנחה על עיכוב, חלף הוחזר, טעות בחיוב">'+esc(keepR)+'</textarea></div>'
+    +'<div class="hint">'+esc(note)+' המסמך יישלח ללקוח מ-iCount ב-SMS (ובמייל אם יש ללקוח כתובת).</div>'
+    +'<button class="save" id="crBtn" style="background:#8a1220" onclick="doCredit()">💳 בצע זיכוי ב-iCount</button>'
+    +'<div id="crRes"></div>';
+  el.innerHTML=h;
+}
+async function doCredit(){
+  var s=crState(), btn=document.getElementById("crBtn");
+  var reason=(document.getElementById("crReason").value||"").trim();
+  if(reason.length<2){toast("חובה לכתוב סיבת זיכוי",1);return;}
+  var amount=s.paid;
+  if(CR_MODE==="partial"){
+    amount=Math.round((parseFloat((document.getElementById("crAmt")||{}).value)||0)*100)/100;
+    if(!(amount>0)){toast("צריך סכום לזיכוי",1);return;}
+    if(amount>s.remaining+0.005){toast("הסכום גדול מהיתרה ("+money(s.remaining)+")",1);return;}
+  }
+  /* הסכום המדויק לפי iCount (מקור האמת) — לפני האישור הבלתי הפיך */
+  var pv={};
+  btn.disabled=true; btn.textContent="⏳ בודק מול iCount…";
+  try{
+    var pr=await fetch("https://"+PROXY_HOST+"/icount/credit",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({recordId:CUR.id,mode:CR_MODE,amount:amount,reason:reason,preview:true})});
+    try{pv=await pr.json();}catch(e){pv={};}
+    if(!pr.ok||!pv.ok) throw new Error((pv&&pv.error)||("שרת "+pr.status));
+  }catch(e){
+    btn.disabled=false; btn.textContent="💳 בצע זיכוי ב-iCount";
+    var bx=document.getElementById("crRes");
+    if(bx)bx.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">'+esc(String(e.message||e))+'</div>';
+    if(pv&&pv.synced)refetchCard(CUR.id,0);
+    return;
+  }
+  btn.disabled=false; btn.textContent="💳 בצע זיכוי ב-iCount";
+  amount=pv.amount;
+  if(!await appAsk("לבצע זיכוי ב-iCount?\n\n• סוג: "+(CR_MODE==="full"?"זיכוי מלא (ביטול החשבונית)":"זיכוי חלקי")
+    +"\n• סכום: "+money(amount)+"  (שולם "+money(pv.paid)+", זוכה עד כה "+money(pv.credited)+")"
+    +"\n• אמצעי החזר: "+pv.method+(pv.cardAuto?" — יוחזר לכרטיס דרך iCount":" — החזר ידני")+"\n• סיבה: "+reason
+    +"\n\nיופק מסמך זיכוי רשמי ב-iCount וישלח ללקוח.\nהפעולה אינה הפיכה."))return;
+  var rid=CUR.id;
+  btn.disabled=true; btn.textContent="⏳ מפיק מסמך זיכוי ב-iCount…";
+  var box=document.getElementById("crRes");
+  try{
+    var r=await fetch("https://"+PROXY_HOST+"/icount/credit",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({recordId:rid,mode:CR_MODE,amount:amount,reason:reason})});
+    var d={}; try{d=await r.json();}catch(e){}
+    if(!r.ok||!d.ok) throw new Error((d&&(d.error&&(d.error.message||d.error)))||("שרת "+r.status));
+    var msg="✓ בוצע זיכוי של "+money(d.amount)+" · מסמך "+(d.doctype==="refund"?"חשבונית מס זיכוי":"חשבונית מס קבלה במינוס")+" "+(d.docnum||"");
+    toast(msg);
+    var sent=[]; if(d.sent&&d.sent.sms)sent.push("SMS"); if(d.sent&&d.sent.email)sent.push("מייל");
+    await appTell(msg+"\n\n"
+      +(d.manualRefund?"⚠️ להחזרת הכסף: "+d.manualRefund:"✓ הכסף הוחזר לכרטיס האשראי של הלקוח דרך iCount.")
+      +"\n\n"+(sent.length?"המסמך נשלח ללקוח ב-"+sent.join(" וב-")+".":"⚠️ המסמך לא נשלח ללקוח אוטומטית — אפשר לשלוח מתוך iCount.")
+      +(d.airtableOk===false?"\n\n⚠️ המסמך הופק ב-iCount אבל עדכון הכרטיס נכשל: "+d.airtableError+"\nאל תבצעי זיכוי נוסף — עדכני את הכרטיס ידנית.":""));
+    refetchCard(rid,0);
+  }catch(e){
+    btn.disabled=false; btn.textContent="💳 בצע זיכוי ב-iCount";
+    if(box)box.innerHTML='<div class="hint" style="background:#fdecec;border-color:#ED1E24;color:#8a1220">הזיכוי לא בוצע: '+esc(String(e.message||e))+'</div>';
+    toast("הזיכוי נכשל",1);
+  }
+}
+
 /* בלוק "קבלת תשלום" בלשונית התשלום */
 function cashActions(gross){
   var f=CUR.fields||{};
   var pm=txt(f["אמצעי תשלום"]);
   var invrec=txt(f["מספר חשבונית מס קבלה"]);
-  var paid=(txt(f["סטטוס חשבון"])==="שולם");
+  var accSt=txt(f["סטטוס חשבון"]);
+  var paid=(accSt==="שולם"||accSt==="זוכה"||accSt==="זוכה חלקית");   /* v38: כרטיס שזוכה אינו מקבל תשלום חדש */
 
   var html='<div class="sec">קבלת תשלום</div>';
 
@@ -2297,6 +2422,7 @@ function cashActions(gross){
       +'<span class="pill at-greenBright">✓ שולם'+(pm?" · "+esc(pm):"")+'</span>'
       +(invrec?'<span class="pill at-blueLight2">חשבונית מס קבלה '+esc(invrec)+'</span>':'')
       +(f["תאריך תשלום"]?'<span class="mini">'+esc(dt(f["תאריך תשלום"]))+'</span>':'')
+      +(accSt!=="שולם"?'<span class="pill at-orangeLight2">'+esc(accSt)+(f['סה"כ זוכה']?" · "+esc(money(f['סה"כ זוכה'])):"")+'</span>':'')
       +'</div>';
   }
 
@@ -2328,6 +2454,8 @@ function invoiceActions(gross){
   if(!(gross>0))blocked.push("\u05d0\u05d9\u05df \u05de\u05d4 \u05dc\u05d7\u05d9\u05d9\u05d1 \u2014 \u05e1\u05d4\"\u05db 0");
   /* שער סטטוס: קישור תשלום יוצא רק אחרי "סיימתי" של המכונאי */
   if(txt(f["סטטוס"])!=="מוכן לתשלום")blocked.push("הכרטיס אינו \"מוכן לתשלום\" — המכונאי טרם לחץ סיימתי");
+  /* v38: כרטיס ששולם או זוכה אינו מקבל קישור תשלום חדש */
+  if(["שולם","זוכה","זוכה חלקית"].indexOf(txt(f["סטטוס חשבון"]))>=0)blocked.push("הכרטיס כבר שולם"+(txt(f["סטטוס חשבון"])!=="שולם"?" וזוכה":""));
   /* מיקום אינו חובה (החלטת לאו 27/09/2026): בלי קואורדינטה ההודעה יוצאת בלי שורת המיקום */
   return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
@@ -2566,6 +2694,7 @@ async function sendToCustomer(){
     return;
   }
   if(f["תאריך שליחה לתשלום"]){ toast("ההודעה כבר נשלחה ללקוח"); return; }
+  if(["שולם","זוכה","זוכה חלקית"].indexOf(txt(f["סטטוס חשבון"]))>=0){ toast("הכרטיס כבר שולם — לא נשלח קישור תשלום",1); return; }
   if(window.__sendBusy)return;
   var L=exitLoc(f);
   var loc=L.url||"ללא מיקום — ההודעה תישלח בלי שורת המיקום";
@@ -2781,7 +2910,7 @@ function refetchCard(id,tries){
     fetch(PX+B+"/"+T.wo+"/"+id).then(function(r){return r.ok?r.json():Promise.reject();})
      .then(function(d){
        var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
-       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();try{headStatus();}catch(e){}
+       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();try{pCredit();}catch(e){}try{headStatus();}catch(e){}
          if(d.fields["⚠️ התראה"])toast("⚠️ "+d.fields["⚠️ התראה"],1);}
        draw();drawTabs();
        if(tries<1)refetchCard(id,tries+1);
