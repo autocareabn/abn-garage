@@ -111,6 +111,25 @@ table.itab td.empty{color:#888;text-align:center}
 .ln input{width:60px;padding:6px;text-align:center;border:1px solid #cfd5e0;border-radius:7px;font-size:14px}
 .ln input.pr{width:82px}.ln .lt{width:70px;text-align:center;font-size:13px;font-weight:bold}
 .ln .x{width:32px;background:#fff;border:1px solid #e0d0d3;color:#ED1E24;border-radius:7px;padding:5px 0;cursor:pointer}
+/* v45: טבלת חלפים/שירותים בגריד — עמודות קבועות, כל ערך בדיוק מתחת לכותרת שלו */
+.pgrid .hd,.pgrid .ln{display:grid;grid-template-columns:minmax(0,1fr) 64px 90px 80px 92px 34px;gap:8px;align-items:center}
+.pgrid.nomon .hd,.pgrid.nomon .ln{grid-template-columns:minmax(0,1fr) 64px 34px}
+.pgrid.svc .hd,.pgrid.svc .ln{grid-template-columns:minmax(0,1fr) 64px 90px 80px 34px}
+.pgrid.svc.nomon .hd,.pgrid.svc.nomon .ln{grid-template-columns:minmax(0,1fr) 34px}
+.pgrid .hd span{text-align:center}.pgrid .hd .nm{text-align:right}
+.pgrid .ln input,.pgrid .ln input.pr{width:100%;min-width:0;box-sizing:border-box}
+.pgrid .ln .lt{width:auto;direction:ltr;text-align:center}
+.pgrid .ln .x{width:34px}
+.pgrid .ln .pend{width:100%;background:#fff;border:1px solid #cfd5e0;color:#5b6172;border-radius:7px;padding:6px 2px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.pgrid .ln .pend.on{border-color:#B87503;color:#8a5b00;background:#FFF7E6}
+.pgrid .ln .nm{min-width:0}
+.pgrid .ln input.nmIn{text-align:right;width:100%}
+.ln .nm .pn{display:block}
+span.sku{display:block;color:#5b6172;font-size:12px;margin-top:2px;unicode-bidi:plaintext}
+.ln .nm small.src{color:var(--steel)}
+.svcAdd{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:end;margin-top:8px}
+.svcAdd input{width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd5e0;border-radius:8px;font-size:14px}
+.svcAdd button{padding:9px 14px;border-radius:8px;border:0;background:var(--red);color:#fff;font-weight:bold;cursor:pointer}
 .srch{position:relative;margin-top:10px}
 .srch input{width:100%;padding:11px;border:1.5px solid var(--red);border-radius:9px;font-size:14.5px}
 .dd{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #dfe3ea;border-radius:9px;max-height:240px;overflow:auto;z-index:20;display:none;box-shadow:0 8px 22px rgba(0,0,0,.13)}
@@ -278,6 +297,17 @@ body.no-money .money-col,body.no-money .pane-pay{display:none !important}
  .ln .nm{flex:1 1 100%;margin-bottom:5px}
  .ln input{flex:1;min-width:64px}
  .hd{display:none}
+ /* v45: בטלפון שם החלף בשורה מלאה, והמספרים בשורה שנייה — מיושרים מתחת לכותרת שנשארת גלויה */
+ .pgrid .hd,.pgrid .ln{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 78px 34px}
+ .pgrid.nomon .hd,.pgrid.nomon .ln{grid-template-columns:minmax(0,1fr) 64px 34px}
+ .pgrid.svc .hd,.pgrid.svc .ln{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr) 34px}
+ .pgrid.svc.nomon .hd,.pgrid.svc.nomon .ln{grid-template-columns:minmax(0,1fr) 34px}
+ .pgrid .hd{display:grid}
+ .pgrid:not(.nomon) .hd .nm{display:none}
+ .pgrid:not(.nomon) .ln .nm{grid-column:1/-1;margin-bottom:0}
+ .pgrid.nomon .ln .nm{flex:none;margin-bottom:0}
+ .svcAdd{grid-template-columns:minmax(0,1fr) 96px}
+ .svcAdd button{grid-column:1/-1}
  .bar h1,.brand .nm{display:none}
  .brand .mark{height:26px}
  .wrap{padding:8px 8px 60px}
@@ -426,7 +456,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v44";
+var APP_VERSION="v45";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1420,7 +1450,7 @@ async function identifyParts(rid,att){
     if(noPrice)msg+=" · "+noPrice+" ללא מחיר";
     toast(msg,low?1:0);
     var L=await all(T.ln); LINES=L; LAST_LOCAL=new Date().getTime();
-    if(CUR&&CUR.id===rid){pParts();try{pPay();}catch(e){}}
+    if(CUR&&CUR.id===rid){pParts();try{pSvc();}catch(e){}try{pPay();}catch(e){}}
     refetchCard(rid,0);
   }catch(e){
     toast("הזיהוי נכשל: "+String(e.message||"").slice(0,90),1);
@@ -1433,7 +1463,7 @@ function pollParts(rid,n){
      var got=(d.fields||{})["🔧 חלפים שהותקנו (תצוגה)"];
      if(got&&CUR&&CUR.id===rid){CUR=d;
        var i=-1;WOS.forEach(function(x,k){if(x.id===rid)i=k;});if(i>=0)WOS[i]=d;
-       all(T.ln).then(function(L){LINES=L;pParts();pPay();toast("✓ החלפים זוהו והתווספו");});
+       all(T.ln).then(function(L){LINES=L;pParts();try{pSvc();}catch(e){}pPay();toast("✓ החלפים זוהו והתווספו");});
      } else setTimeout(function(){pollParts(rid,n+1);},3000);
    }).catch(function(){});
 }
@@ -1571,7 +1601,7 @@ async function rmAtt(key,rid,attId){
     if(!r.ok)throw new Error((await r.text()).slice(0,120));
 
     toast("\u2713 \u05d4\u05e7\u05d5\u05d1\u05e5 \u05e0\u05de\u05d7\u05e7"+(lines.length?" \u00b7 "+lines.length+" \u05e9\u05d5\u05e8\u05d5\u05ea \u05d7\u05dc\u05e4\u05d9\u05dd \u05d4\u05d5\u05e1\u05e8\u05d5":""));
-    if(lines.length&&CUR&&CUR.id===rid){try{pParts();pPay();}catch(e){}}
+    if(lines.length&&CUR&&CUR.id===rid){try{pParts();pSvc();pPay();}catch(e){}}
     pfRefresh(key,rid);
   }catch(e){toast("\u05d4\u05de\u05d7\u05d9\u05e7\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4: "+String(e.message||"").slice(0,70),1);}
 }
@@ -2136,54 +2166,132 @@ function togglePend(id,on){
    .catch(function(){toast("העדכון נכשל",1);});
 }
 function myLines(){return LINES.filter(function(x){return ids((x.fields||{})["כרטיס עבודה"]).indexOf(CUR.id)>=0;});}
-function pParts(){var ls=myLines(),sum=0,mon=can("money");
+/* v45 (30/09/2026): שורת שירות = שורה בטבלת השורות עם "שירות" (קישור לקטלוג) או "שם שירות (ידני)".
+   המחיר שלה יושב ב"מחיר ליחידה (בזמן השימוש)" — ניתן לשינוי לכל כרטיס, ונכנס לסכומי Airtable ולחשבונית iCount
+   בדיוק כמו חלף. לשונית החלפים מציגה רק חלפים; לשונית השירותים — שורות שירות + שירותים ישנים (קישור ישיר). */
+function isSvcLine(r){var g=(r&&r.fields)||{};return !!(String(g["שם שירות (ידני)"]||"").trim()||ids(g["שירות"]).length);}
+function svcLineName(g){var m=String(g["שם שירות (ידני)"]||"").trim();if(m)return m;
+ var l=g["שירות"],sid=ids(l)[0],s=SVC.filter(function(x){return x.id===sid;})[0];
+ return (s&&s.name)||(l&&l[0]&&l[0].name)||"(שירות)";}
+function myPartLines(){return myLines().filter(function(r){return !isSvcLine(r);});}
+function mySvcLines(){return myLines().filter(isSvcLine);}
+/* שם חלף ומק"ט — בשתי שורות נפרדות (בקשת שרה). שמות בקטלוג מכילים לעיתים שבירת שורה ורווחים כפולים. */
+function partName(g){var lk=g["שם חלף (lookup)"];lk=Array.isArray(lk)?lk[0]:lk;
+ var nm=lk||(g["חלף"]&&g["חלף"][0]&&g["חלף"][0].name)||"";
+ /* גיבוי: "תיאור שורה" הוא נוסחה "שם — ברקוד ×כמות" — לוקחים רק את השם */
+ if(!nm){nm=String(g["תיאור שורה"]||"").split(" — ")[0].replace(/^"|"$/g,"");}
+ return String(nm||"(חלף)").replace(/\s+/g," ").replace(/^"|"$/g,"").trim();}
+function partSku(g){var v=g['מק"ט (lookup)'];v=Array.isArray(v)?v[0]:v;return String(v||"").trim();}
+function pParts(){var ls=myPartLines(),sum=0,mon=can("money");
+ /* שומרים את מה שהוקלד בחיפוש — ציור מחדש (שמירת כמות/מחיר, רענון) לא ימחק אותו ולא יסגור את הרשימה */
+ var oq=document.getElementById("pq"),keep=oq?{v:oq.value,f:document.activeElement===oq,dd:(document.getElementById("pdd")||{}).innerHTML,on:((document.getElementById("pdd")||{}).classList||{contains:function(){return false;}}).contains("on")}:null;
  /* עמודות המחיר אינן מוסתרות למכונאי — הן פשוט לא נבנות, והערך עצמו כבר
     לא הגיע מהשרת. אין מה למצוא ב-DevTools. */
- var head='<div class="hd"><span class="nm">חלף</span><span class="c1">כמות</span>'
-  +(mon?'<span class="c2">מחיר ליח\''+'</span><span class="c3">סה"כ</span>':'')
-  +'<span class="c4"></span></div>';
- var body=ls.map(function(r){var f=r.fields||{},nm=(f["חלף"]&&f["חלף"][0]&&f["חלף"][0].name)||f["תיאור שורה"]||"(חלף)";
+ var head='<div class="hd"><span class="nm">חלף / מק״ט</span><span>כמות</span>'
+  +(mon?'<span>מחיר ליח\'</span><span>סה"כ</span><span>תמחור</span>':'')
+  +'<span></span></div>';
+ var body=ls.map(function(r){var f=r.fields||{},nm=partName(f),sku=partSku(f);
   var qy=f["כמות"]==null?1:f["כמות"],pr=f["מחיר ליחידה (בזמן השימוש)"]||0,lt=qy*pr;sum+=lt;
   var pend=!!f["ממתין להשלמת מחיר"];
   var flag=pend?"<small>דורש תמחור</small>"
-          :(!pr?'<small style="color:var(--steel)">כלול בערכה</small>':"");
-  return '<div class="ln"><div class="nm">'+esc(nm)+flag+'</div>'
-   +'<input type="number" min="1" value="'+qy+'" onchange="setQ(\''+r.id+'\',this.value)">'
-   +(mon?('<input type="number" min="0" step="0.01" class="pr" value="'+pr+'" onchange="setP(\''+r.id+'\',this.value)">'
-        +'<div class="lt">'+lt.toFixed(2)+'</div>'):'')
-   +(mon?('<button class="x" title="סמן שהחלף הזה צריך מחיר משלו" style="width:auto;padding:4px 8px;font-size:11px"'
+          :(!pr&&mon?'<small style="color:var(--steel)">כלול בערכה</small>':"");
+  return '<div class="ln"><div class="nm"><span class="pn">'+esc(nm)+'</span>'
+   +(sku?'<span class="sku">מק״ט '+esc(sku)+'</span>':'')+flag+'</div>'
+   +'<input type="number" min="1" inputmode="numeric" value="'+qy+'" aria-label="כמות" onchange="setQ(\''+r.id+'\',this.value)">'
+   +(mon?('<input type="number" min="0" step="0.01" inputmode="decimal" class="pr" value="'+pr+'" aria-label="מחיר ליחידה" onchange="setP(\''+r.id+'\',this.value)">'
+        +'<div class="lt">'+lt.toFixed(2)+'</div>'
+        +'<button class="pend'+(f["דורש תמחור"]?' on':'')+'" title="סמן שהחלף הזה צריך מחיר משלו"'
         +' onclick="togglePend(\''+r.id+'\','+(f["דורש תמחור"]?0:1)+')">'+(f["דורש תמחור"]?"בטל סימון":"דורש תמחור")+'</button>'):'')
-   +'<button class="x" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("")
-  ||'<div class="empty" style="padding:16px">אין חלפים. חפש חלף להוספה.</div>';
- document.getElementById("p1").innerHTML=head+body
-  +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף (שם או מק\u05f4ט)…" autocomplete="off" oninput="sq()"><div class="dd" id="pdd"></div></div>'
-  +'<div class="sec">צילום החלפים — זיהוי מק\u05f4ט אוטומטי</div>'
-  +'<div class="hint">צלם את החלפים או את הברקודים שעל האריזות. המערכת תקרא את המק\u05f4ט, תזהה את החלפים ותוסיף אותם לרשימה למעלה תוך כדקה.</div>'
-  +photoBox("parts","\ud83d\udcf7 צלם / סרוק חלפים",CUR.fields["סריקה של חלקים שהותקנו"])
-  +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
+   +'<button class="x" title="הסר" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("");
+ document.getElementById("p1").innerHTML=(body?'<div class="pgrid'+(mon?'':' nomon')+'">'+head+body+'</div>'
+    :'<div class="empty" style="padding:16px">אין חלפים. חפש חלף להוספה.</div>')
+  +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף (שם או מק״ט)…" autocomplete="off" oninput="sqType()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();sqNow();}"><div class="dd" id="pdd"></div></div>'
+  +'<div class="sec">צילום החלפים — זיהוי מק״ט אוטומטי</div>'
+  +'<div class="hint">צלם את החלפים או את הברקודים שעל האריזות. המערכת תקרא את המק״ט, תזהה את החלפים ותוסיף אותם לרשימה למעלה תוך כדקה.</div>'
+  +photoBox("parts","📷 צלם / סרוק חלפים",CUR.fields["סריקה של חלקים שהותקנו"])
+  +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');
+ if(keep&&(keep.v||keep.f)){var nq=document.getElementById("pq"),nd=document.getElementById("pdd");
+  nq.value=keep.v;if(keep.dd)nd.innerHTML=keep.dd;if(keep.on)nd.classList.add("on");
+  if(keep.f){nq.focus();try{nq.setSelectionRange(keep.v.length,keep.v.length);}catch(e){}}}}
 
-function pSvc(){var f=CUR.fields||{},cur=ids(f["שירותים נוספים:"]),mon=can("money");
- /* ⚠️ שם שדה הקישור הוא "שירותים נוספים:" — עם נקודתיים בסוף.
-    תפריט ההוספה נמצא למעלה, לפני הרשימה: זה מה שמחפשים כשנכנסים לכאן. */
- var avail=SVC.filter(function(s){return cur.indexOf(s.id)<0;})
+function pSvc(){var f=CUR.fields||{},legacy=ids(f["שירותים נוספים:"]),sl=mySvcLines(),mon=can("money");
+ /* v45: מחיר שירות ניתן להקלדה ולשינוי בכל כרטיס, ואפשר להוסיף שירות שאינו בקטלוג.
+    דרג הכספים מוסיף שירות כשורה (עם מחיר). מכונאי — שאינו רשאי לכתוב מחירים — ממשיך לקשר ישירות לקטלוג,
+    והמחיר מגיע מהקטלוג; ברגע ששרה משנה לו מחיר הוא הופך לשורה. */
+ var used={};legacy.forEach(function(x){used[x]=1;});sl.forEach(function(r){ids((r.fields||{})["שירות"]).forEach(function(x){used[x]=1;});});
+ var avail=SVC.filter(function(s){return !used[s.id];})
    .sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""),"he");});
  var add='<div class="f" style="margin-top:0"><label>הוסף שירות מהקטלוג</label>'
-  +'<select onchange="addSvc(this.value);this.value=\'\'">'
+  +'<select onchange="'+(mon?'addSvcLine':'addSvc')+'(this.value);this.value=\'\'">'
   +'<option value="">— בחר שירות —</option>'
   +avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+(mon&&Number(s.price)>0?' · ₪'+Number(s.price).toFixed(2):'')+'</option>';}).join("")
-  +'</select></div>';
+  +'</select></div>'
+  +(mon?'<div class="svcAdd"><div class="f" style="margin:0"><label>או הקלד שירות חופשי</label><input id="svN" placeholder="שם השירות" onkeydown="if(event.key===\'Enter\')addSvcFree()"></div>'
+     +'<div class="f" style="margin:0"><label>מחיר ₪</label><input id="svP" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" onkeydown="if(event.key===\'Enter\')addSvcFree()"></div>'
+     +'<button onclick="addSvcFree()">➕ הוסף</button></div>':'');
 
- var rowsHtml=cur.map(function(id){var s=SVC.filter(function(x){return x.id===id;})[0];
-  return '<div class="ln"><div class="nm">'+esc(s?s.name:"(שירות)")+'</div>'
-   +(mon?'<div class="lt">'+(s&&Number(s.price)>0?Number(s.price).toFixed(2):"—")+'</div>':'')
-   +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';}).join("");
-
+ var sum=0;
+ var rows=sl.map(function(r){var g=r.fields||{},manual=!!String(g["שם שירות (ידני)"]||"").trim();
+   var qy=g["כמות"]==null?1:g["כמות"],pr=Number(g["מחיר ליחידה (בזמן השימוש)"]||0),lt=qy*pr;sum+=lt;
+   var nm=manual&&mon
+     ?'<input class="nmIn" value="'+esc(svcLineName(g))+'" aria-label="שם השירות" onchange="setSvcName(\''+r.id+'\',this.value)">'
+     :'<span class="pn">'+esc(svcLineName(g))+'</span>'+(manual?'<small class="src">שירות חופשי</small>':'');
+   return '<div class="ln"><div class="nm">'+nm+'</div>'
+    +(mon?('<input type="number" min="1" inputmode="numeric" value="'+qy+'" aria-label="כמות" onchange="setQ(\''+r.id+'\',this.value)">'
+          +'<input type="number" min="0" step="0.01" inputmode="decimal" class="pr" value="'+pr+'" aria-label="מחיר" onchange="setP(\''+r.id+'\',this.value)">'
+          +'<div class="lt">'+lt.toFixed(2)+'</div>'):'')
+    +'<button class="x" title="הסר שירות" onclick="rmLine(\''+r.id+'\')">✕</button></div>';})
+  .concat(legacy.map(function(id){var s=SVC.filter(function(x){return x.id===id;})[0],pr=s?Number(s.price||0):0;sum+=pr;
+   return '<div class="ln"><div class="nm"><span class="pn">'+esc(s?s.name:"(שירות)")+'</span></div>'
+    +(mon?('<input type="number" min="1" inputmode="numeric" value="1" aria-label="כמות" onchange="svcLegacyToLine(\''+id+'\',this)">'
+          +'<input type="number" min="0" step="0.01" inputmode="decimal" class="pr" value="'+pr+'" aria-label="מחיר" onchange="svcLegacyToLine(\''+id+'\',this)">'
+          +'<div class="lt">'+pr.toFixed(2)+'</div>'):'')
+    +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';})).join("");
+ var n=sl.length+legacy.length;
  document.getElementById("p2").innerHTML=add
-  +'<div class="sec">שירותים בכרטיס ('+cur.length+')</div>'
-  +(rowsHtml
-     ? '<div class="hd"><span class="nm">שירות</span>'+(mon?'<span class="c3">מחיר</span>':'')+'<span class="c4"></span></div>'+rowsHtml
+  +'<div class="sec">שירותים בכרטיס ('+n+')</div>'
+  +(rows
+     ? '<div class="pgrid svc'+(mon?'':' nomon')+'"><div class="hd"><span class="nm">שירות</span>'+(mon?'<span>כמות</span><span>מחיר ליח\'</span><span>סה"כ</span>':'')+'<span></span></div>'+rows+'</div>'
      : '<div class="empty" style="padding:16px">לא נבחרו שירותים — בחר מהתפריט למעלה</div>')
-  +(mon?'<div class="tot"><span>סך שירותים</span><span>'+(f["סך עלות שירותים נוספים"]!=null?"₪"+Number(f["סך עלות שירותים נוספים"]).toFixed(2):"—")+'</span></div>':'');}
+  +(mon?'<div class="tot"><span>סך שירותים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
+
+/* v45: יצירת שורת שירות. אחרי ההוספה כל הלשוניות מצוירות מחדש מהזיכרון. */
+var SVC_BUSY=false;
+function newSvcLine(fields,okMsg){if(SVC_BUSY)return Promise.reject(0);SVC_BUSY=true;var b={fields:fields,typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];
+ if(b.fields["כמות"]==null)b.fields["כמות"]=1;
+ return fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+  .then(function(r){return r.ok?r.json():Promise.reject();})
+  .then(function(d){SVC_BUSY=false;LINES.push(d);LAST_LOCAL=new Date().getTime();svcRepaint();toast(okMsg||"✓ נוסף");return d;})
+  .catch(function(){SVC_BUSY=false;toast("ההוספה נכשלה",1);throw 0;});}
+function addSvcLine(id){if(!id)return;var s=SVC.filter(function(x){return x.id===id;})[0];
+ newSvcLine({"שירות":[id],"מחיר ליחידה (בזמן השימוש)":s?Number(s.price||0):0}).catch(function(){});}
+function addSvcFree(){var n=document.getElementById("svN"),p=document.getElementById("svP");
+ var nm=String((n&&n.value)||"").trim(),pr=parseFloat((p&&p.value)||"");
+ if(!nm){toast("הקלד שם שירות",1);if(n)n.focus();return;}
+ if(isNaN(pr)||pr<0)pr=0;
+ newSvcLine({"שם שירות (ידני)":nm,"מחיר ליחידה (בזמן השימוש)":pr}).catch(function(){});}
+function setSvcName(id,v){v=String(v||"").trim();if(!v){toast("שם השירות לא יכול להיות ריק",1);svcRepaint();return;}
+ patchLine(id,{"שם שירות (ידני)":v});}
+/* שירות ישן (קישור ישיר לקטלוג, בלי מחיר משלו) שקיבל מחיר/כמות — הופך לשורה, ואז מוסר מהקישור הישן */
+var SVC_CONV={};
+function svcLegacyToLine(id,el){if(SVC_CONV[id])return;SVC_CONV[id]=1;
+ /* קוראים כמות ומחיר מהשורה עצמה ברגע ההמרה — כך ששינוי בשני השדות לא הולך לאיבוד */
+ var row=el&&el.closest?el.closest(".ln"):null,s=SVC.filter(function(x){return x.id===id;})[0];
+ var qi=row&&row.querySelector("input:not(.pr)"),pi=row&&row.querySelector("input.pr");
+ var qy=parseInt(qi?qi.value:"1",10);if(!qy||qy<1)qy=1;
+ var pr=parseFloat(pi?pi.value:(s?s.price:0));if(isNaN(pr)||pr<0)pr=0;
+ var woId=CUR.id,cur=ids((CUR.fields||{})["שירותים נוספים:"]).filter(function(x){return x!==id;});
+ newSvcLine({"שירות":[id],"כמות":qy,"מחיר ליחידה (בזמן השימוש)":pr},"✓ נשמר")
+  .then(function(d){
+     /* הסרת הקישור הישן חייבת להצליח — אחרת השירות ייספר פעמיים בחשבון. אם נכשלה, מוחקים את השורה החדשה. */
+     return fetch(PX+B+"/"+T.wo+"/"+woId,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:{"שירותים נוספים:":cur},typecast:true})})
+      .then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(w){if(CUR&&CUR.id===woId){CUR.fields["שירותים נוספים:"]=cur;if(w&&w.fields)Object.keys(w.fields).forEach(function(k){CUR.fields[k]=w.fields[k];});}svcRepaint();})
+      .catch(function(){LINES=LINES.filter(function(r){return r.id!==d.id;});
+         fetch(PX+B+"/"+T.ln+"/"+d.id,{method:"DELETE"}).catch(function(){});
+         svcRepaint();toast("השמירה נכשלה — נסה שוב",1);});})
+  .catch(function(){svcRepaint();})
+  .then(function(){delete SVC_CONV[id];});}
 
 function chk(name,on){return '<label class="chk'+(on?" on":"")+'"><input type="checkbox"'+(on?" checked":"")+' onchange="setChk(\''+name.replace(/'/g,"\\'")+'\',this.checked)"><span>'+esc(L(name))+'</span></label>';}
 function pChecks(){var f=CUR.fields||{};
@@ -2207,10 +2315,10 @@ var LAST_LOCAL=0;
 function money(n){return "\u20aa"+Number(n||0).toLocaleString("he-IL",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function pPay(){
   var f=CUR.fields||{};
-  var ls=myLines();
+  var ls=myPartLines(), svl=mySvcLines();
   var partsSum=0, noPrice=0;
   var partRows=ls.map(function(r){
-    var g=r.fields||{}, nm=(g["\u05d7\u05dc\u05e3"]&&g["\u05d7\u05dc\u05e3"][0]&&g["\u05d7\u05dc\u05e3"][0].name)||g["\u05ea\u05d9\u05d0\u05d5\u05e8 \u05e9\u05d5\u05e8\u05d4"]||"(\u05d7\u05dc\u05e3)";
+    var g=r.fields||{}, nm=partName(g), sku=partSku(g);
     var q=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"], pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0, lt=q*pr;
     /* ⚠️ v24 — מחיר 0 אינו שגיאה. זו ברירת המחדל של חלף שמסופק בתוך ערכה:
        הערכה נושאת את הכסף והרכיבים ב-0, בדיוק כמו בחשבונית 14980 של המוסך.
@@ -2219,12 +2327,15 @@ function pPay(){
     partsSum+=lt; if(pend)noPrice++;
     var tagp = pend ? ' <span style="color:var(--red);font-size:11.5px">\u26a0 \u05d3\u05d5\u05e8\u05e9 \u05ea\u05de\u05d7\u05d5\u05e8</span>'
              : (!pr ? ' <span class="muted" style="font-size:11.5px">\u05db\u05dc\u05d5\u05dc \u05d1\u05e2\u05e8\u05db\u05d4</span>' : '');
-    return '<tr><td>'+esc(nm)+tagp+'</td>'
+    return '<tr><td>'+esc(nm)+tagp+(sku?'<span class="sku">\u05de\u05e7\u05f4\u05d8 '+esc(sku)+'</span>':'')+'</td>'
       +'<td style="text-align:center">'+q+'</td><td style="text-align:left">'+money(pr)+'</td>'
       +'<td style="text-align:left"><b>'+money(lt)+'</b></td></tr>';}).join("");
 
   var svcIds=ids(f["\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd:"]), svcSum=0;
-  var svcRows=svcIds.map(function(id){
+  var svcRows=svl.map(function(r){var g=r.fields||{},q=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"],pr=Number(g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0),lt=q*pr;svcSum+=lt;
+    return '<tr><td>'+esc(svcLineName(g))+'</td><td style="text-align:center">'+q+'</td>'
+      +'<td style="text-align:left">'+money(pr)+'</td><td style="text-align:left"><b>'+money(lt)+'</b></td></tr>';}).join("")
+   +svcIds.map(function(id){
     var sv=SVC.filter(function(x){return x.id===id;})[0]; var pr=sv?Number(sv.price||0):0; svcSum+=pr;
     return '<tr><td>'+esc(sv?sv.name:"(\u05e9\u05d9\u05e8\u05d5\u05ea)")+'</td><td style="text-align:center">1</td>'
       +'<td style="text-align:left">'+money(pr)+'</td><td style="text-align:left"><b>'+money(pr)+'</b></td></tr>';}).join("");
@@ -2796,7 +2907,7 @@ function dOnly(v){var s2=dt(v)||"";return s2.split(" ")[0];}
 
 /* ===== מבנה החשבונית של מוסך ABN ===== */
 function invoiceHTML(){
-  var f=CUR.fields||{}, ls=(typeof myLines==="function"?myLines():[]);
+  var f=CUR.fields||{}, ls=(typeof myPartLines==="function"?myPartLines():[]), svl=(typeof mySvcLines==="function"?mySvcLines():[]);
 
   /* --- עבודות --- */
   var labour=Number(f["\u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4"]||0);
@@ -2807,8 +2918,8 @@ function invoiceHTML(){
   /* --- חלקים --- */
   var partsSum=0;
   var partRows=ls.map(function(r){var g=r.fields||{};
-    var nm=(g["\u05d7\u05dc\u05e3"]&&g["\u05d7\u05dc\u05e3"][0]&&g["\u05d7\u05dc\u05e3"][0].name)||g["\u05ea\u05d9\u05d0\u05d5\u05e8 \u05e9\u05d5\u05e8\u05d4"]||"(\u05d7\u05dc\u05e3)";
-    var sku=g["\u05de\u05e7\u05f4\u05d8"]||g["\u05d1\u05e8\u05e7\u05d5\u05d3"]||"";
+    var nm=partName(g);
+    var sku=partSku(g)||g["\u05de\u05e7\u05f4\u05d8"]||g["\u05d1\u05e8\u05e7\u05d5\u05d3"]||"";
     var qy=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"];
     var pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0;
     partsSum+=qy*pr;
@@ -2817,7 +2928,10 @@ function invoiceHTML(){
 
   /* --- שירותים נוספים נכנסים לטבלת החלקים --- */
   var svcSum=0;
-  var svcRows=ids(f["\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd:"]).map(function(id){
+  var svcRows=svl.map(function(r){var g=r.fields||{},qy=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"],pr=Number(g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0);svcSum+=qy*pr;
+    return '<tr><td class="sku"></td><td>'+esc(svcLineName(g))+'</td>'
+      +'<td class="num">'+qy+'</td><td class="num">'+n2(pr)+'</td><td class="num">'+n2(qy*pr)+'</td></tr>';}).join("")
+   +ids(f["\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd:"]).map(function(id){
     var sv=SVC.filter(function(x){return x.id===id;})[0], pr=sv?Number(sv.price||0):0; svcSum+=pr;
     return '<tr><td class="sku"></td><td>'+esc(sv?sv.name:"(\u05e9\u05d9\u05e8\u05d5\u05ea)")+'</td>'
       +'<td class="num">1</td><td class="num">'+n2(pr)+'</td><td class="num">'+n2(pr)+'</td></tr>';}).join("");
@@ -2998,7 +3112,7 @@ var RULES={
    החסימה היחידה היא סכום סופי 0 — נבדקת ב-confirmCash וב-invoiceActions. */
 function unpricedParts(){
   if(!CUR)return [];
-  var ls=(typeof myLines==="function"?myLines():[]);
+  var ls=(typeof myPartLines==="function"?myPartLines():[]);
   /* מכונאי אינו מקבל מחירים מהשרת. אילו היינו בודקים כאן את שדה המחיר, כל
      שורה הייתה נראית "ללא מחיר" והכרטיס לא היה נסגר לעולם. לכן משתמשים בדגל
      הבוליאני "ממתין להשלמת מחיר" — הוא לא חושף סכום ולכן כן מגיע. */
@@ -3134,7 +3248,7 @@ function refetchCard(id,tries){
     fetch(PX+B+"/"+T.wo+"/"+id).then(function(r){return r.ok?r.json():Promise.reject();})
      .then(function(d){
        var i=-1;WOS.forEach(function(x,n){if(x.id===d.id)i=n;});if(i>=0)WOS[i]=d;
-       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();pSvc();try{pCredit();}catch(e){}try{headStatus();}catch(e){}
+       if(CUR&&CUR.id===d.id){CUR=d;pDet();pPay();pChecks();try{pSvc();}catch(e){}try{pCredit();}catch(e){}try{headStatus();}catch(e){}
          if(d.fields["⚠️ התראה"])toast("⚠️ "+d.fields["⚠️ התראה"],1);}
        draw();drawTabs();
        if(tries<1)refetchCard(id,tries+1);
@@ -3156,28 +3270,45 @@ function rmSvc(id){var cur=ids((CUR.fields||{})["שירותים נוספים:"])
  patchWO({"שירותים נוספים:":cur},svcRepaint);}
 function patchLine(id,fields){var i=-1;LINES.forEach(function(r,n){if(r.id===id)i=n;});
  if(i>=0)Object.keys(fields).forEach(function(k){LINES[i].fields[k]=fields[k];});
- LAST_LOCAL=new Date().getTime();pParts();try{pPay();}catch(e){}
+ LAST_LOCAL=new Date().getTime();pParts();try{pSvc();}catch(e){}try{pPay();}catch(e){}
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields,typecast:true})})
   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה",1);});}
 function setQ(id,v){var n=parseInt(v,10);if(!n||n<1)n=1;patchLine(id,{"כמות":n});}
 function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
-function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});LAST_LOCAL=new Date().getTime();pParts();pPay();
+function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});LAST_LOCAL=new Date().getTime();pParts();try{pSvc();}catch(e){}try{pPay();}catch(e){}
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה",1);});}
+/* v45: חיפוש חלפים — ממתין שההקלדה תיעצר (350ms) לפני שהוא שואל את השרת, ומציג רק את התשובה
+   לשאילתה האחרונה. קודם כל הקשה שלחה חיפוש, הרשימה התחלפה ל"מחפש…" וחזרה, ותשובות ישנות דרסו חדשות — וזה "קפץ". */
+var SQ_T=0,SQ_SEQ=0,SQ_LAST="";
+function sqType(){clearTimeout(SQ_T);
+  var s=((document.getElementById("pq")||{}).value||"").trim(),dd=document.getElementById("pdd");
+  if(s.length<2){SQ_SEQ++;SQ_LAST="";if(dd){dd.classList.remove("on");dd.innerHTML="";}return;}
+  SQ_T=setTimeout(sqNow,350);}
+function sqNow(){clearTimeout(SQ_T);sq();}
 async function sq(){
   var s=(document.getElementById("pq").value||"").trim(),dd=document.getElementById("pdd");
   if(s.length<2){dd.classList.remove("on");return;}
-  dd.innerHTML='<div class="muted">מחפש…</div>';dd.classList.add("on");
+  if(s===SQ_LAST&&dd.classList.contains("on"))return;
+  var my=++SQ_SEQ;
+  /* "מחפש…" מוצג רק כשהרשימה ריקה — אחרת התוצאות הקודמות נשארות במקומן עד שהחדשות מגיעות */
+  if(!dd.classList.contains("on")||!dd.innerHTML){dd.innerHTML='<div class="muted">מחפש…</div>';dd.classList.add("on");}
   try{
     var recs=await find(T.cat,'OR(SEARCH('+q(s)+',{פריט}),SEARCH('+q(s)+',{מק"ט}),SEARCH('+q(s)+',{ברקוד}))',20);
+    if(my!==SQ_SEQ)return;           /* הוקלד משהו חדש בינתיים — התשובה הזו כבר לא רלוונטית */
+    dd=document.getElementById("pdd"); if(!dd)return;   /* ייתכן שהלשונית צוירה מחדש בזמן ההמתנה */
+    SQ_LAST=s;
     dd.innerHTML=recs.length?recs.map(function(r){var f=r.fields||{};
-      return '<div onclick="addPart(\''+r.id+'\')"><b>'+esc(f["פריט"]||"")+'</b>'
-        +'<div class="muted" style="font-size:12px">'+(f['מק"ט']?'מק"ט '+esc(f['מק"ט']):'')
-        +(f["יצרן"]?' · '+esc(f["יצרן"]):'')+(can("money")?(f["מחיר"]?' · ₪'+Number(f["מחיר"]).toFixed(2):' · ללא מחיר'):'')
-        +(f["כמות במלאי"]!=null?' · במלאי '+f["כמות במלאי"]:'')+'</div></div>';}).join("")
+      var meta=[f["יצרן"]?esc(f["יצרן"]):"",
+                can("money")?(f["מחיר"]?'₪'+Number(f["מחיר"]).toFixed(2):'ללא מחיר'):"",
+                f["כמות במלאי"]!=null?'במלאי '+f["כמות במלאי"]:""].filter(Boolean).join(" · ");
+      return '<div onclick="addPart(\''+r.id+'\')"><b>'+esc(String(f["פריט"]||"").replace(/\s+/g," ").trim())+'</b>'
+        +(f['מק"ט']?'<span class="sku">מק״ט '+esc(f['מק"ט'])+'</span>':'')
+        +(meta?'<div class="muted" style="font-size:12px">'+meta+'</div>':'')+'</div>';}).join("")
      :'<div class="muted">לא נמצא חלף</div>';
-  }catch(e){dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
+    dd.classList.add("on");
+  }catch(e){dd=document.getElementById("pdd");if(my===SQ_SEQ&&dd)dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
 }
-function addPart(pid){document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
+function addPart(pid){SQ_SEQ++;SQ_LAST="";clearTimeout(SQ_T);document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
  var b={fields:{},typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];b.fields["חלף"]=[pid];b.fields["כמות"]=1;
  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
   .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);LAST_LOCAL=new Date().getTime();pParts();pPay();toast("✓ נוסף");})
@@ -3685,15 +3816,16 @@ async function loadVehHistory(rec){
 
     var cards=recs.map(function(r){var g=r.fields||{};
       /* חלפים */
-      var parts=[];
+      var parts=[], svLines=[];
       ids(g["➕ חלפים שהותקנו (עם כמות)"]).forEach(function(lid){var l=LN[lid]; if(!l)return; var h=l.fields||{};
+        if(isSvcLine(l)){var sq=h["כמות"]==null?1:Number(h["כמות"]);svLines.push({name:svcLineName(h)+(sq>1?" ×"+sq:""),price:sq*(Number(h["מחיר ליחידה (בזמן השימוש)"])||0)});return;}
         var pid=ids(h["חלף"])[0], c=pid&&CAT[pid]?(CAT[pid].fields||{}):{};
         var nm=txt(c["פריט"])||txt(h["חלף"])||vhClean(h["תיאור שורה"])||"(חלף)";
         parts.push({nm:nm,sku:txt(c['מק"ט'])||txt(h['מק"ט (lookup)']),qty:h["כמות"]==null?1:Number(h["כמות"]),pr:Number(h["מחיר ליחידה (בזמן השימוש)"])||0,old:false});});
       ids(g["חלפים (ישן — לא בשימוש)"]).forEach(function(pid){var c=CAT[pid]?(CAT[pid].fields||{}):{};
         parts.push({nm:txt(c["פריט"])||"(חלף)",sku:txt(c['מק"ט']),qty:1,pr:Number(c["מחיר"])||0,old:true});});
       partCount+=parts.length;
-      var svs=ids(g["שירותים נוספים:"]).map(function(x){return SV[x]||{name:"(שירות)",price:0};});
+      var svs=svLines.concat(ids(g["שירותים נוספים:"]).map(function(x){return SV[x]||{name:"(שירות)",price:0};}));
       /* בדיקות */
       var sys=["מערכת בלמים קידמית","מערכת בלמים אחורית","נוזל בלמים","נוזל קירור"]
         .map(function(k){var v=txt(g[k]).trim();return v?(k+": "+v):"";}).filter(Boolean);
@@ -4142,7 +4274,7 @@ async function boot(){
     }
     document.getElementById("list").innerHTML='<div class="empty">\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05d4: '+esc(msg)+'</div>';return;
   }
-  try{LINES=await all(T.ln);if(CUR){pParts();pPay();}}catch(e){}
+  try{LINES=await all(T.ln);if(CUR){pParts();try{pSvc();}catch(x){}pPay();}}catch(e){}
   loadSlots().then(function(){if(CUR)pDet();});
   try{SVC=(await all(T.svc)).map(function(r){var f=r.fields||{};return {id:r.id,name:f["שם שירות"]||"",price:f["מחיר שירות"]||0};});}catch(e){}
   try{LOC=(await all(T.loc)).map(function(r){return {id:r.id,name:(r.fields||{})["שם מיקום"]||""};});}catch(e){}
