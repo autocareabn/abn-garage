@@ -138,6 +138,25 @@ span.sku{display:block;color:#5b6172;font-size:12px;margin-top:2px;unicode-bidi:
 .dd div{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8;white-space:normal;line-height:1.45;font-size:13.5px}
 .dd div:hover{background:#fdecef}
 .tot{display:flex;justify-content:space-between;font-weight:bold;padding-top:10px;margin-top:8px;border-top:2px solid #1d2130;font-size:15px}
+/* v46: חיפוש חלפים — תיבה קבועה בראש הלשונית, חלון תוצאות בגובה קבוע (לא מתכווץ ולא גדל) */
+.psearch{position:relative;z-index:15;background:#fff;padding:2px 0 10px;margin-bottom:6px}
+.psearch .srch{margin-top:0}
+.psearch .srch input{padding:12px 40px 12px 40px;-webkit-appearance:none;appearance:none}
+.psearch .srch input::-webkit-search-cancel-button{display:none}
+.sqX{position:absolute;left:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#8a90a0;font-size:15px;width:30px;height:30px;cursor:pointer;display:none}
+.psearch.open .sqX{display:block}
+.sqSp{position:absolute;right:12px;top:50%;width:16px;height:16px;margin-top:-8px;border:2px solid #f3c2c4;border-top-color:var(--red);border-radius:50%;opacity:0;transition:opacity .15s}
+.psearch.busy .sqSp{opacity:1;animation:sqspin .7s linear infinite}
+@keyframes sqspin{to{transform:rotate(360deg)}}
+.pdd{display:none;height:300px;overflow-y:auto;overscroll-behavior:contain;margin-top:6px;border:1px solid #dfe3ea;border-radius:9px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.10)}
+.psearch.open .pdd{display:block}
+.psearch.stale .pdd{opacity:.5}
+.sqRow{padding:10px 12px;cursor:pointer;border-bottom:1px solid #f2f4f8;line-height:1.45;font-size:13.5px}
+.sqRow:hover,.sqRow:active{background:#fdecef}
+.sqRow b{display:block}
+.sqMeta{display:block;color:#8a90a0;font-size:12px}
+.sqMsg{padding:18px 12px;color:#8a90a0;font-size:13px;text-align:center}
+@media(max-width:560px){.pdd{height:42vh}}
 /* הסטטוס בכותרת הכרטיס — נראה מכל לשונית, לא רק מ"פרטים" */
 .mstat{display:inline-flex;align-items:center;margin-inline-start:10px;vertical-align:middle}
 .mstat .pill{font-size:12px;padding:3px 10px}
@@ -389,6 +408,7 @@ var PROXY_HOST="abn-airtable-proxy.autocareabn.workers.dev";
     var u=(typeof input==="string")?input:((input&&input.url)||"");
     if(u.indexOf(PROXY_HOST)<0)return _f(input,init);
     init=init||{};
+    if(init.method&&String(init.method).toUpperCase()!=="GET")window.__lastWrite=Date.now();   /* v46: הרענון החי מחכה רגע אחרי כתיבה מקומית */
     var h=new Headers(init.headers||{});
     if(window.__idToken)h.set("Authorization","Bearer "+window.__idToken);
     init.headers=h;
@@ -456,7 +476,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v45";
+var APP_VERSION="v46";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -483,6 +503,7 @@ var ROLE_BY_EMAIL={
   "autocareabn@gmail.com":"manager",   /* אמיר */
   "sarabn56@gmail.com":"manager",      /* שרה  */
   "galbn1102@gmail.com":"manager",     /* גל   */
+  "abn7787gal@gmail.com":"manager",    /* גל — חשבון נוסף (30/09/2026) */
   "autocareabnemp@gmail.com":"mechanic"
   /* זאב (צ'יקו) → advisor — יתווסף כשיגיע האימייל */
 };
@@ -493,7 +514,7 @@ var PERMS={
   mechanic:{label:"מכונאי",     views:["work"],                          money:false, users:false,
             filters:["today","tomorrow","future"]}
 };
-var NAME_BY_EMAIL={"leoneld151174@gmail.com":"לאו"};
+var NAME_BY_EMAIL={"leoneld151174@gmail.com":"לאו","abn7787gal@gmail.com":"גל"};
 var ME={email:null,role:null,name:"",empId:null};
 
 function can(k){var p=PERMS[ME.role];
@@ -2016,7 +2037,8 @@ function headButtons(){
   if(el&&dr&&dr!=="העבודה כבר סומנה כגמורה"&&dr!=="מעדכן…")
     el.innerHTML+='<span class="mini" style="color:#ffd6d6;margin-inline-start:8px;font-size:11.5px">⏳ '+esc(dr)+(canOv?" · אפשר לעקוף":"")+'</span>';
 }
-function closeCard(){closeInv();document.getElementById("ov").classList.remove("on");CUR=null;}
+function closeCard(){closeInv();document.getElementById("ov").classList.remove("on");CUR=null;
+ var ps=document.getElementById("psearch");if(ps)ps.setAttribute("data-card","");}   /* v46: חיפוש נקי בפתיחה הבאה */
 function mt(i){closeInv();[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
  [0,1,2,3,4,5].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane"+(n===i?" on":"");});}
 var SLOTS=[];
@@ -2182,9 +2204,9 @@ function partName(g){var lk=g["שם חלף (lookup)"];lk=Array.isArray(lk)?lk[0]
  if(!nm){nm=String(g["תיאור שורה"]||"").split(" — ")[0].replace(/^"|"$/g,"");}
  return String(nm||"(חלף)").replace(/\s+/g," ").replace(/^"|"$/g,"").trim();}
 function partSku(g){var v=g['מק"ט (lookup)'];v=Array.isArray(v)?v[0]:v;return String(v||"").trim();}
+function partBarcode(g){var v=g["ברקוד (lookup)"];v=Array.isArray(v)?v[0]:v;return String(v||"").trim();}
 function pParts(){var ls=myPartLines(),sum=0,mon=can("money");
- /* שומרים את מה שהוקלד בחיפוש — ציור מחדש (שמירת כמות/מחיר, רענון) לא ימחק אותו ולא יסגור את הרשימה */
- var oq=document.getElementById("pq"),keep=oq?{v:oq.value,f:document.activeElement===oq,dd:(document.getElementById("pdd")||{}).innerHTML,on:((document.getElementById("pdd")||{}).classList||{contains:function(){return false;}}).contains("on")}:null;
+ /* v46: תיבת החיפוש יושבת בראש הלשונית וקבועה במקומה; ציור מחדש של הרשימה לא נוגע בה בכלל */
  /* עמודות המחיר אינן מוסתרות למכונאי — הן פשוט לא נבנות, והערך עצמו כבר
     לא הגיע מהשרת. אין מה למצוא ב-DevTools. */
  var head='<div class="hd"><span class="nm">חלף / מק״ט</span><span>כמות</span>'
@@ -2196,23 +2218,31 @@ function pParts(){var ls=myPartLines(),sum=0,mon=can("money");
   var flag=pend?"<small>דורש תמחור</small>"
           :(!pr&&mon?'<small style="color:var(--steel)">כלול בערכה</small>':"");
   return '<div class="ln"><div class="nm"><span class="pn">'+esc(nm)+'</span>'
-   +(sku?'<span class="sku">מק״ט '+esc(sku)+'</span>':'')+flag+'</div>'
+   +(sku?'<span class="sku">מק״ט '+esc(sku)+'</span>':'')
+   +(partBarcode(f)?'<span class="sku">ברקוד '+esc(partBarcode(f))+'</span>':'')+flag+'</div>'
    +'<input type="number" min="1" inputmode="numeric" value="'+qy+'" aria-label="כמות" onchange="setQ(\''+r.id+'\',this.value)">'
    +(mon?('<input type="number" min="0" step="0.01" inputmode="decimal" class="pr" value="'+pr+'" aria-label="מחיר ליחידה" onchange="setP(\''+r.id+'\',this.value)">'
         +'<div class="lt">'+lt.toFixed(2)+'</div>'
         +'<button class="pend'+(f["דורש תמחור"]?' on':'')+'" title="סמן שהחלף הזה צריך מחיר משלו"'
         +' onclick="togglePend(\''+r.id+'\','+(f["דורש תמחור"]?0:1)+')">'+(f["דורש תמחור"]?"בטל סימון":"דורש תמחור")+'</button>'):'')
    +'<button class="x" title="הסר" onclick="rmLine(\''+r.id+'\')">✕</button></div>';}).join("");
- document.getElementById("p1").innerHTML=(body?'<div class="pgrid'+(mon?'':' nomon')+'">'+head+body+'</div>'
+ var p1=document.getElementById("p1");
+ var ps=document.getElementById("psearch");
+ if(!ps||!p1.contains(ps)||ps.getAttribute("data-card")!==CUR.id){
+  SQ_SEQ++;SQ_LAST="";SQ_SHOWN=[];clearTimeout(SQ_T);
+  p1.innerHTML='<div class="psearch" id="psearch" data-card="'+CUR.id+'">'
+     +'<div class="srch"><input id="pq" type="search" enterkeyhint="search" placeholder="🔍 חפש חלף להוספה — שם, מק״ט או ברקוד" autocomplete="off" autocorrect="off" spellcheck="false"'
+     +' oninput="sqType()" onfocus="sqOpen()" onkeydown="sqKey(event)">'
+     +'<span class="sqSp" aria-hidden="true"></span><button type="button" class="sqX" title="נקה" onclick="sqClear()">✕</button></div>'
+     +'<div class="pdd" id="pdd" role="listbox"></div></div>'
+     +'<div id="pbody"></div>';
+ }
+ document.getElementById("pbody").innerHTML=(body?'<div class="pgrid'+(mon?'':' nomon')+'">'+head+body+'</div>'
     :'<div class="empty" style="padding:16px">אין חלפים. חפש חלף להוספה.</div>')
-  +'<div class="srch"><input id="pq" placeholder="🔍 חפש חלף (שם או מק״ט)…" autocomplete="off" oninput="sqType()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();sqNow();}"><div class="dd" id="pdd"></div></div>'
   +'<div class="sec">צילום החלפים — זיהוי מק״ט אוטומטי</div>'
   +'<div class="hint">צלם את החלפים או את הברקודים שעל האריזות. המערכת תקרא את המק״ט, תזהה את החלפים ותוסיף אותם לרשימה למעלה תוך כדקה.</div>'
   +photoBox("parts","📷 צלם / סרוק חלפים",CUR.fields["סריקה של חלקים שהותקנו"])
-  +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');
- if(keep&&(keep.v||keep.f)){var nq=document.getElementById("pq"),nd=document.getElementById("pdd");
-  nq.value=keep.v;if(keep.dd)nd.innerHTML=keep.dd;if(keep.on)nd.classList.add("on");
-  if(keep.f){nq.focus();try{nq.setSelectionRange(keep.v.length,keep.v.length);}catch(e){}}}}
+  +(mon?'<div class="tot"><span>סה"כ חלפים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
 
 function pSvc(){var f=CUR.fields||{},legacy=ids(f["שירותים נוספים:"]),sl=mySvcLines(),mon=can("money");
  /* v45: מחיר שירות ניתן להקלדה ולשינוי בכל כרטיס, ואפשר להוסיף שירות שאינו בקטלוג.
@@ -2261,7 +2291,7 @@ function newSvcLine(fields,okMsg){if(SVC_BUSY)return Promise.reject(0);SVC_BUSY=
  if(b.fields["כמות"]==null)b.fields["כמות"]=1;
  return fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
   .then(function(r){return r.ok?r.json():Promise.reject();})
-  .then(function(d){SVC_BUSY=false;LINES.push(d);LAST_LOCAL=new Date().getTime();svcRepaint();toast(okMsg||"✓ נוסף");return d;})
+  .then(function(d){SVC_BUSY=false;linePush(d);LAST_LOCAL=new Date().getTime();svcRepaint();toast(okMsg||"✓ נוסף");return d;})
   .catch(function(){SVC_BUSY=false;toast("ההוספה נכשלה",1);throw 0;});}
 function addSvcLine(id){if(!id)return;var s=SVC.filter(function(x){return x.id===id;})[0];
  newSvcLine({"שירות":[id],"מחיר ליחידה (בזמן השימוש)":s?Number(s.price||0):0}).catch(function(){});}
@@ -2923,7 +2953,8 @@ function invoiceHTML(){
     var qy=g["\u05db\u05de\u05d5\u05ea"]==null?1:g["\u05db\u05de\u05d5\u05ea"];
     var pr=g["\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\u05d9\u05d3\u05d4 (\u05d1\u05d6\u05de\u05df \u05d4\u05e9\u05d9\u05de\u05d5\u05e9)"]||0;
     partsSum+=qy*pr;
-    return '<tr><td class="sku">'+esc(txt(sku))+'</td><td>'+esc(nm)+'</td>'
+    var bc=partBarcode(g);
+    return '<tr><td class="sku">'+esc(txt(sku))+(bc?'<div style="font-size:10.5px;color:#555">\u05d1\u05e8\u05e7\u05d5\u05d3 '+esc(bc)+'</div>':'')+'</td><td>'+esc(nm)+'</td>'
       +'<td class="num">'+qy+'</td><td class="num">'+n2(pr)+'</td><td class="num">'+n2(qy*pr)+'</td></tr>';}).join("");
 
   /* --- שירותים נוספים נכנסים לטבלת החלקים --- */
@@ -3275,45 +3306,71 @@ function patchLine(id,fields){var i=-1;LINES.forEach(function(r,n){if(r.id===id)
   .then(function(r){if(!r.ok)throw 0;toast("✓ נשמר");}).catch(function(){toast("השמירה נכשלה",1);});}
 function setQ(id,v){var n=parseInt(v,10);if(!n||n<1)n=1;patchLine(id,{"כמות":n});}
 function setP(id,v){var p=parseFloat(v);if(isNaN(p)||p<0)p=0;patchLine(id,{"מחיר ליחידה (בזמן השימוש)":p});}
-function rmLine(id){LINES=LINES.filter(function(r){return r.id!==id;});LAST_LOCAL=new Date().getTime();pParts();try{pSvc();}catch(e){}try{pPay();}catch(e){}
+/* v46: הוספה ללא כפילות (הרענון החי עשוי להביא את השורה לפני שתשובת ה-POST חוזרת) */
+function linePush(d){if(!d||!d.id)return;var i=-1;LINES.forEach(function(r,n){if(r.id===d.id)i=n;});if(i>=0)LINES[i]=d;else LINES.push(d);}
+var LIVE_DEL={};   /* שורות שנמחקו כאן — הרענון החי לא יחזיר אותן */
+function rmLine(id){LIVE_DEL[id]=Date.now();LINES=LINES.filter(function(r){return r.id!==id;});LAST_LOCAL=new Date().getTime();pParts();try{pSvc();}catch(e){}try{pPay();}catch(e){}
  fetch(PX+B+"/"+T.ln+"/"+id,{method:"DELETE"}).then(function(r){if(!r.ok)throw 0;toast("✓ הוסר");}).catch(function(){toast("המחיקה נכשלה",1);});}
-/* v45: חיפוש חלפים — ממתין שההקלדה תיעצר (350ms) לפני שהוא שואל את השרת, ומציג רק את התשובה
-   לשאילתה האחרונה. קודם כל הקשה שלחה חיפוש, הרשימה התחלפה ל"מחפש…" וחזרה, ותשובות ישנות דרסו חדשות — וזה "קפץ". */
-var SQ_T=0,SQ_SEQ=0,SQ_LAST="";
-function sqType(){clearTimeout(SQ_T);
-  var s=((document.getElementById("pq")||{}).value||"").trim(),dd=document.getElementById("pdd");
-  if(s.length<2){SQ_SEQ++;SQ_LAST="";if(dd){dd.classList.remove("on");dd.innerHTML="";}return;}
-  SQ_T=setTimeout(sqNow,350);}
+/* v46: חיפוש חלפים חלק — בלי קפיצות (בקשת שרה, 30/09/2026)
+   • התיבה בראש הלשונית, והתוצאות נפתחות מתחתיה בחלון בגובה קבוע — הגובה לא משתנה בין "מחפש", תוצאות ו"לא נמצא".
+   • כל הקשה מציגה מיד התאמות מקומיות (חלפים שכבר נראו בחיפושים קודמים), והשרת נשאל רק כשההקלדה נעצרת (250ms).
+   • בזמן חיפוש מסתובב סימן קטן בתוך התיבה — התוצאות הקודמות נשארות במקומן עד שהחדשות מגיעות.
+   • רק התשובה לשאילתה האחרונה מוצגת. Enter מוסיף את התוצאה הראשונה, Esc / ✕ מנקים. */
+var SQ_T=0,SQ_SEQ=0,SQ_LAST="",SQ_POOL={},SQ_SHOWN=[];
+function sqEl(){return {i:document.getElementById("pq"),d:document.getElementById("pdd"),w:document.getElementById("psearch")};}
+function sqNorm(v){return String(v||"").toLowerCase().replace(/[\s\-"'״׳.]/g,"");}
+function sqOpen(){var e=sqEl();if(!e.d)return;e.w.classList.add("open");
+  if(!e.d.innerHTML)e.d.innerHTML='<div class="sqMsg">הקלד לפחות 2 אותיות מהשם, מהמק״ט או מהברקוד</div>';}
+function sqClose(){var e=sqEl();if(e.w)e.w.classList.remove("open","busy");}
+function sqClear(){var e=sqEl();SQ_SEQ++;SQ_LAST="";clearTimeout(SQ_T);if(!e.i)return;e.i.value="";e.d.innerHTML="";SQ_SHOWN=[];sqOpen();e.i.focus();}
+function sqKey(ev){
+  if(ev.key==="Enter"){ev.preventDefault();if(SQ_SHOWN.length)addPart(SQ_SHOWN[0].id);else sqNow();}
+  else if(ev.key==="Escape"){ev.preventDefault();ev.stopPropagation();sqClear();sqClose();ev.target.blur();}}
+function sqRender(recs,s,msg){var e=sqEl();if(!e.d)return;SQ_SHOWN=recs;e.w.classList.remove("stale");
+  if(!recs.length){e.d.innerHTML='<div class="sqMsg">'+(msg||"לא נמצא חלף")+'</div>';return;}
+  var mon=can("money");
+  e.d.innerHTML=recs.map(function(r){var f=r.fields||{};
+    var meta=[f["יצרן"]?esc(f["יצרן"]):"",
+              mon?(f["מחיר"]?'₪'+Number(f["מחיר"]).toFixed(2):'ללא מחיר'):"",
+              f["כמות במלאי"]!=null?'במלאי '+f["כמות במלאי"]:""].filter(Boolean).join(" · ");
+    var ids2=[f['מק"ט']?'מק״ט '+esc(f['מק"ט']):"",f["ברקוד"]?'ברקוד '+esc(f["ברקוד"]):""].filter(Boolean).join(" · ");
+    return '<div class="sqRow" role="option" onmousedown="event.preventDefault()" onclick="addPart(\''+r.id+'\')">'
+      +'<b>'+esc(String(f["פריט"]||"").replace(/\s+/g," ").trim())+'</b>'
+      +(ids2?'<span class="sku">'+ids2+'</span>':'')
+      +(meta?'<span class="sqMeta">'+meta+'</span>':'')+'</div>';}).join("");}
+function sqLocal(s){var n=sqNorm(s),out=[];
+  Object.keys(SQ_POOL).forEach(function(k){var f=SQ_POOL[k].fields||{};
+    if(sqNorm(f["פריט"]).indexOf(n)>=0||sqNorm(f['מק"ט']).indexOf(n)>=0||sqNorm(f["ברקוד"]).indexOf(n)>=0)out.push(SQ_POOL[k]);});
+  return out.slice(0,20);}
+function sqType(){clearTimeout(SQ_T);var e=sqEl();if(!e.i)return;sqOpen();
+  var s=(e.i.value||"").trim();
+  if(s.length<2){SQ_SEQ++;SQ_LAST="";e.w.classList.remove("busy");SQ_SHOWN=[];
+    e.d.innerHTML='<div class="sqMsg">הקלד לפחות 2 אותיות מהשם, מהמק״ט או מהברקוד</div>';return;}
+  var loc=sqLocal(s); if(loc.length)sqRender(loc,s);
+  else{SQ_SHOWN=[];if(e.d.firstChild)e.w.classList.add("stale");}   /* תוצאות ישנות מועמות — Enter לא יוסיף אותן */
+  e.w.classList.add("busy");
+  SQ_T=setTimeout(sqNow,250);}
 function sqNow(){clearTimeout(SQ_T);sq();}
 async function sq(){
-  var s=(document.getElementById("pq").value||"").trim(),dd=document.getElementById("pdd");
-  if(s.length<2){dd.classList.remove("on");return;}
-  if(s===SQ_LAST&&dd.classList.contains("on"))return;
-  var my=++SQ_SEQ;
-  /* "מחפש…" מוצג רק כשהרשימה ריקה — אחרת התוצאות הקודמות נשארות במקומן עד שהחדשות מגיעות */
-  if(!dd.classList.contains("on")||!dd.innerHTML){dd.innerHTML='<div class="muted">מחפש…</div>';dd.classList.add("on");}
+  var e=sqEl();if(!e.i)return;var s=(e.i.value||"").trim();
+  if(s.length<2)return;
+  if(s===SQ_LAST){e.w.classList.remove("busy");return;}
+  var my=++SQ_SEQ;e.w.classList.add("busy");
   try{
     var recs=await find(T.cat,'OR(SEARCH('+q(s)+',{פריט}),SEARCH('+q(s)+',{מק"ט}),SEARCH('+q(s)+',{ברקוד}))',20);
     if(my!==SQ_SEQ)return;           /* הוקלד משהו חדש בינתיים — התשובה הזו כבר לא רלוונטית */
-    dd=document.getElementById("pdd"); if(!dd)return;   /* ייתכן שהלשונית צוירה מחדש בזמן ההמתנה */
-    SQ_LAST=s;
-    dd.innerHTML=recs.length?recs.map(function(r){var f=r.fields||{};
-      var meta=[f["יצרן"]?esc(f["יצרן"]):"",
-                can("money")?(f["מחיר"]?'₪'+Number(f["מחיר"]).toFixed(2):'ללא מחיר'):"",
-                f["כמות במלאי"]!=null?'במלאי '+f["כמות במלאי"]:""].filter(Boolean).join(" · ");
-      return '<div onclick="addPart(\''+r.id+'\')"><b>'+esc(String(f["פריט"]||"").replace(/\s+/g," ").trim())+'</b>'
-        +(f['מק"ט']?'<span class="sku">מק״ט '+esc(f['מק"ט'])+'</span>':'')
-        +(meta?'<div class="muted" style="font-size:12px">'+meta+'</div>':'')+'</div>';}).join("")
-     :'<div class="muted">לא נמצא חלף</div>';
-    dd.classList.add("on");
-  }catch(e){dd=document.getElementById("pdd");if(my===SQ_SEQ&&dd)dd.innerHTML='<div class="muted">החיפוש נכשל</div>';}
+    recs.forEach(function(r){SQ_POOL[r.id]=r;});
+    SQ_LAST=s;sqRender(recs,s);
+  }catch(err){if(my===SQ_SEQ)sqRender([],s,"החיפוש נכשל — נסה שוב");}
+  if(my===SQ_SEQ){var w=sqEl().w;if(w)w.classList.remove("busy");}
 }
-function addPart(pid){SQ_SEQ++;SQ_LAST="";clearTimeout(SQ_T);document.getElementById("pdd").classList.remove("on");document.getElementById("pq").value="";
+function addPart(pid){SQ_SEQ++;SQ_LAST="";clearTimeout(SQ_T);
+ var e=sqEl();if(e.i){e.i.value="";e.d.innerHTML="";SQ_SHOWN=[];}sqClose();
  var b={fields:{},typecast:true};b.fields["כרטיס עבודה"]=[CUR.id];b.fields["חלף"]=[pid];b.fields["כמות"]=1;
  fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
-  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){LINES.push(d);LAST_LOCAL=new Date().getTime();pParts();pPay();toast("✓ נוסף");})
+  .then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){linePush(d);LAST_LOCAL=new Date().getTime();pParts();pPay();toast("✓ נוסף");})
   .catch(function(){toast("ההוספה נכשלה",1);});}
-document.addEventListener("click",function(e){if(!e.target.closest(".srch")){var d=document.getElementById("pdd");if(d)d.classList.remove("on");}});
+document.addEventListener("click",function(e){if(!e.target.closest("#psearch"))sqClose();});
 
 /* ============ NEW CARD ============ */
 
@@ -4297,9 +4354,11 @@ async function boot(){
    שממתינים לתשלום. כשתשלום נקלט — הודעה, רענון הרשימה והכרטיס הפתוח, ואם הכרטיס עדיין
    "מוכן לתשלום" הוא עובר ל"שולם" (גיבוי למקרה שהשרת לא עדכן את סטטוס העבודה).
    ========================================================================== */
-var PAY_POLL_MS=20000, PAY_BUSY=false;
+var PAY_POLL_MS=20000, PAY_BUSY=false, PAY_SKIP=0;
 async function paySync(){
   if(PAY_BUSY||document.hidden||!ME||!ME.role||!WOS||!WOS.length)return;
+  /* v46: כשהרענון החי פעיל, שינויי תשלום מגיעים ממילא — בודקים רק פעם בדקה (חוסך קריאות API) */
+  if(typeof LIVE_OK!=="undefined"&&Date.now()-LIVE_OK<30000){PAY_SKIP=(PAY_SKIP+1)%3;if(PAY_SKIP)return;}
   var pend=WOS.filter(function(r){var f=r.fields||{},acc=txt(f["סטטוס חשבון"]);
     return acc==="נשלח לתשלום"||(acc==="שולם"&&txt(f["סטטוס"])==="מוכן לתשלום");});
   if(!pend.length)return;
@@ -4333,6 +4392,88 @@ async function paySync(){
   PAY_BUSY=false;
 }
 setInterval(paySync,PAY_POLL_MS);
+/* ============================================================================
+   v46 — רענון חי כל שנייה (30/09/2026)
+   ----------------------------------------------------------------------------
+   כל שנייה (כשהלשונית גלויה) שואלים את ה-Worker "מה השתנה" (/sync). ה-Worker
+   פונה ל-Airtable פעם אחת בשנייה לכל המכשירים יחד — לכן זה לא חורג ממגבלת 5
+   הבקשות לשנייה. מקבלים את כרטיסי העבודה ושורות החלפים/השירותים שהשתנו ב-20
+   השניות האחרונות, וממזגים לתוך WOS / LINES.
+   כללי ציור — כדי שהמסך לא יקפוץ:
+     • הרשימה מצוירת מחדש רק אם משהו בה באמת השתנה.
+     • כרטיס פתוח מתעדכן רק כשאף שדה בו לא בעריכה (פוקוס בתוך החלונית = מחכים).
+     • 2.5 שניות אחרי כתיבה מקומית לא ממזגים — כדי שערך ישן לא "יקפוץ" חזרה.
+   מחיקות אינן מופיעות ב"מה השתנה" — לכן אחת ל-5 דקות, ובחזרה ללשונית אחרי
+   הפסקה, טעינה שקטה מלאה.
+   ========================================================================== */
+var LIVE_MS=1000, LIVE_BUSY=false, LIVE_OK=0, LIVE_FULL=0, LIVE_HOLD=0, LIVE_NEXT=0, LIVE_WIN=60, LIVE_PENDING_CARD=false;
+var SYNC_URL="https://"+PROXY_HOST+"/sync";
+function liveEditing(){var a=document.activeElement,ov=document.getElementById("ov");
+  /* תיבת חיפוש החלפים אינה נחשבת עריכה — ציור מחדש לא נוגע בה */
+  return !!(a&&ov&&ov.contains(a)&&a.id!=="pq"&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));}
+function liveMerge(arr,recs,skip){var ch=false,idx={};arr.forEach(function(r,i){idx[r.id]=i;});
+  recs.forEach(function(d){if(skip&&skip[d.id])return;var i=idx[d.id];
+    if(i==null){arr.push(d);idx[d.id]=arr.length-1;ch=true;}
+    else if(JSON.stringify(arr[i].fields)!==JSON.stringify(d.fields)){arr[i]=d;ch=true;}});
+  return ch;}
+/* שורות שכרטיס העבודה שלהן כבר לא מקשר אליהן — נמחקו במכשיר אחר */
+function livePrune(wos){var ch=false;
+  wos.forEach(function(w){var keep=ids((w.fields||{})["➕ חלפים שהותקנו (עם כמות)"]);
+    var n=LINES.length;
+    LINES=LINES.filter(function(l){var wl=ids((l.fields||{})["כרטיס עבודה"]);return wl.indexOf(w.id)<0||keep.indexOf(l.id)>=0;});
+    if(LINES.length!==n)ch=true;});
+  return ch;}
+function liveRepaintCard(){
+  if(!CUR)return;
+  if(liveEditing()){LIVE_PENDING_CARD=true;return;}
+  LIVE_PENDING_CARD=false;
+  try{pDet();}catch(e){} try{pParts();}catch(e){} try{pSvc();}catch(e){} try{pChecks();}catch(e){}
+  try{pPay();}catch(e){} try{pCredit();}catch(e){} try{headStatus();}catch(e){}}
+/* טעינה שקטה מלאה — רק אחרי היעדרות ארוכה מחלון "מה השתנה", ולכל היותר פעם ב-10 דקות (חוסך קריאות API) */
+async function liveFull(){
+  if(Date.now()-LIVE_FULL<600000)return false;
+  LIVE_FULL=Date.now();var t0=Date.now();
+  try{var W=await all(T.wo),L=await all(T.ln);
+    if((window.__lastWrite||0)>t0)return true;       /* נכתב משהו בזמן הטעינה — לא דורסים */
+    L=L.filter(function(l){return !LIVE_DEL[l.id];});
+    WOS=W;LINES=L;
+    if(CUR){var c=WOS.filter(function(r){return r.id===CUR.id;})[0];if(c)CUR=c;}
+    try{draw();drawTabs();}catch(e){}
+    liveRepaintCard();
+    LIVE_OK=Date.now();return true;
+  }catch(e){LIVE_HOLD=Date.now()+30000;return false;}}
+async function liveSync(){
+  if(LIVE_BUSY||document.hidden||!ME||!ME.role||!window.__idToken||!WOS.length)return;
+  var now=Date.now();
+  if(now<LIVE_HOLD||now<LIVE_NEXT)return;
+  if(LIVE_PENDING_CARD&&!liveEditing())liveRepaintCard();
+  LIVE_BUSY=true;
+  try{
+    var r=await fetch(SYNC_URL,{cache:"no-store"});
+    if(!r.ok){LIVE_HOLD=Date.now()+(r.status===404?600000:10000);return;}   /* 404 = ה-Worker עוד לא עודכן */
+    var d=await r.json();
+    /* קצב הפנייה ל-Worker נגזר מקצב הרענון שלו — אין טעם לשאול מהר יותר */
+    var iv=Number(d.interval)||20; LIVE_NEXT=Date.now()+Math.min(Math.max(iv*1000/4,LIVE_MS),5000);
+    if(d.window)LIVE_WIN=Number(d.window);
+    if(d.cooldown||d.error){LIVE_HOLD=Date.now()+Math.min(Number(d.retryMs)||10000,60000);return;}
+    /* חזרה אחרי היעדרות ארוכה מחלון "מה השתנה" (או תשובה חלקית) — טעינה שקטה מלאה */
+    if(d.full||(LIVE_OK&&Date.now()-LIVE_OK>(LIVE_WIN-5)*1000)){if(await liveFull())return;}
+    var lw=window.__lastWrite||0;
+    /* תמונת מצב שנלקחה לפני כתיבה מקומית אינה ממוזגת — אחרת ערך ישן "קופץ" חזרה */
+    var wo=(Number(d.t)||0)>lw?(d.wo||[]):[], ln=(Number(d.lnAt)||0)>lw?(d.ln||[]):[];
+    var chW=liveMerge(WOS,wo), chL=liveMerge(LINES,ln,LIVE_DEL);
+    if(chW&&livePrune(wo))chL=true;
+    if(chW){if(CUR){var c=WOS.filter(function(x){return x.id===CUR.id;})[0];if(c)CUR=c;}
+      try{draw();drawTabs();}catch(e){}
+      try{var st=document.getElementById("stamp");if(st)st.textContent=WOS.length+" כרטיסים";}catch(e){}}
+    var curHit=CUR&&((chW&&wo.some(function(x){return x.id===CUR.id;}))||chL);
+    if(curHit)liveRepaintCard();
+    LIVE_OK=Date.now();
+  }catch(e){LIVE_HOLD=Date.now()+10000;}
+  finally{LIVE_BUSY=false;}
+}
+setInterval(liveSync,LIVE_MS);
+document.addEventListener("focusout",function(){setTimeout(function(){if(LIVE_PENDING_CARD&&!liveEditing())liveRepaintCard();},300);});
 document.addEventListener("visibilitychange",function(){if(!document.hidden)setTimeout(paySync,500);});
 
 function reload(){document.getElementById("list").innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:10px">מרענן…</div></div>';boot();}
