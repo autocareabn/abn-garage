@@ -476,7 +476,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v46";
+var APP_VERSION="v47";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2038,7 +2038,8 @@ function headButtons(){
     el.innerHTML+='<span class="mini" style="color:#ffd6d6;margin-inline-start:8px;font-size:11.5px">⏳ '+esc(dr)+(canOv?" · אפשר לעקוף":"")+'</span>';
 }
 function closeCard(){closeInv();document.getElementById("ov").classList.remove("on");CUR=null;
- var ps=document.getElementById("psearch");if(ps)ps.setAttribute("data-card","");}   /* v46: חיפוש נקי בפתיחה הבאה */
+ var ps=document.getElementById("psearch");if(ps)ps.setAttribute("data-card","");
+ var ss=document.getElementById("ssearch");if(ss)ss.setAttribute("data-card","");}   /* v46: חיפוש נקי בפתיחה הבאה */
 function mt(i){closeInv();[].forEach.call(document.querySelectorAll("#mTabs button"),function(b){b.className=(String(b.getAttribute("data-pane"))===String(i))?"on":"";});
  [0,1,2,3,4,5].forEach(function(n){var e=document.getElementById("p"+n);if(e)e.className="pane"+(n===i?" on":"");});}
 var SLOTS=[];
@@ -2248,18 +2249,8 @@ function pSvc(){var f=CUR.fields||{},legacy=ids(f["שירותים נוספים:"
  /* v45: מחיר שירות ניתן להקלדה ולשינוי בכל כרטיס, ואפשר להוסיף שירות שאינו בקטלוג.
     דרג הכספים מוסיף שירות כשורה (עם מחיר). מכונאי — שאינו רשאי לכתוב מחירים — ממשיך לקשר ישירות לקטלוג,
     והמחיר מגיע מהקטלוג; ברגע ששרה משנה לו מחיר הוא הופך לשורה. */
- var used={};legacy.forEach(function(x){used[x]=1;});sl.forEach(function(r){ids((r.fields||{})["שירות"]).forEach(function(x){used[x]=1;});});
- var avail=SVC.filter(function(s){return !used[s.id];})
-   .sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""),"he");});
- var add='<div class="f" style="margin-top:0"><label>הוסף שירות מהקטלוג</label>'
-  +'<select onchange="'+(mon?'addSvcLine':'addSvc')+'(this.value);this.value=\'\'">'
-  +'<option value="">— בחר שירות —</option>'
-  +avail.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+(mon&&Number(s.price)>0?' · ₪'+Number(s.price).toFixed(2):'')+'</option>';}).join("")
-  +'</select></div>'
-  +(mon?'<div class="svcAdd"><div class="f" style="margin:0"><label>או הקלד שירות חופשי</label><input id="svN" placeholder="שם השירות" onkeydown="if(event.key===\'Enter\')addSvcFree()"></div>'
-     +'<div class="f" style="margin:0"><label>מחיר ₪</label><input id="svP" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" onkeydown="if(event.key===\'Enter\')addSvcFree()"></div>'
-     +'<button onclick="addSvcFree()">➕ הוסף</button></div>':'');
-
+ /* v47 (01/10/2026, לאו): בחירה חופשית — מקלידים ומסננים מתוך השירותים הקיימים בקטלוג בלבד.
+    לא ממציאים שירות חדש בשלב זה. המחיר נלקח מהקטלוג וניתן לשינוי בשורה אחרי ההוספה. */
  var sum=0;
  var rows=sl.map(function(r){var g=r.fields||{},manual=!!String(g["שם שירות (ידני)"]||"").trim();
    var qy=g["כמות"]==null?1:g["כמות"],pr=Number(g["מחיר ליחידה (בזמן השימוש)"]||0),lt=qy*pr;sum+=lt;
@@ -2278,12 +2269,43 @@ function pSvc(){var f=CUR.fields||{},legacy=ids(f["שירותים נוספים:"
           +'<div class="lt">'+pr.toFixed(2)+'</div>'):'')
     +'<button class="x" title="הסר שירות" onclick="rmSvc(\''+id+'\')">✕</button></div>';})).join("");
  var n=sl.length+legacy.length;
- document.getElementById("p2").innerHTML=add
-  +'<div class="sec">שירותים בכרטיס ('+n+')</div>'
+ var p2=document.getElementById("p2"),ss=document.getElementById("ssearch");
+ if(!ss||!p2.contains(ss)||ss.getAttribute("data-card")!==CUR.id){
+  p2.innerHTML='<div class="psearch" id="ssearch" data-card="'+CUR.id+'">'
+    +'<div class="srch"><input id="svQ" type="search" enterkeyhint="done" placeholder="🔍 הוסף שירות מהקטלוג — הקלד או בחר מהרשימה" autocomplete="off" autocorrect="off" spellcheck="false"'
+    +' oninput="svList()" onfocus="svList()" onkeydown="svKey(event)">'
+    +'<button type="button" class="sqX" title="נקה" onclick="svClear()">✕</button></div>'
+    +'<div class="pdd" id="svdd" role="listbox"></div></div>'
+    +'<div id="sbody"></div>';
+ }
+ if(ss&&ss.classList.contains("open"))svList();
+ document.getElementById("sbody").innerHTML='<div class="sec">שירותים בכרטיס ('+n+')</div>'
   +(rows
      ? '<div class="pgrid svc'+(mon?'':' nomon')+'"><div class="hd"><span class="nm">שירות</span>'+(mon?'<span>כמות</span><span>מחיר ליח\'</span><span>סה"כ</span>':'')+'<span></span></div>'+rows+'</div>'
-     : '<div class="empty" style="padding:16px">לא נבחרו שירותים — בחר מהתפריט למעלה</div>')
+     : '<div class="empty" style="padding:16px">לא נבחרו שירותים — הקלד או בחר מהרשימה למעלה</div>')
   +(mon?'<div class="tot"><span>סך שירותים</span><span>₪'+sum.toFixed(2)+'</span></div>':'');}
+
+/* v47: בורר השירותים — סינון מקומי ומיידי של קטלוג השירותים (אין פנייה לשרת בזמן הקלדה) */
+var SV_SHOWN=[];
+function svUsed(){var f=CUR.fields||{},u={};ids(f["שירותים נוספים:"]).forEach(function(x){u[x]=1;});
+  mySvcLines().forEach(function(r){ids((r.fields||{})["שירות"]).forEach(function(x){u[x]=1;});});return u;}
+function svList(){var w=document.getElementById("ssearch"),i=document.getElementById("svQ"),d=document.getElementById("svdd");if(!w||!i||!d)return;
+  w.classList.add("open");
+  var n=sqNorm(i.value),used=svUsed(),mon=can("money");
+  SV_SHOWN=SVC.filter(function(s){return !used[s.id]&&(!n||sqNorm(s.name).indexOf(n)>=0);})
+    .sort(function(a,b){return String(a.name||"").localeCompare(String(b.name||""),"he");});
+  d.innerHTML=SV_SHOWN.length?SV_SHOWN.map(function(s){
+      return '<div class="sqRow" role="option" onmousedown="event.preventDefault()" onclick="svPick(\''+s.id+'\')"><b>'+esc(s.name)+'</b>'
+        +(mon?'<span class="sqMeta">'+(Number(s.price)>0?'₪'+Number(s.price).toFixed(2):'ללא מחיר בקטלוג')+'</span>':'')+'</div>';}).join("")
+    :'<div class="sqMsg">'+(n?'אין שירות כזה בקטלוג':'כל השירותים בקטלוג כבר בכרטיס')+'</div>';}
+function svPick(id){var i=document.getElementById("svQ");if(i)i.value="";
+  var w=document.getElementById("ssearch");if(w)w.classList.remove("open");
+  if(can("money"))addSvcLine(id);else addSvc(id);}
+function svClear(){var i=document.getElementById("svQ");if(!i)return;i.value="";svList();i.focus();}
+function svKey(ev){
+  if(ev.key==="Enter"){ev.preventDefault();if(SV_SHOWN.length)svPick(SV_SHOWN[0].id);}
+  else if(ev.key==="Escape"){ev.preventDefault();ev.stopPropagation();var w=document.getElementById("ssearch");if(w)w.classList.remove("open");ev.target.value="";ev.target.blur();}}
+document.addEventListener("click",function(e){if(!e.target.closest("#ssearch")){var w=document.getElementById("ssearch");if(w)w.classList.remove("open");}});
 
 /* v45: יצירת שורת שירות. אחרי ההוספה כל הלשוניות מצוירות מחדש מהזיכרון. */
 var SVC_BUSY=false;
@@ -4410,7 +4432,7 @@ var LIVE_MS=1000, LIVE_BUSY=false, LIVE_OK=0, LIVE_FULL=0, LIVE_HOLD=0, LIVE_NEX
 var SYNC_URL="https://"+PROXY_HOST+"/sync";
 function liveEditing(){var a=document.activeElement,ov=document.getElementById("ov");
   /* תיבת חיפוש החלפים אינה נחשבת עריכה — ציור מחדש לא נוגע בה */
-  return !!(a&&ov&&ov.contains(a)&&a.id!=="pq"&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));}
+  return !!(a&&ov&&ov.contains(a)&&a.id!=="pq"&&a.id!=="svQ"&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName));}
 function liveMerge(arr,recs,skip){var ch=false,idx={};arr.forEach(function(r,i){idx[r.id]=i;});
   recs.forEach(function(d){if(skip&&skip[d.id])return;var i=idx[d.id];
     if(i==null){arr.push(d);idx[d.id]=arr.length-1;ch=true;}
