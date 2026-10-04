@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v49";
+var APP_VERSION="v50";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1994,10 +1994,16 @@ function drawTabs(){var el=document.getElementById("tabs");
 function setF(k){FILTER=k;drawTabs();draw();}
 /* מכונאי רואה רק היום / מחר / עתידי */
 function allowedFilters(){var p=PERMS[ME.role]; return p&&p.filters?p.filters:null;}
-function woRows(){var toks=(document.getElementById("q").value||"").trim().toLowerCase().split(/\s+/).filter(Boolean);
- return WOS.filter(function(r){if(!match(r,FILTER))return false;if(!toks.length)return true;var f=r.fields||{};
+/* v50 (לאו 04/10): בחיפוש מספר רכב/טלפון מתעלמים מרווחים ומקפים — "12-345-67" = "12 345 67" = "1234567" */
+function digitsQuery(s){s=String(s||"").trim();return /^[\d\s\-–.\/]+$/.test(s)&&/\d/.test(s)?s.replace(/\D/g,""):"";}
+function woRows(){var raw=(document.getElementById("q").value||""),dq=digitsQuery(raw);
+ var toks=dq?[]:raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+ return WOS.filter(function(r){if(!match(r,FILTER))return false;if(!toks.length&&!dq)return true;var f=r.fields||{};
   var h=[f["מספר כרטיס עבודה"],f["שם להצגה"],plate(f),f["יצרן (מלל חופשי)"],f["דגם (מלל חופשי)"],txt(f["מספר טלפון"]),txt(f["סוג טיפול"])].join(" ").toLowerCase();
-  return toks.every(function(t){return h.indexOf(t)>=0;});})
+  if(dq){var hd=[plate(f),txt(f["מספר טלפון"])].join(" ").replace(/[\s\-–.\/]/g,"");
+    return hd.indexOf(dq)>=0||String(f["מספר כרטיס עבודה"]||"").replace(/\D/g,"")===dq;}
+  var hc=h.replace(/[\-–]/g,"");
+  return toks.every(function(t){return h.indexOf(t)>=0||hc.indexOf(t.replace(/[\-–]/g,""))>=0;});})
   .sort(function(a,b){   /* הקרוב למעלה, הרחוק למטה */
     var A=txt((a.fields||{})["תאריך ושעה"])||"9999",Bv=txt((b.fields||{})["תאריך ושעה"])||"9999";
     return String(A).localeCompare(String(Bv));});}
@@ -2065,8 +2071,9 @@ async function remoteSearch(){
   if(s.length<2){FOUND=[];draw();return;}
   el.innerHTML='<div class="boot"><div class="sp">⏳</div><div style="margin-top:8px">מחפש…</div></div>';
   try{
-    if(VIEW==="cus")FOUND=await find(T.cus,'OR(SEARCH('+q(s)+',{שם לקוח}),SEARCH('+q(s)+',{מספר טלפון}))',30);
-    else FOUND=await find(T.veh,'OR(SEARCH('+q(s)+',{מספר רכב}),SEARCH('+q(s)+',{שם לקוח (טקסט)}))',30);
+    var dq=digitsQuery(s), strip=function(fl){return 'SUBSTITUTE(SUBSTITUTE(SUBSTITUTE({'+fl+'},"-","")," ",""),"–","")';};
+    if(VIEW==="cus")FOUND=await find(T.cus,dq?'SEARCH('+q(dq)+','+strip("מספר טלפון")+')':'OR(SEARCH('+q(s)+',{שם לקוח}),SEARCH('+q(s)+',{מספר טלפון}))',30);
+    else FOUND=await find(T.veh,dq?'SEARCH('+q(dq)+','+strip("מספר רכב")+')':'OR(SEARCH('+q(s)+',{מספר רכב}),SEARCH('+q(s)+',{שם לקוח (טקסט)}))',30);
   }catch(e){FOUND=[];toast("החיפוש נכשל",1);}
   draw();
 }
