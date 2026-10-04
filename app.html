@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v50";
+var APP_VERSION="v51";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1201,7 +1201,11 @@ function dash(v){
 /* ============ PRINT (identical wording to the field app) ============ */
 function cardRows(r){
   var f=r.fields||{};
-  function T(v){return txt(v);}
+  /* v51: שדות מקושרים מגיעים כמזהי רשומה (rec…) — מתרגמים לשם האמיתי (מיקום/עובד), ומזהה שלא נמצא לא מודפס */
+  function recName(id){var a=(LOC||[]).concat(EMP||[]);for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i].name||"";return "";}
+  function T(v){var arr=[].concat(v==null?[]:v);
+    return arr.map(function(x){if(x&&typeof x==="object")return x.name||x.text||"";var t=String(x);return /^rec[A-Za-z0-9]{14}$/.test(t.trim())?recName(t.trim()):t;})
+      .filter(Boolean).join(", ");}
   function num(v){return v==null?"":Number(v).toLocaleString("en-US");}
   function apt(v){var s=txt(v),m=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
     return m?(m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]+":"+m[5]:"")):s;}
