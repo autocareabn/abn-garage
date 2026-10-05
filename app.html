@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v56";
+var APP_VERSION="v57";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -3668,11 +3668,40 @@ function sqRender(recs,s,msg){var e=sqEl();if(!e.d)return;SQ_SHOWN=recs;e.w.clas
     return '<div class="sqRow" role="option" onmousedown="event.preventDefault()" onclick="addPart(\''+r.id+'\')">'
       +'<b>'+esc(String(f["פריט"]||"").replace(/\s+/g," ").trim())+'</b>'
       +(ids2?'<span class="sku">'+ids2+'</span>':'')
-      +(meta?'<span class="sqMeta">'+meta+'</span>':'')+'</div>';}).join("");}
-function sqLocal(s){var n=sqNorm(s),out=[];
-  Object.keys(SQ_POOL).forEach(function(k){var f=SQ_POOL[k].fields||{};
-    if(sqNorm(f["פריט"]).indexOf(n)>=0||sqNorm(f['מק"ט']).indexOf(n)>=0||sqNorm(f["ברקוד"]).indexOf(n)>=0)out.push(SQ_POOL[k]);});
-  return out.slice(0,20);}
+      +(meta?'<span class="sqMeta">'+meta+'</span>':'')+'</div>';}).join("")
+    +(recs.length>=SQ_MAX?'<div class="sqMsg">מוצגות '+SQ_MAX+' התוצאות הראשונות — הוסף מילה כדי לצמצם</div>':'');}
+/* v57: חיפוש לפי מילים (05/10/2026) — לא מצאו את כל סוגי "פילטר אויר טויוטה קורולה"
+   • כל מילה שהוקלדה צריכה להופיע בשם / במק״ט / בברקוד — בכל סדר ("קורולה פילטר אויר" מוצא אותו דבר).
+   • שם: התעלמות מרווחים כפולים/שבירות שורה ומהבדלי כתיב נפוצים (אוויר=אויר, טויטה=טויוטה).
+   • מק״ט/ברקוד: התעלמות מרווחים, מקפים, נקודות ולוכסנים (26320-2U000 = 26320 2U000 = 263202U000).
+   • עד 100 תוצאות (במקום 20), ממוינות: התאמה מלאה לביטוי קודם, אחר כך לפי שם. */
+var SQ_MAX=100;
+function sqSpell(v){return String(v||"").toLowerCase().replace(/[\s\u00a0]+/g," ").trim().replace(/אוויר/g,"אויר").replace(/טויטה/g,"טויוטה");}
+function sqKeyN(v){return String(v||"").toUpperCase().replace(/[^A-Z0-9א-ת]/g,"");}
+function sqWords(s){return sqSpell(String(s).replace(/["\\]/g,"")).split(" ").filter(Boolean);}
+function sqMatch(f,s){var nm=sqSpell(f["פריט"]),sk=sqKeyN(f['מק"ט']),bc=sqKeyN(f["ברקוד"]),all=sqKeyN(s);
+  if(all.length>=2&&(sk.indexOf(all)>=0||bc.indexOf(all)>=0))return true;
+  var ws=sqWords(s);if(!ws.length)return false;
+  return ws.every(function(w){var k=sqKeyN(w);return nm.indexOf(w)>=0||(k&&(sk.indexOf(k)>=0||bc.indexOf(k)>=0));});}
+function sqRank(recs,s){var ph=sqSpell(s),k=sqKeyN(s);
+  function sc(r){var f=r.fields||{},nm=sqSpell(f["פריט"]),sk=sqKeyN(f['מק"ט']);
+    return (k&&sk===k?0:nm.indexOf(ph)===0?1:nm.indexOf(ph)>=0?2:3);}
+  return recs.slice().sort(function(a,b){var d=sc(a)-sc(b);if(d)return d;
+    return sqSpell((a.fields||{})["פריט"]).localeCompare(sqSpell((b.fields||{})["פריט"]),"he");});}
+function sqFormula(s){
+  var NM='SUBSTITUTE(SUBSTITUTE(LOWER({פריט}&""),"אוויר","אויר"),"טויטה","טויוטה")',
+      SK='REGEX_REPLACE(UPPER({מק"ט}&""),"[^A-Z0-9א-ת]","")',
+      BC='REGEX_REPLACE(UPPER({ברקוד}&""),"[^A-Z0-9א-ת]","")';
+  var ws=sqWords(s).map(function(w){var k=sqKeyN(w),c=['FIND('+q(w)+','+NM+')>0'];
+    if(k){c.push('FIND('+q(k)+','+SK+')>0');c.push('FIND('+q(k)+','+BC+')>0');}
+    return c.length>1?'OR('+c.join(',')+')':c[0];});
+  var all=sqKeyN(s),parts=[];
+  if(ws.length)parts.push(ws.length>1?'AND('+ws.join(',')+')':ws[0]);
+  if(all.length>=2){parts.push('FIND('+q(all)+','+SK+')>0');parts.push('FIND('+q(all)+','+BC+')>0');}
+  return parts.length>1?'OR('+parts.join(',')+')':(parts[0]||'FALSE()');}
+function sqLocal(s){var out=[];
+  Object.keys(SQ_POOL).forEach(function(k){if(sqMatch(SQ_POOL[k].fields||{},s))out.push(SQ_POOL[k]);});
+  return sqRank(out,s).slice(0,SQ_MAX);}
 function sqType(){clearTimeout(SQ_T);var e=sqEl();if(!e.i)return;sqOpen();
   var s=(e.i.value||"").trim();
   if(s.length<2){SQ_SEQ++;SQ_LAST="";e.w.classList.remove("busy");SQ_SHOWN=[];
@@ -3688,7 +3717,7 @@ async function sq(){
   if(s===SQ_LAST){e.w.classList.remove("busy");return;}
   var my=++SQ_SEQ;e.w.classList.add("busy");
   try{
-    var recs=await find(T.cat,'OR(SEARCH('+q(s)+',{פריט}),SEARCH('+q(s)+',{מק"ט}),SEARCH('+q(s)+',{ברקוד}))',20);
+    var recs=sqRank(await find(T.cat,sqFormula(s),SQ_MAX),s);
     if(my!==SQ_SEQ)return;           /* הוקלד משהו חדש בינתיים — התשובה הזו כבר לא רלוונטית */
     recs.forEach(function(r){SQ_POOL[r.id]=r;});
     SQ_LAST=s;sqRender(recs,s);
