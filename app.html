@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v58";
+var APP_VERSION="v59";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -2545,6 +2545,8 @@ function pParts(){var ls=myPartLines(),sum=0,mon=can("money");
      +' oninput="sqType()" onfocus="sqOpen()" onkeydown="sqKey(event)">'
      +'<span class="sqSp" aria-hidden="true"></span><button type="button" class="sqX" title="נקה" onclick="sqClear()">✕</button></div>'
      +'<div class="pdd" id="pdd" role="listbox"></div></div>'
+     +'<div style="margin:6px 0 10px"><button class="x" style="margin:0" onclick="newPartForm()">➕ חלף חדש — שם, ברקוד'+(mon?' ומחיר':'')+'</button>'
+     +'<span class="mini" style="margin-inline-start:8px">לא מצאת בחיפוש? הוסף אותו כאן</span></div>'
      +'<div id="pbody"></div>';
  }
  document.getElementById("pbody").innerHTML=(body?'<div class="pgrid'+(mon?'':' nomon')+'">'+head+body+'</div>'
@@ -2688,7 +2690,7 @@ function pPay(){
     partsSum+=lt; if(pend)noPrice++;
     var tagp = pend ? ' <span style="color:var(--red);font-size:11.5px">\u26a0 \u05d3\u05d5\u05e8\u05e9 \u05ea\u05de\u05d7\u05d5\u05e8</span>'
              : (!pr ? ' <span class="muted" style="font-size:11.5px">\u05db\u05dc\u05d5\u05dc \u05d1\u05e2\u05e8\u05db\u05d4</span>' : '');
-    return '<tr><td>'+esc(nm)+tagp+(sku?'<span class="sku">\u05de\u05e7\u05f4\u05d8 '+esc(sku)+'</span>':'')+'</td>'
+    return '<tr><td>'+esc(nm)+tagp+(sku?'<span class="sku">\u05de\u05e7\u05f4\u05d8 '+esc(sku)+'</span>':'')+(partBarcode(g)?'<span class="sku">ברקוד '+esc(partBarcode(g))+'</span>':'')+'</td>'
       +'<td style="text-align:center">'+q+'</td><td style="text-align:left">'+money(pr)+'</td>'
       +'<td style="text-align:left"><b>'+money(lt)+'</b></td></tr>';}).join("");
 
@@ -2732,6 +2734,9 @@ function pPay(){
       :'<tr><td colspan="4" class="muted">\u05dc\u05d0 \u05d4\u05d5\u05d6\u05e0\u05d4 \u05e2\u05dc\u05d5\u05ea \u05e2\u05d1\u05d5\u05d3\u05d4</td></tr>')+'</table>'
    +'<table style="margin-bottom:14px"><tr><th>\u05d7\u05dc\u05e7\u05d9\u05dd</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8 \u05dc\u05d9\u05d7\'</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
    +(partRows||'<tr><td colspan="4" class="muted">\u05d0\u05d9\u05df \u05d7\u05dc\u05e4\u05d9\u05dd</td></tr>')+'</table>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px">'
+     +'<button class="x" style="margin:0" onclick="newPartForm()">➕ חלף חדש — שם, ברקוד ומחיר</button>'
+     +'<button class="x" style="margin:0" onclick="mt(1);setTimeout(function(){var i=document.getElementById(\'pq\');if(i)i.focus();},60)">🔍 הוסף מהקטלוג</button></div>'
    +'<table style="margin-bottom:14px"><tr><th>\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd</th><th style="width:60px;text-align:center">\u05db\u05de\u05d5\u05ea</th><th style="width:100px;text-align:left">\u05de\u05d7\u05d9\u05e8</th><th style="width:110px;text-align:left">\u05e1\u05d4"\u05db</th></tr>'
    +(svcRows||'<tr><td colspan="4" class="muted">\u05d0\u05d9\u05df \u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd</td></tr>')+'</table>'
    +'<div style="background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:13px 15px">'
@@ -2748,6 +2753,7 @@ function pPay(){
      +'<div class="f"><label>\u05de\u05d5\u05db\u05e0\u05d5\u05ea \u05dc\u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea</label><div class="v">'
        +'<span class="pill '+(okInv?"at-greenBright":"at-redBright")+'">'+esc(ready||"\u2014")+'</span></div></div>'
    +'</div>'
+   +docsActions(gross)
    +invoiceActions(gross)
    +cashActions(gross);
 }
@@ -3157,7 +3163,7 @@ function invoiceActions(gross){
   /* מיקום אינו חובה (החלטת לאו 27/09/2026): בלי קואורדינטה ההודעה יוצאת בלי שורת המיקום */
   return '<div class="sec">\u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05dc\u05e7\u05d5\u05d7</div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
-   +'<button class="x" onclick="previewInvoice()">\ud83d\udc41 \u05ea\u05e6\u05d5\u05d2\u05d4 \u05de\u05e7\u05d3\u05d9\u05de\u05d4</button>'
+   /* v59: התצוגה המקדימה עברה ל"מסמכים ללקוח" */
    +(sent
       ? '<span class="pill at-greenBright">\u2713 \u05e0\u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 '+esc(dt(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"]))+'</span>'
       : '<button class="save" style="width:auto;padding:9px 16px;margin:0"'+(blocked.length?" disabled":"")
@@ -3176,6 +3182,244 @@ var SHOP={
   /* כותרת המסמך. האפליקציה אינה מנפיקה חשבוניות מס — ראה הערה בהסבר. */
   docTitle:"\u05d7\u05e9\u05d1\u05d5\u05df \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"
 };
+/* ============================================================================
+   v59 (06/10/2026, בקשת לאו) — "מסמכים ללקוח" בלשונית התשלום
+   ----------------------------------------------------------------------------
+   המסמכים עצמם, בדיוק כפי שהלקוח מקבל אותם בוואטסאפ — מוגשים ע"י ה-Worker
+   abn-icount בכתובת /doc/<recordId>:
+     • חשבון לתשלום (חשבון עסקה)  — ?doc=deal    · קיים אחרי "שלח ללקוח"
+     • חשבונית מס קבלה            — ?doc=invrec  · קיימת אחרי שהתקבל תשלום
+   נפתחים בתוך האפליקציה (לא בטאב חדש) עם כפתור הדפסה.
+   לפני שהמסמך הונפק — "תצוגה מקדימה" (previewInvoice) נשארת כמו שהיא.
+   ⚠️ אין כאן שום הנפקה — רק צפייה והדפסה. אין תופעות לוואי ב-iCount.
+   ========================================================================== */
+var ICDOC="https://abn-icount.autocareabn.workers.dev/doc/";
+function docRefs(f){
+  f=f||{};
+  var dealRef=txt(f["מזהה מסמך חשבונית מס iCount"]), invRef=txt(f["מזהה מסמך קבלה iCount"]);
+  return {
+    deal: /^deal[:\/]\d+$/i.test(dealRef) ? (txt(f["מספר חשבונית מס"])||dealRef.split(/[:\/]/)[1]) : "",
+    inv:  /^invrec[:\/]\d+$/i.test(invRef) ? (txt(f["מספר חשבונית מס קבלה"])||invRef.split(/[:\/]/)[1]) : "",
+    pdf:  /^https:\/\/([a-z0-9-]+\.)*icount\.co\.il\//i.test(txt(f["PDF חשבונית מס קבלה"])) ? txt(f["PDF חשבונית מס קבלה"]) : ""
+  };
+}
+function docsActions(gross){
+  var f=CUR.fields||{}, d=docRefs(f);
+  var B='class="x" style="margin:0"', P='class="x" style="margin:0;background:var(--red);color:#fff;border-color:var(--red)"';
+  function card(icon,title,num,body,note){
+    return '<div style="flex:1;min-width:240px;background:#fff;border:1px solid #e2e6ee;border-radius:11px;padding:11px 13px">'
+      +'<div style="font-weight:bold;margin-bottom:7px">'+icon+' '+title+(num?' <span class="pill at-blueLight2" style="margin-inline-start:4px">מס׳ '+esc(num)+'</span>':'')+'</div>'
+      +'<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">'+body+'</div>'
+      +(note?'<div class="mini" style="margin-top:6px">'+note+'</div>':'')+'</div>';
+  }
+  var deal = d.deal
+    ? card("📄","חשבון לתשלום",d.deal,
+        '<button '+B+' onclick="openCustDoc(\'deal\')">👁 הצג</button>'
+       +'<button '+P+' onclick="openCustDoc(\'deal\',1)">🖨 הדפס</button>',
+        "המסמך שנשלח ללקוח עם קישור התשלום")
+    : card("📄","חשבון לתשלום","",
+        '<button '+B+' onclick="previewInvoice()">👁 תצוגה מקדימה</button>'
+       +'<button '+P+' onclick="previewInvoice();setTimeout(printWhenReady,300)">🖨 הדפס טיוטה</button>',
+        "טרם הונפק — יונפק ב\"שלח ללקוח\". התצוגה היא טיוטה בלבד.");
+  var inv = d.inv
+    ? card("🧾","חשבונית מס קבלה",d.inv,
+        '<button '+B+' onclick="openCustDoc(\'invrec\')">👁 הצג</button>'
+       +'<button '+P+' onclick="openCustDoc(\'invrec\',1)">🖨 הדפס</button>'
+       +(d.pdf?'<button '+B+' onclick="openIcountPdf()">📑 מקור iCount</button>':''),
+        "המסמך שהלקוח קיבל אחרי התשלום")
+    : card("🧾","חשבונית מס קבלה","",
+        '<button class="x" style="margin:0;opacity:.45;cursor:not-allowed" disabled>👁 הצג</button>'
+       +'<button class="x" style="margin:0;opacity:.45;cursor:not-allowed" disabled>🖨 הדפס</button>',
+        "תונפק אוטומטית אחרי שהתשלום מתקבל");
+  return '<div class="sec">מסמכים ללקוח</div><div style="display:flex;gap:10px;flex-wrap:wrap">'+deal+inv+'</div>';
+}
+/* פותח את המסמך ללקוח בחלון שבתוך האפליקציה. print=1 → מדפיס מיד כשנטען. */
+function openCustDoc(kind,print){
+  if(!CUR)return;
+  var ov=document.getElementById("invOv"), body=document.getElementById("invBody");
+  var token=(window.__invTok=(window.__invTok||0)+1), rid=CUR.id;
+  var want = kind==="deal" ? "חשבון עסקה" : "חשבונית מס קבלה";
+  var url=ICDOC+encodeURIComponent(rid)+"?doc="+kind;
+  ov.classList.add("wide","on");
+  body.innerHTML='<div style="padding:60px;text-align:center;color:#666">⏳ טוען את '+esc(want)+'…</div>';
+  function frame(){var fr=document.createElement("iframe");fr.id="invFrame";fr.title=want;
+    fr.style.cssText="display:block;width:100%;height:74vh;border:0;background:#fff";return fr;}
+  function alive(){return token===window.__invTok&&ov.classList.contains("on");}
+  fetch(url,{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("שרת "+r.status);return r.text();})
+  .then(function(html){
+    if(!alive())return;
+    var fr=frame(); fr.srcdoc=html; body.innerHTML="";
+    /* ה-Worker מציג מסמך לפי מצב הכרטיס. אם התקבל מסמך אחר מהמבוקש — אומרים זאת בגלוי */
+    if(html.indexOf(want+" מספר")<0)
+      body.insertAdjacentHTML("beforeend",'<div class="hint" style="margin:0;border-radius:0">⚠️ השרת החזיר מסמך אחר מ"'+esc(want)+'". נדרש עדכון של ה-Worker abn-icount.</div>');
+    body.appendChild(fr);
+    fr.addEventListener("load",function(){
+      try{ fr.contentWindow.document.addEventListener("keydown",function(e){ if(e.key==="Escape")closeInv(); }); }catch(e){}
+      if(print)setTimeout(function(){ if(alive())printInvoice(); },350);
+    });
+  })
+  .catch(function(e){
+    /* לפני עדכון ה-Worker אין CORS — טוענים ישירות. הדפסה תיפתח בטאב של המסמך. */
+    if(!alive())return;
+    console.warn("openCustDoc fetch:",e);
+    var fr=frame(); fr.src=url; fr.setAttribute("data-ext",url);
+    body.innerHTML=""; body.appendChild(fr);
+    if(print)toast("לחץ 🖨 הדפס חשבונית בתחתית החלון");
+  });
+}
+/* המסמך המקורי מ-iCount (PDF) — באותו חלון פנימי */
+function openIcountPdf(){
+  var u=docRefs(CUR&&CUR.fields).pdf; if(!u)return;
+  var ov=document.getElementById("invOv"), body=document.getElementById("invBody");
+  window.__invTok=(window.__invTok||0)+1;
+  ov.classList.add("wide","on");
+  var fr=document.createElement("iframe"); fr.id="invFrame"; fr.title="חשבונית מס קבלה — iCount";
+  fr.style.cssText="display:block;width:100%;height:74vh;border:0;background:#fff";
+  fr.src=u; fr.setAttribute("data-ext",u);
+  body.innerHTML=""; body.appendChild(fr);
+}
+/* הדפסת טיוטה: מחכה שהתצוגה המקדימה תיטען ואז מדפיס */
+function printWhenReady(n){
+  n=n||0; var ov=document.getElementById("invOv"); if(!ov||!ov.classList.contains("on"))return;
+  var fr=document.getElementById("invFrame");
+  if(fr){ var cdoc=null;try{cdoc=fr.contentDocument;}catch(e){}
+          if(cdoc&&cdoc.readyState==="complete"&&cdoc.body&&cdoc.body.childElementCount){printInvoice();return;}
+          fr.addEventListener("load",function(){setTimeout(printInvoice,300);},{once:true});return; }
+  if(document.getElementById("invBody").querySelector(".inv,table")&&n>3){printInvoice();return;}
+  if(n<40)setTimeout(function(){printWhenReady(n+1);},300);
+}
+
+/* ============================================================================
+   v59 (06/10/2026, בקשת לאו) — הוספת חלף מתוך כרטיס העבודה: שם + ברקוד + מחיר
+   ----------------------------------------------------------------------------
+   • אם הברקוד / המק"ט כבר קיימים בקטלוג — לא יוצרים כפילות: החלף הקיים נוסף לכרטיס.
+   • אחרת — נוצר חלף חדש בקטלוג (פריט, ברקוד, מק"ט, מחיר) ונוסף לכרטיס.
+   • מחיר — רק להנהלה (can("money")). מכונאי מוסיף בלי מחיר והשרת חוסם ממילא.
+   • סריקת ברקוד במצלמה — כשהדפדפן תומך (BarcodeDetector, אנדרואיד/כרום).
+     סורק ברקוד USB/בלוטות' מקליד לתוך השדה — עובד בכל מכשיר.
+   ========================================================================== */
+function newPartForm(){
+  if(!CUR)return;
+  var mon=can("money"), rid=CUR.id;
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(16,20,32,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:14px";
+  ov.dir="rtl";
+  var I='style="width:100%;padding:9px;border:1px solid #cfd5e0;border-radius:8px;font-size:15px;box-sizing:border-box"';
+  function fld(lbl,inner,w){return '<div style="flex:1;min-width:'+(w||130)+'px"><div style="font-size:12px;color:#5b6172;margin:6px 0 3px">'+lbl+'</div>'+inner+'</div>';}
+  var canScan=("BarcodeDetector" in window)&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia;
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:18px 20px">'
+    +'<div style="font-size:17px;font-weight:bold;margin-bottom:4px">➕ הוספת חלף לכרטיס</div>'
+    +'<div class="mini" style="margin-bottom:6px">אם הברקוד או המק״ט כבר קיימים בקטלוג — יתווסף החלף הקיים, בלי כפילות.</div>'
+    +fld("שם החלף *",'<input id="npName" autocomplete="off" '+I+'>',240)
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +fld("ברקוד",'<div style="display:flex;gap:6px"><input id="npBc" inputmode="text" autocomplete="off" style="flex:1;min-width:0;padding:9px;border:1px solid #cfd5e0;border-radius:8px;font-size:15px;direction:ltr;text-align:right">'
+        +(canScan?'<button type="button" id="npScan" title="סרוק במצלמה" style="padding:0 12px;border:1px solid #cfd5e0;border-radius:8px;background:#fff;font-size:18px;cursor:pointer">📷</button>':'')+'</div>')
+      +fld("מק״ט",'<input id="npSku" autocomplete="off" style="width:100%;padding:9px;border:1px solid #cfd5e0;border-radius:8px;font-size:15px;box-sizing:border-box;direction:ltr;text-align:right">')
+    +'</div>'
+    +'<div id="npCam" style="display:none;margin-top:8px;position:relative"><video id="npVid" playsinline muted style="width:100%;max-height:240px;background:#000;border-radius:10px;object-fit:cover"></video>'
+      +'<div class="mini" style="text-align:center;margin-top:4px">כוון את המצלמה לברקוד…</div></div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +fld("כמות *",'<input id="npQty" type="number" min="1" step="1" inputmode="numeric" value="1" '+I+'>',90)
+      +(mon?fld("מחיר ליחידה לפני מע״מ (₪)",'<input id="npPr" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" '+I+'>',150):'')
+    +'</div>'
+    +'<div id="npDup" class="mini" style="margin-top:8px;min-height:16px"></div>'
+    +'<div id="npErr" style="color:#b3121b;font-size:13px;margin-top:4px;min-height:18px"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:6px"><button id="npOk" style="flex:1;padding:11px;border:0;border-radius:9px;color:#fff;background:#1B7F35;font-size:15px;font-weight:bold;cursor:pointer">✓ הוסף לכרטיס</button>'
+    +'<button id="npNo" style="flex:1;padding:11px;border:1px solid #cfd5e0;border-radius:9px;background:#fff;font-size:15px;cursor:pointer">ביטול</button></div></div>';
+  document.body.appendChild(ov);
+  var $=function(id){return ov.querySelector("#"+id);};
+  var stream=null, scanT=0, dupRec=null, dupSeq=0, busy=false, dupFail=false;
+  function stopCam(){clearTimeout(scanT);if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}$("npCam").style.display="none";}
+  function close(){stopCam();document.removeEventListener("keydown",onKey,true);ov.remove();}
+  function onKey(e){if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();close();}}
+  document.addEventListener("keydown",onKey,true);
+  ov.addEventListener("click",function(e){if(e.target===ov)close();});
+  $("npNo").onclick=close;
+  setTimeout(function(){$("npName").focus();},50);
+
+  /* בדיקת כפילות לפי ברקוד / מק"ט — מנורמל כמו בחיפוש (בלי רווחים, מקפים, נקודות) */
+  async function dupCheck(){
+    var bc=sqKeyN($("npBc").value), sk=sqKeyN($("npSku").value), my=++dupSeq;
+    dupRec=null; dupFail=false; $("npDup").textContent="";
+    if(bc.length<3&&sk.length<3)return null;
+    var c=[];
+    if(bc.length>=3)c.push('REGEX_REPLACE(UPPER({ברקוד}&""),"[^A-Z0-9א-ת]","")='+q(bc));
+    if(sk.length>=3)c.push('REGEX_REPLACE(UPPER({מק"ט}&""),"[^A-Z0-9א-ת]","")='+q(sk));
+    try{
+      var recs=await find(T.cat,c.length>1?"OR("+c.join(",")+")":c[0],1);
+      if(my!==dupSeq)return dupRec;
+      dupRec=recs[0]||null;
+      if(dupRec){var g=dupRec.fields||{};SQ_POOL[dupRec.id]=dupRec;
+        $("npDup").innerHTML='✓ נמצא בקטלוג: <b>'+esc(String(g["פריט"]||"").replace(/\s+/g," ").trim())+'</b>'
+          +(g['מק"ט']?' · מק״ט '+esc(g['מק"ט']):'')+(g["ברקוד"]?' · ברקוד '+esc(g["ברקוד"]):'')
+          +(mon&&g["מחיר"]?' · ₪'+Number(g["מחיר"]).toFixed(2):'')+' — יתווסף החלף הקיים.';
+        if(!$("npName").value.trim())$("npName").value=String(g["פריט"]||"").replace(/\s+/g," ").trim();
+        if(mon&&$("npPr")&&!$("npPr").value&&g["מחיר"])$("npPr").value=Number(g["מחיר"]);
+      }
+    }catch(e){ dupFail=true; }   /* נבדק בשמירה — לא יוצרים חלף חדש בלי בדיקת כפילות */
+    return dupRec;
+  }
+  var dT=0; function dupSoon(){clearTimeout(dT);dT=setTimeout(dupCheck,400);}
+  $("npBc").addEventListener("input",dupSoon); $("npSku").addEventListener("input",dupSoon);
+  /* סורק ברקוד USB מסיים ב-Enter */
+  $("npBc").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();dupCheck();$("npQty").focus();}});
+
+  if($("npScan"))$("npScan").onclick=async function(){
+    if(stream){stopCam();return;}
+    try{
+      var det=new BarcodeDetector();
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+      var v=$("npVid"); v.srcObject=stream; $("npCam").style.display="block"; await v.play();
+      (function loop(){
+        if(!stream)return;
+        det.detect(v).then(function(c){
+          if(c&&c[0]&&c[0].rawValue){$("npBc").value=c[0].rawValue;stopCam();toast("✓ ברקוד נסרק");dupCheck();return;}
+          scanT=setTimeout(loop,250);
+        }).catch(function(){scanT=setTimeout(loop,400);});
+      })();
+    }catch(e){stopCam();$("npErr").textContent="⛔ לא ניתן לפתוח את המצלמה — הקלד את הברקוד ידנית";}
+  };
+
+  $("npOk").onclick=async function(){
+    if(busy)return;
+    var name=$("npName").value.replace(/\s+/g," ").trim(), bc=$("npBc").value.trim(), sku=$("npSku").value.trim();
+    var qty=parseInt($("npQty").value,10), prS=mon&&$("npPr")?String($("npPr").value).trim():"", pr=prS===""?null:parseFloat(prS);
+    $("npErr").textContent="";
+    if(name.length<2){$("npErr").textContent="⛔ חסר שם חלף";$("npName").focus();return;}
+    if(!(qty>=1)){$("npErr").textContent="⛔ כמות חייבת להיות 1 ומעלה";return;}
+    if(pr!=null&&(isNaN(pr)||pr<0)){$("npErr").textContent="⛔ מחיר לא תקין";return;}
+    if(!CUR||CUR.id!==rid){$("npErr").textContent="⛔ הכרטיס נסגר — פתח אותו מחדש";return;}
+    busy=true; var btn=$("npOk"), lbl=btn.textContent; btn.disabled=true; btn.textContent="⏳ מוסיף…";
+    try{
+      var ex=await dupCheck(), pid;
+      if(dupFail)throw new Error("בדיקת הכפילות בקטלוג נכשלה — נסה שוב (לא נוצר דבר)");
+      if(ex){ pid=ex.id; }
+      else{
+        var cb={fields:{"פריט":name},typecast:true};
+        if(bc)cb.fields["ברקוד"]=bc; if(sku)cb.fields['מק"ט']=sku;
+        if(pr!=null&&pr>0)cb.fields["מחיר"]=pr;
+        var cr=await fetch(PX+B+"/"+T.cat,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cb)});
+        if(!cr.ok)throw new Error("יצירת החלף בקטלוג נכשלה — "+(await cr.text()).slice(0,140));
+        var cd=await cr.json(); pid=cd.id; SQ_POOL[cd.id]=cd;
+      }
+      var lb={fields:{},typecast:true};
+      lb.fields["כרטיס עבודה"]=[rid]; lb.fields["חלף"]=[pid]; lb.fields["כמות"]=qty;
+      if(pr!=null)lb.fields["מחיר ליחידה (בזמן השימוש)"]=pr;
+      var lr=await fetch(PX+B+"/"+T.ln,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(lb)});
+      if(!lr.ok)throw new Error("הוספת השורה לכרטיס נכשלה — "+(await lr.text()).slice(0,140));
+      linePush(await lr.json()); LAST_LOCAL=new Date().getTime();
+      close();
+      try{pParts();}catch(e){} try{pPay();}catch(e){}
+      toast(ex?"✓ נוסף מהקטלוג":"✓ חלף חדש נוצר ונוסף לכרטיס");
+      refetchCard(rid,0);
+    }catch(e){
+      console.error("newPart:",e);
+      $("npErr").textContent="⛔ "+String(e.message||e);
+      btn.disabled=false; btn.textContent=lbl; busy=false;
+    }
+  };
+}
+
 /* ============================================================================
    תצוגה מקדימה — המסמך נבנה בשרת (/icount/invoice-html) ונפתח בחלון נפרד.
    ----------------------------------------------------------------------------
@@ -3253,6 +3497,8 @@ function closeInv(){
 }
 function printInvoice(){
   var fr=document.getElementById("invFrame");
+  /* v59: מסמך מכתובת חיצונית (cross-origin) — הדפדפן לא מאפשר להדפיס מתוך המסגרת; פותחים אותו להדפסה */
+  if(fr&&fr.getAttribute("data-ext")){ window.open(fr.getAttribute("data-ext"),"_blank","noopener"); return; }
   if(fr&&fr.contentWindow){ try{ fr.contentWindow.focus(); fr.contentWindow.print(); return; }catch(e){} }
   window.print();
 }
