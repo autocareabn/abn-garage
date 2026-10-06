@@ -446,7 +446,7 @@ function __alog(m){try{window.__authLog.push(new Date().toISOString().slice(11,2
 function proxyDenied(code,msg){
   var now=new Date().getTime();
   if(code!==401){
-    if(now-__deniedAt>6000){__deniedAt=now;try{toast("אין לך הרשאה לפעולה הזו",1);}catch(e){}}
+    if(now-__deniedAt>6000){__deniedAt=now;try{toast("אין לך הרשאה לפעולה הזו"+(msg?" — "+msg:""),1);}catch(e){}}   /* v58: מציג גם את סיבת השרת */
     return;
   }
   __authFails++;
@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v57";
+var APP_VERSION="v58";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -4651,7 +4651,7 @@ async function loadCusHistory(rec,addId,rmId){
       +recs.map(function(r){var g=r.fields||{};
         return '<tr class="r rowlink" onclick="closeCard();setTimeout(function(){openCard(\''+r.id+'\')},250)">'
           +'<td data-l="תאריך">'+esc(dt(g["תאריך ושעה"])||dt(g["תאריך פתיחה"])||"—")+'</td>'
-          +'<td data-l="רכב">'+esc(dash(txt(g["מספר רכב"]))||"—")+'</td>'
+          +'<td data-l="רכב">'+esc(plate(g)||"—")+'</td>'   /* v58: היה מציג מזהה רשומה (rec…) במקום מספר הרכב */
           +'<td data-l="טיפול">'+esc(txt(g["סוג טיפול"])||"—")+'</td>'
           +'<td data-l="סטטוס">'+tag("סטטוס",g["סטטוס"])+'</td>'
           +'<td data-l="לתשלום">'+esc(money(g['סה"כ לתשלום']||0))+'</td></tr>';}).join("")
