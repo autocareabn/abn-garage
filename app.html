@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v62";
+var APP_VERSION="v63";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -1101,7 +1101,8 @@ var D2={"השרת דחה את הבקשה":["The server rejected the request","�
 "👤 לקוח מזדמן — שם וטלפון בלבד":["👤 Walk-in customer — name and phone only","👤 ลูกค้าจร — ชื่อและเบอร์โทรเท่านั้น"],
 "לקוח מזדמן — שם וטלפון בלבד":["Walk-in customer — name and phone only","ลูกค้าจร — ชื่อและเบอร์โทรเท่านั้น"],
 "מספר רכב (לא חובה)":["Plate (optional)","ทะเบียนรถ (ไม่บังคับ)"],"ללא רכב (לקוח מזדמן)":["No vehicle (walk-in)","ไม่มีรถ (ลูกค้าจร)"],
-"המשך לפרטי התור ←":["Continue to booking ←","ไปต่อที่รายละเอียดคิว ←"],"← חזרה":["← Back","← กลับ"]};
+"המשך לפרטי התור ←":["Continue to booking ←","ไปต่อที่รายละเอียดคิว ←"],"← חזרה":["← Back","← กลับ"],"🔕 לא לשלוח ללקוח הודעת ביטול בוואטסאפ":["🔕 Don't send the customer a WhatsApp cancellation","🔕 ไม่ต้องส่งข้อความยกเลิกทาง WhatsApp ให้ลูกค้า"],
+"✕ בטל כרטיס":["✕ Cancel work order","✕ ยกเลิกใบงาน"],"חזרה":["Back","กลับ"],"ללא הודעה ללקוח":["No message to the customer","ไม่ส่งข้อความถึงลูกค้า"],"נשלחה ללקוח הודעת ביטול":["Cancellation sent to the customer","ส่งข้อความยกเลิกให้ลูกค้าแล้ว"]};
 for(var k in N)if(!D[k])D[k]={en:N[k][0],th:N[k][1]};})();
 for(var k in D2){if(!D[k]||!D[k].en||!D[k].th)D[k]={en:D2[k][0],th:D2[k][1]};}D2=null;})();
 function L(v){var k=txt(v); if(LANG==="he"||!k)return k; var e=D[k]; return e&&e[LANG]?e[LANG]:k;}
@@ -1131,11 +1132,22 @@ function appModal(msg,opts){
     }
     ov.dir=(LANG==="he"?"rtl":"ltr");
     document.getElementById("askMsg").textContent=msg;
+    /* v63: תיבת סימון אופציונלית (opts.check) — באישור מחזירים {checked} במקום true */
+    var oldChk=document.getElementById("askChk"); if(oldChk)oldChk.remove();
+    var chk=null;
+    if(opts.check){
+      var cw=document.createElement("label"); cw.id="askChk";
+      cw.style.cssText="display:flex;gap:9px;align-items:center;margin:0 22px 16px;padding:10px 12px;border:1px solid #e2e6ee;border-radius:9px;background:#f7f9fc;font-size:14.5px;cursor:pointer";
+      chk=document.createElement("input"); chk.type="checkbox"; chk.checked=!!opts.check.checked; chk.style.cssText="width:18px;height:18px;flex:none";
+      var cs=document.createElement("span"); cs.textContent=opts.check.label;
+      cw.appendChild(chk); cw.appendChild(cs);
+      document.getElementById("askBtns").parentNode.insertBefore(cw,document.getElementById("askBtns"));
+    }
     var b=document.getElementById("askBtns"); b.innerHTML="";
     function shut(v){
       ov.style.display="none";
       document.removeEventListener("keydown",onKey,true);
-      res(v);
+      res(v&&chk?{checked:chk.checked}:v);
     }
     function onKey(e){
       if(e.key==="Escape"){e.stopPropagation();e.preventDefault();shut(false);}
@@ -2267,8 +2279,7 @@ async function moveSlot(id){
 }
 async function cancelAppt(){
   if(!CUR)return;
-  if(!await appAsk("לבטל את התור?\n\nהסלוט ישוחרר והלקוח יקבל הודעת ביטול."))return;
-  await changeStatus("בוטל");
+  if(await changeStatus("בוטל")===false)return;   /* v63: השאלה (כולל "לא לשלוח ללקוח") נשאלת ב-changeStatus */
   loadSlots();
 }
 /* רק יעדים חוקיים מוצגים בבורר הסטטוס */
@@ -3906,13 +3917,24 @@ async function changeStatus(to){
     note="נקבע תאריך סגירה · נשלחה הודעה לשרה";
   }
 
+  /* 2ב. v63 (בקשת לאו 07/10): ביטול — ברירת המחדל: בלי הודעה ללקוח. שולחים רק כשמבטלים את הסימון במודע.
+         חל גם על כפתור "בטל תור" וגם על בחירת "בוטל" בבורר הסטטוס. */
+  var cancelNotify=false;
+  if(to==="בוטל"){
+    var ca=await appAsk("לבטל את הכרטיס?\n\nהסלוט ביומן ישוחרר.",
+      {danger:true,ok:"✕ בטל כרטיס",cancel:"חזרה",check:{label:"🔕 לא לשלוח ללקוח הודעת ביטול בוואטסאפ",checked:true}});
+    if(!ca){pDet();return false;}
+    cancelNotify=!ca.checked;
+    note=cancelNotify?"נשלחה ללקוח הודעת ביטול":"ללא הודעה ללקוח";
+  }
+
   /* 3. כניסה ל"בטיפול" — חותמת תאריך פתיחה (פעם אחת בלבד) */
   if(to==="בטיפול"&&!f["תאריך פתיחה"]){extra["תאריך פתיחה"]=new Date().toISOString();note="נקבע תאריך פתיחה";}
 
   /* 4. ביטול — שחרור הסלוט ושמירת התאריך ההיסטורי */
   var slotId=ids(f["תור"])[0]||null;
   if(to==="בוטל"&&slotId){
-    try{var old=await releaseSlot(slotId); if(old)extra["תאריך תור (היסטורי)"]=old; note="הסלוט ביומן שוחרר";}
+    try{var old=await releaseSlot(slotId); if(old)extra["תאריך תור (היסטורי)"]=old; note="הסלוט ביומן שוחרר · "+note;}
     catch(e){toast("שחרור הסלוט נכשל — בדוק ידנית",1);}
   }
 
@@ -3923,7 +3945,8 @@ async function changeStatus(to){
 
   /* 6. הודעות יוצאות — פעם אחת בלבד (רק במעבר הראשון) */
   if(to==="מוכן לתשלום"&&!f["תאריך סגירה"])RULES.fire("ready",CUR.id,{kind:"sara"});
-  if(to==="בוטל")RULES.fire("cancel",CUR.id);
+  /* v63: הודעת הביטול (Make) נשלחת רק כשבחרו במודע להודיע ללקוח */
+  if(to==="בוטל"&&cancelNotify)RULES.fire("cancel",CUR.id,{notify:true});
 }
 
 /* ===== חוק: שיוך מכונאי → "בטיפול" + שעת התחלה (לא מושך אחורה כרטיס סגור) ===== */
