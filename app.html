@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v66";
+var APP_VERSION="v67";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -3185,14 +3185,14 @@ function invoiceActions(gross){
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
    /* v59: התצוגה המקדימה עברה ל"מסמכים ללקוח" */
    +(sent
-      ? '<span class="pill at-greenBright">\u2713 \u05e0\u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 '+esc(dt(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"]))+'</span>'
+      ? delivPill(CUR.id)   /* v67: "נשלח" רק לפי אישור שליחה אמיתי מוואטסאפ (יומן התקשורת), עם השעה */
         /* v64: שליחה חוזרת ללקוח — התרחיש ב-Make לא מנפיק מסמך שני (abn-icount /create-invoice מחזיר את הקיים) */
         +(txt(f["סטטוס"])==="מוכן לתשלום"&&["שולם","זוכה","זוכה חלקית"].indexOf(txt(f["סטטוס חשבון"]))<0&&docRefs(f).bill!=="invoice"
           ? '<button class="x" style="margin:0" onclick="resendToCustomer(this)">↻ שלח שוב ללקוח</button>':'')
       : '<button class="save" style="width:auto;padding:9px 16px;margin:0"'+(blocked.length?" disabled":"")
         +' onclick="sendToCustomer()">\ud83d\udcac \u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u2014 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df + \u05ea\u05e9\u05dc\u05d5\u05dd</button>')
    +'</div>'
-   +sendStatusHtml(CUR.id)   /* v65 */
+   +(sent?(sendStatusHtml(CUR.id)||delivHint(CUR.id)):sendStatusHtml(CUR.id))   /* v65 + v67 */
    +(blocked.length?'<div class="mini" style="color:var(--red);margin-top:6px">\u26d4 '+esc(blocked.join(" \u00b7 "))+'</div>'
      :'<div class="mini" style="margin-top:6px">\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea: \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df, \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e9\u05dc\u05d5, \u05d5\u05d4\u05e1\u05db\u05d5\u05dd \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</div>');
 }
@@ -3765,19 +3765,71 @@ function verifySent(rid){
     setTimeout(async function(){
       if(!SEND_ST[rid]||SEND_ST[rid].state!=="wait")return;
       try{
-        var errs=await find("tblI0dPTTqLl6hNRK","AND(FIND("+q(rid)+",{הקשר (Record/ID)}&\"\"),{חומרה}=\"שגיאה\",IS_AFTER(CREATED_TIME(),"+q(since)+"))",5);
-        if(errs.length){setSendSt(rid,"err","⚠️ ההודעה לא נשלחה ללקוח. "+sendFriendly(errs[0])+" אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\".");return;}
         var rec=await api("/"+T.wo+"/"+rid), g=rec.fields||{};
         var i=-1;WOS.forEach(function(x,n){if(x.id===rid)i=n;});if(i>=0)WOS[i]=rec;
         if(CUR&&CUR.id===rid)CUR=rec;
-        if(txt(g["קישור תשלום"])&&Date.now()-t0>50000){
-          setSendSt(rid,"ok","✓ ההודעה נשלחה ללקוח בוואטסאפ — עם הסכום וקישור התשלום (חשבון עסקה "+txt(g["מספר חשבונית מס"])+").");return;}
-        if(Date.now()-t0>120000){
-          setSendSt(rid,"err","⚠️ נראה שההודעה לא יצאה — לא נוצר קישור תשלום תוך שתי דקות. בדרך כלל זה אומר שהחיבור לוואטסאפ במערכת השליחה נפל. אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\", ואם זה חוזר — לבדוק את החיבור.");return;}
+        /* v67: הצלחה רק כשיש שורת "נשלח" ביומן התקשורת לכרטיס הזה אחרי הלחיצה */
+        var dv=await delivQuery(rid,g,since);
+        if(dv.state==="ok"){DELIV[rid]={state:"ok",at:dv.at,ts:Date.now()};
+          setSendSt(rid,"ok","✓ ההודעה נשלחה ללקוח בוואטסאפ ב-"+ilTime(dv.at)+" — עם הסכום וקישור התשלום (חשבון עסקה "+txt(g["מספר חשבונית מס"])+").");return;}
+        if(dv.state==="fail"){DELIV[rid]={state:"fail",reason:dv.reason,ts:Date.now()};
+          setSendSt(rid,"err","⚠️ ההודעה לא נשלחה ללקוח. "+dv.reason+" אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\".");return;}
+        if(Date.now()-t0>150000){
+          var why="לא התקבל אישור שליחה מוואטסאפ תוך שתי דקות וחצי — בדרך כלל זה אומר שהחיבור לוואטסאפ במערכת השליחה נפל.";
+          DELIV[rid]={state:"fail",reason:why,ts:Date.now()};
+          setSendSt(rid,"err","⚠️ ההודעה לא נשלחה ללקוח. "+why+" אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\", ואם זה חוזר — לבדוק את החיבור.");return;}
       }catch(e){}
       poll();
     },15000);
   })();
+}
+/* v67: האם ההודעה באמת יצאה ללקוח?
+   מקור האמת = יומן התקשורת (Make כותב שורה רק אחרי שוואטסאפ החזיר מזהה הודעה).
+   שורה שייכת לכרטיס לפי "rec:<מזהה>" בתוכן ההודעה (מ-13/10/2026), ולשורות ישנות — לפי הטלפון של הלקוח שמקודד במזהה ההודעה (wamid).
+   אין שורה → "לא נשלח" + הסיבה מיומן השגיאות. */
+var DELIV={};
+function wamidPhone(id){try{var s=atob(String(id||"").replace(/^wamid\./,""));var m=s.match(/\d{9,15}/);return m?m[0]:"";}catch(e){return "";}}
+function last9(p){return String(p||"").replace(/\D/g,"").slice(-9);}
+function ilTime(iso){try{var d=new Date(iso);return d.toLocaleDateString("he-IL",{timeZone:"Asia/Jerusalem",day:"2-digit",month:"2-digit",year:"numeric"}).replace(/\./g,"/")+" · "+d.toLocaleTimeString("he-IL",{timeZone:"Asia/Jerusalem",hour:"2-digit",minute:"2-digit",hour12:false});}catch(e){return "";}}
+async function delivQuery(rid,f,since,until){
+  var ph=last9(txt(f["טלפון לסינון"])||txt(f["מספר טלפון"]));
+  var rows=await find("tbluXkkoHLKNVPNhQ","AND({סוג הודעה}=\"רכב מוכן + קישור תשלום ללקוח\",{סטטוס שליחה}=\"נשלח\",IS_AFTER({תאריך ושעה},"+q(since)+")"+(until?",IS_BEFORE({תאריך ושעה},"+q(until)+")":"")+")",100);
+  var ok=null;
+  rows.forEach(function(r){var g=r.fields||{},c=txt(g["תוכן ההודעה"]),mine;
+    if(c.indexOf("rec:")===0) mine=c.indexOf("rec:"+rid)===0;
+    else mine=!!ph&&(last9(g["נמען"])===ph||last9(wamidPhone(g["מזהה הודעה"]))===ph);
+    if(mine&&(!ok||String(g["תאריך ושעה"])>String(ok.fields["תאריך ושעה"])))ok=r;});
+  var errs=await find("tblI0dPTTqLl6hNRK","AND(FIND("+q(rid)+",{הקשר (Record/ID)}&\"\"),{חומרה}=\"שגיאה\",IS_AFTER({תאריך ושעה},"+q(since)+"))",20);
+  var err=null; errs.forEach(function(r){if(!err||String(r.fields["תאריך ושעה"])>String(err.fields["תאריך ושעה"]))err=r;});
+  var okAt=ok?String(ok.fields["תאריך ושעה"]):"", errAt=err?String(err.fields["תאריך ושעה"]):"";
+  if(ok&&(!err||okAt>=errAt))return {state:"ok",at:okAt};
+  if(err)return {state:"fail",reason:sendFriendly(err),at:errAt};
+  return {state:"none"};
+}
+function delivLoad(rid){
+  var d=DELIV[rid]; if(d&&(d.state==="loading"||Date.now()-d.ts<60000))return;
+  var f=(CUR&&CUR.id===rid?CUR.fields:null)||{}, day=txt(f["תאריך שליחה לתשלום"]);
+  if(!day)return;
+  DELIV[rid]={state:"loading",ts:Date.now()};
+  var since=new Date(new Date(day+"T00:00:00Z").getTime()-86400000).toISOString();
+  var until=new Date(new Date(day+"T00:00:00Z").getTime()+3*86400000).toISOString();
+  delivQuery(rid,f,since,until).then(function(r){
+    if(r.state==="none")r={state:"fail",reason:"לא התקבל אישור שליחה מוואטסאפ — בדרך כלל זה אומר שהחיבור לוואטסאפ במערכת השליחה נפל, או שהשליחה לא הופעלה."};
+    r.ts=Date.now(); DELIV[rid]=r; if(CUR&&CUR.id===rid)try{pPay();}catch(e){}
+  }).catch(function(){DELIV[rid]={state:"unknown",ts:Date.now()}; if(CUR&&CUR.id===rid)try{pPay();}catch(e){}});
+}
+function delivPill(rid){
+  var st=SEND_ST[rid]; if(st&&st.state==="wait")return '<span class="pill" data-notr dir="rtl" lang="he">⏳ שולחים ללקוח…</span>';
+  delivLoad(rid); var d=DELIV[rid]||{state:"loading"};
+  if(d.state==="ok")return '<span class="pill at-greenBright" data-notr dir="rtl" lang="he">✓ נשלח ללקוח '+esc(ilTime(d.at))+'</span>';
+  if(d.state==="fail")return '<span class="pill" data-notr dir="rtl" lang="he" style="background:#fdecec;color:#8a1220;border:1px solid #ED1E24">✗ לא נשלח ללקוח</span>';
+  if(d.state==="unknown")return '<span class="pill" data-notr dir="rtl" lang="he">? לא הצלחנו לבדוק אם נשלח</span>';
+  return '<span class="pill" data-notr dir="rtl" lang="he">⏳ בודק אם ההודעה נשלחה…</span>';
+}
+function delivHint(rid){
+  var d=DELIV[rid]; if(!d||d.state!=="fail")return "";
+  return '<div class="hint" data-notr dir="rtl" lang="he" style="margin-top:8px;text-align:right;background:#fdecec;border-color:#ED1E24;color:#8a1220">'
+    +esc("הסיבה: "+d.reason+" אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\".")+'</div>';
 }
 async function resendToCustomer(btn){
   if(!CUR)return; var f=CUR.fields||{}, rid=CUR.id;
