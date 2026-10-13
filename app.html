@@ -478,7 +478,7 @@ function srvRole(v){
   try{document.body.classList.toggle("no-money",!can("money"));}catch(e){}
   try{if(CUR){pDet();pParts();pSvc();pPay();}}catch(e){}
 }
-var APP_VERSION="v63";
+var APP_VERSION="v66";
 var T={slot:"tblu3hGXhEDMhdltl",wo:"tbl5X1tEJVAAUk4uE",ln:"tblT2TK3L3dpHEZji",cat:"tblPjXb3FN1bA7Ir6",svc:"tblw9CNxpIg3BZFS1",
        loc:"tbl5Jm2ssq6kVSZFT",emp:"tblzY5fT9cpNSTIZY",cus:"tblnCFvGEpL75AVRl",veh:"tbl9CnyPSqTookRT5"};
 var WOS=[],LINES=[],SVC=[],LOC=[],EMP=[],CUR=null,FILTER="today",VIEW="work",FOUND=[];
@@ -3186,9 +3186,13 @@ function invoiceActions(gross){
    /* v59: התצוגה המקדימה עברה ל"מסמכים ללקוח" */
    +(sent
       ? '<span class="pill at-greenBright">\u2713 \u05e0\u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 '+esc(dt(f["\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd"]))+'</span>'
+        /* v64: שליחה חוזרת ללקוח — התרחיש ב-Make לא מנפיק מסמך שני (abn-icount /create-invoice מחזיר את הקיים) */
+        +(txt(f["סטטוס"])==="מוכן לתשלום"&&["שולם","זוכה","זוכה חלקית"].indexOf(txt(f["סטטוס חשבון"]))<0&&docRefs(f).bill!=="invoice"
+          ? '<button class="x" style="margin:0" onclick="resendToCustomer(this)">↻ שלח שוב ללקוח</button>':'')
       : '<button class="save" style="width:auto;padding:9px 16px;margin:0"'+(blocked.length?" disabled":"")
         +' onclick="sendToCustomer()">\ud83d\udcac \u05e9\u05dc\u05d7 \u05dc\u05dc\u05e7\u05d5\u05d7 \u2014 \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df + \u05ea\u05e9\u05dc\u05d5\u05dd</button>')
    +'</div>'
+   +sendStatusHtml(CUR.id)   /* v65 */
    +(blocked.length?'<div class="mini" style="color:var(--red);margin-top:6px">\u26d4 '+esc(blocked.join(" \u00b7 "))+'</div>'
      :'<div class="mini" style="margin-top:6px">\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d0\u05d7\u05ea: \u05d4\u05e8\u05db\u05d1 \u05de\u05d5\u05db\u05df, \u05d4\u05de\u05d9\u05e7\u05d5\u05dd \u05e9\u05dc\u05d5, \u05d5\u05d4\u05e1\u05db\u05d5\u05dd \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd</div>');
 }
@@ -3734,6 +3738,61 @@ function exitLoc(f){
   var ok=/^-?\d{1,2}\.\d+,-?\d{1,3}\.\d+$/.test(gps);
   return {photo:atts.length>0, gps:ok?gps:"", url:ok?"https://maps.google.com/?q="+gps:""};
 }
+/* v65: משוב ידידותי אחרי שליחה ללקוח — בתוך הכרטיס, עם הסבר קצר כשמשהו נכשל.
+   הצלחה = נוצר קישור תשלום ואין שגיאה ביומן מאז השליחה (אזהרות כמו "נשלח גיבוי בלי תמונה" אינן כישלון). כישלון = שגיאה ביומן לכרטיס הזה,
+   או שעברו 2 דקות בלי קישור (בדרך כלל: החיבור לוואטסאפ ב-Make נפל ולכן התרחיש לא רץ). */
+var SEND_ST={};
+function sendFriendly(err){
+  var t=txt((err.fields||{})["תרחיש"])+" "+txt((err.fields||{})["מודול"])+" "+txt((err.fields||{})["הודעת שגיאה"]);
+  if(/create-invoice|iCount/i.test(t))return "לא הצלחנו להפיק את חשבון העסקה במערכת החשבוניות, ולכן לא נשלח קישור תשלום.";
+  if(/אין קישור תשלום/.test(t))return "חשבון העסקה הונפק, אבל בלי קישור תשלום (בדרך כלל בעיה בסליקת האשראי) — ההודעה לא נשלחה.";
+  if(/131026|undeliverable|not.*whatsapp/i.test(t))return "למספר של הלקוח אין וואטסאפ, או שהוא לא תקין.";
+  if(/וואטסאפ|WhatsApp|template|תבנית/i.test(t))return "וואטסאפ דחה את ההודעה (מספר, תבנית או חיבור).";
+  if(/שליפת כרטיס/.test(t))return "מערכת השליחה לא הצליחה לקרוא את הכרטיס.";
+  return "אירעה תקלה במערכת השליחה. הפרטים נשמרו ביומן השגיאות.";
+}
+function sendStatusHtml(rid){
+  var st=SEND_ST[rid]; if(!st)return "";
+  var css={wait:"background:#f2f4f8;border-color:#cfd5e0;color:#3b4252",ok:"background:#e8f6ea;border-color:#1d7a33;color:#1d7a33",err:"background:#fdecec;border-color:#ED1E24;color:#8a1220"}[st.state];
+  /* v66: תמיד בעברית — גם כשממשק המשתמש באנגלית/תאית (data-notr = לא לתרגם) */
+  return '<div class="hint" data-notr dir="rtl" lang="he" style="margin-top:8px;text-align:right;'+css+'">'+esc(st.msg)+'</div>';
+}
+function setSendSt(rid,state,msg){SEND_ST[rid]={state:state,msg:msg,at:Date.now()};if(CUR&&CUR.id===rid)try{pPay();}catch(e){}}
+function verifySent(rid){
+  var since=new Date(Date.now()-5000).toISOString(), t0=Date.now();
+  setSendSt(rid,"wait","⏳ שולחים ללקוח… זה לוקח בערך דקה (מנפיקים חשבון עסקה וקישור תשלום ושולחים בוואטסאפ).");
+  (function poll(){
+    setTimeout(async function(){
+      if(!SEND_ST[rid]||SEND_ST[rid].state!=="wait")return;
+      try{
+        var errs=await find("tblI0dPTTqLl6hNRK","AND(FIND("+q(rid)+",{הקשר (Record/ID)}&\"\"),{חומרה}=\"שגיאה\",IS_AFTER(CREATED_TIME(),"+q(since)+"))",5);
+        if(errs.length){setSendSt(rid,"err","⚠️ ההודעה לא נשלחה ללקוח. "+sendFriendly(errs[0])+" אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\".");return;}
+        var rec=await api("/"+T.wo+"/"+rid), g=rec.fields||{};
+        var i=-1;WOS.forEach(function(x,n){if(x.id===rid)i=n;});if(i>=0)WOS[i]=rec;
+        if(CUR&&CUR.id===rid)CUR=rec;
+        if(txt(g["קישור תשלום"])&&Date.now()-t0>50000){
+          setSendSt(rid,"ok","✓ ההודעה נשלחה ללקוח בוואטסאפ — עם הסכום וקישור התשלום (חשבון עסקה "+txt(g["מספר חשבונית מס"])+").");return;}
+        if(Date.now()-t0>120000){
+          setSendSt(rid,"err","⚠️ נראה שההודעה לא יצאה — לא נוצר קישור תשלום תוך שתי דקות. בדרך כלל זה אומר שהחיבור לוואטסאפ במערכת השליחה נפל. אפשר לנסות שוב ב\"↻ שלח שוב ללקוח\", ואם זה חוזר — לבדוק את החיבור.");return;}
+      }catch(e){}
+      poll();
+    },15000);
+  })();
+}
+async function resendToCustomer(btn){
+  if(!CUR)return; var f=CUR.fields||{}, rid=CUR.id;
+  if(txt(f["סטטוס"])!=="מוכן לתשלום"){toast("אפשר לשלוח רק כרטיס במצב \"מוכן לתשלום\"",1);return;}
+  if(window.__sendBusy){toast("שליחה כבר בדרך — המתן רגע");return;}
+  var L2=exitLoc(f), d=docRefs(f);
+  if(!await appAsk("לשלוח שוב ללקוח את הודעת \"הרכב מוכן\" עם קישור התשלום?\n\n• מיקום: "+(L2.url||"ללא מיקום")
+    +"\n• לתשלום: "+money(f['סה"כ לתשלום']||0)
+    +(d.deal?"\n• אותו חשבון עסקה ("+d.deal+") ואותו קישור — לא מונפק מסמך חדש":"\n• יונפק חשבון עסקה וקישור תשלום (לא הונפקו בשליחה הקודמת)")))return;
+  window.__sendBusy=true; setTimeout(function(){window.__sendBusy=false;},15000);
+  if(btn){btn.disabled=true;btn.textContent="⏳ נשלח…";}
+  patchWO({"\u05ea\u05d0\u05e8\u05d9\u05da \u05e9\u05dc\u05d9\u05d7\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd":new Date().toISOString().slice(0,10)},pPay,"ההודעה נשלחה שוב ללקוח");
+  RULES.fire("ready",rid,{kind:"customer",resend:true});
+  verifySent(rid);
+}
 async function sendToCustomer(){
   if(!CUR)return;
   var f=CUR.fields||{};
@@ -3754,6 +3813,7 @@ async function sendToCustomer(){
     "\u05e0\u05e9\u05dc\u05d7\u05d4 \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d0\u05d5\u05d7\u05d3\u05ea \u05dc\u05dc\u05e7\u05d5\u05d7");
   window.__sendBusy=true; setTimeout(function(){window.__sendBusy=false;},15000);
   RULES.fire("ready",CUR.id,{kind:"customer"});
+  verifySent(CUR.id);   /* v64 */
 }
 /* ============================================================
    ============ RULES ENGINE (שכבת הקוד) — v5 =================
